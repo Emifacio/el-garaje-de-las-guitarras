@@ -1,0 +1,164 @@
+---
+export const prerender = false;
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { createSupabaseServerClient } from '../../../lib/supabase-server';
+import { getPublicImageUrl } from '../../../lib/image-utils';
+
+const supabase = createSupabaseServerClient(Astro.cookies, Astro.request);
+
+// Verify session
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) {
+  return Astro.redirect('/admin/login');
+}
+
+// Handle POST actions (like Delete)
+let actionMessage = '';
+let actionError = '';
+
+if (Astro.request.method === 'POST') {
+  const formData = await Astro.request.formData();
+  const action = formData.get('action')?.toString();
+  const productId = formData.get('productId')?.toString();
+
+  if (action === 'delete' && productId) {
+    const { error: deleteError } = await supabase
+      .from('products')
+      .delete()
+      .eq('id', productId);
+
+    if (deleteError) {
+      actionError = 'Error al eliminar el producto: ' + deleteError.message;
+    } else {
+      actionMessage = 'Producto eliminado exitosamente.';
+    }
+  }
+}
+
+// Fetch all products
+const { data: products, error } = await supabase
+  .from('products')
+  .select(`
+    *,
+    categories (name),
+    product_images (storage_path, sort_order)
+  `)
+  .order('created_at', { ascending: false });
+
+if (error) {
+  console.error("Error fetching products:", error);
+}
+
+// Helper to get main image
+const getMainImage = (images: any[]) => {
+  if (!images || images.length === 0) return null;
+  const sorted = [...images].sort((a, b) => a.sort_order - b.sort_order);
+  return getPublicImageUrl(sorted[0].storage_path);
+};
+
+// Helper for status colors
+const getStatusClasses = (status: string) => {
+  switch (status) {
+    case 'disponible': return 'bg-emerald-900/30 text-emerald-400 border-emerald-500/30';
+    case 'reservado': return 'bg-amber-900/30 text-amber-400 border-amber-500/30';
+    case 'vendido': return 'bg-red-900/30 text-red-400 border-red-500/30';
+    default: return 'bg-slate-800 text-slate-400 border-slate-700';
+  }
+};
+---
+
+<AdminLayout title="Inventario de Productos">
+    <div class="flex justify-between items-end mb-8">
+        <div>
+            <h1 class="font-serif text-3xl font-black text-slate-100 tracking-wide mb-2">Inventario</h1>
+            <p class="text-slate-400">Gestiona las guitarras y accesorios del catálogo.</p>
+        </div>
+        <a href="/admin/productos/nuevo" class="h-10 px-5 flex items-center justify-center gap-2 bg-primary text-background-dark text-sm font-bold tracking-widest uppercase hover:bg-primary/90 transition-all rounded-sm shadow-lg shadow-primary/20 border border-primary">
+            <span class="material-symbols-outlined text-[1.25rem]">add</span> Nuevo Producto
+        </a>
+    </div>
+
+    {actionMessage && (
+        <div class="mb-6 p-4 bg-emerald-900/20 border border-emerald-500/30 text-emerald-300 rounded text-sm flex items-center gap-2">
+            <span class="material-symbols-outlined">check_circle</span> {actionMessage}
+        </div>
+    )}
+
+    {actionError && (
+        <div class="mb-6 p-4 bg-red-900/20 border border-red-500/30 text-red-300 rounded text-sm flex items-center gap-2">
+            <span class="material-symbols-outlined">error</span> {actionError}
+        </div>
+    )}
+
+    <div class="bg-background-light/5 border border-primary/20 rounded-lg overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-background-dark/50 border-b border-primary/20">
+                        <th class="p-4 text-xs font-bold uppercase tracking-widest text-slate-400 w-16">Imagen</th>
+                        <th class="p-4 text-xs font-bold uppercase tracking-widest text-slate-400">Título / Modelo</th>
+                        <th class="p-4 text-xs font-bold uppercase tracking-widest text-slate-400">Categoría</th>
+                        <th class="p-4 text-xs font-bold uppercase tracking-widest text-slate-400">Precio</th>
+                        <th class="p-4 text-xs font-bold uppercase tracking-widest text-slate-400">Estado</th>
+                        <th class="p-4 text-xs font-bold uppercase tracking-widest text-slate-400 text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-primary/10">
+                    {products && products.length > 0 ? (
+                        products.map((product) => {
+                            const mainImageUrl = getMainImage(product.product_images);
+                            return (
+                                <tr class="hover:bg-primary/5 transition-colors group">
+                                    <td class="p-4 align-middle">
+                                        <div class="w-12 h-12 rounded bg-background-dark border border-primary/20 overflow-hidden flex items-center justify-center">
+                                            {mainImageUrl ? (
+                                                <img src={mainImageUrl} alt={product.title} class="w-full h-full object-cover" />
+                                            ) : (
+                                                <span class="material-symbols-outlined text-slate-600">image</span>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td class="p-4 align-middle">
+                                        <div class="font-bold text-slate-200">{product.title}</div>
+                                        <div class="text-xs text-slate-500 mt-1">{product.brand || 'Sin marca'} {product.year ? `• ${product.year}` : ''}</div>
+                                    </td>
+                                    <td class="p-4 align-middle text-slate-400 text-sm">
+                                        {product.categories?.name || '---'}
+                                    </td>
+                                    <td class="p-4 align-middle font-serif text-slate-200">
+                                        {product.price ? `U$D ${product.price.toLocaleString()}` : <span class="text-slate-500 text-sm">N/C</span>}
+                                    </td>
+                                    <td class="p-4 align-middle">
+                                        <span class={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 border rounded-sm ${getStatusClasses(product.status)}`}>
+                                            {product.status}
+                                        </span>
+                                    </td>
+                                    <td class="p-4 align-middle text-right">
+                                        <div class="flex justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                                            <a href={`/admin/productos/${product.id}`} class="p-2 text-slate-400 hover:text-primary transition-colors bg-background-dark/50 rounded border border-transparent hover:border-primary/30" title="Editar">
+                                                <span class="material-symbols-outlined text-[1.25rem]">edit</span>
+                                            </a>
+                                            <form method="post" onsubmit="return confirm('¿Estás seguro de que deseas eliminar este producto de forma permanente?');">
+                                                <input type="hidden" name="action" value="delete" />
+                                                <input type="hidden" name="productId" value={product.id} />
+                                                <button type="submit" class="p-2 text-slate-400 hover:text-red-400 transition-colors bg-background-dark/50 rounded border border-transparent hover:border-red-500/30" title="Eliminar">
+                                                    <span class="material-symbols-outlined text-[1.25rem]">delete_forever</span>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            );
+                        })
+                    ) : (
+                        <tr>
+                            <td colspan="6" class="p-8 text-center text-slate-500">
+                                No hay productos registrados en la base de datos.
+                            </td>
+                        </tr>
+                    )}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</AdminLayout>

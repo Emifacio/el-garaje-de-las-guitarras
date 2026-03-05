@@ -1,0 +1,286 @@
+---
+export const prerender = false;
+import AdminLayout from '../../../../layouts/AdminLayout.astro';
+import { createSupabaseServerClient } from '../../../../lib/supabase-server';
+import { getPublicImageUrl } from '../../../../lib/image-utils';
+
+const supabase = createSupabaseServerClient(Astro.cookies, Astro.request);
+
+// Verify session
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) {
+    return Astro.redirect('/admin/login');
+}
+
+// Get the product ID from URL
+const { id } = Astro.params;
+
+if (!id) {
+    return Astro.redirect('/admin/productos');
+}
+
+let errorMsg = '';
+let successMsg = '';
+
+// Handle Form Submission (Update)
+if (Astro.request.method === 'POST') {
+    try {
+        const formData = await Astro.request.formData();
+        
+        // 1. Extract base fields
+        const title = formData.get('title')?.toString().trim();
+        const slug = formData.get('slug')?.toString().trim() || title?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+        const category_id = formData.get('category_id')?.toString();
+        const priceStr = formData.get('price')?.toString();
+        const price = priceStr ? parseFloat(priceStr) : null;
+        const status = formData.get('status')?.toString() || 'disponible';
+        
+        if (!title || !slug || !category_id) {
+            throw new Error('El título, el slug y la categoría son obligatorios.');
+        }
+
+        // 2. Build the Product object for updating
+        const updateData = {
+            title,
+            slug,
+            category_id,
+            status,
+            price,
+            price_display: formData.get('price_display')?.toString() || null,
+            brand: formData.get('brand')?.toString() || null,
+            year: formData.get('year') ? parseInt(formData.get('year')!.toString()) : null,
+            short_description: formData.get('short_description')?.toString() || null,
+            long_description: formData.get('long_description')?.toString() || null,
+            badge: formData.get('badge')?.toString() || null,
+            is_featured: formData.get('is_featured') === 'on',
+            sort_order: parseInt(formData.get('sort_order')?.toString() || '0'),
+            updated_at: new Date().toISOString()
+        };
+
+        // 3. Update Product Document
+        const { error: updateError } = await supabase
+            .from('products')
+            .update(updateData)
+            .eq('id', id);
+
+        if (updateError) throw updateError;
+
+        // 4. Note: To keep things simple right now, advanced image deletion/relational updating
+        // is skipped in this quick-edit mode. We update the main text columns.
+        
+        successMsg = `¡Producto "${updateData.title}" actualizado con éxito!`;
+        
+    } catch (err: any) {
+        errorMsg = err.message || 'Ocurrió un error inesperado al actualizar el producto.';
+        console.error("Product Update Error:", err);
+    }
+}
+
+// Fetch categories for the dropdown
+const { data: categories } = await supabase
+    .from('categories')
+    .select('id, name')
+    .order('name');
+
+// Fetch the existing product data to populate the form
+const { data: product, error: fetchError } = await supabase
+    .from('products')
+    .select(`
+        *,
+        product_images (id, storage_path, sort_order)
+    `)
+    .eq('id', id)
+    .single();
+
+if (fetchError || !product) {
+    console.error("Error fetching product:", fetchError);
+    return Astro.redirect('/admin/productos');
+}
+
+// Sort existing images if present
+const sortedImages = product.product_images?.sort((a: any, b: any) => a.sort_order - b.sort_order) || [];
+---
+
+<AdminLayout title={`Editar: ${product.title}`}>
+    <div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+            <a href="/admin/productos" class="w-10 h-10 flex items-center justify-center rounded-full bg-background-dark/50 border border-primary/20 text-slate-400 hover:text-primary transition-colors hover:border-primary/50">
+                <span class="material-symbols-outlined">arrow_back</span>
+            </a>
+            <div>
+                <h1 class="font-serif text-3xl font-black text-slate-100 tracking-wide mb-1">Editar Producto</h1>
+                <p class="text-slate-400 text-sm">Modificando los datos de este instrumento en el catálogo.</p>
+            </div>
+        </div>
+        <a href={`/producto/${product.slug}`} target="_blank" rel="noopener noreferrer" class="h-10 px-5 flex items-center justify-center gap-2 bg-background-dark text-primary text-sm font-bold tracking-widest uppercase hover:bg-primary/10 transition-all rounded-sm border border-primary/40">
+            <span class="material-symbols-outlined text-[1.25rem]">visibility</span> Ver Público
+        </a>
+    </div>
+
+    {errorMsg && (
+        <div class="mb-6 p-4 bg-red-900/20 border border-red-500/30 text-red-300 rounded text-sm flex items-center gap-2">
+            <span class="material-symbols-outlined">error</span> {errorMsg}
+        </div>
+    )}
+
+    {successMsg && (
+        <div class="mb-6 p-4 bg-emerald-900/20 border border-emerald-500/30 text-emerald-300 rounded text-sm flex items-center gap-2">
+            <span class="material-symbols-outlined">check_circle</span> {successMsg}
+        </div>
+    )}
+
+    <form method="POST" class="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-12">
+        <!-- Main Content Column -->
+        <div class="lg:col-span-2 flex flex-col gap-6">
+            <!-- Basic Info Card -->
+            <div class="bg-background-light/5 border border-primary/20 rounded-lg p-6">
+                <h2 class="font-serif text-xl font-bold text-slate-200 mb-6 border-b border-primary/10 pb-2">Información Básica</h2>
+                
+                <div class="flex flex-col gap-4">
+                    <div>
+                        <label for="title" class="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Título del Producto *</label>
+                        <input type="text" id="title" name="title" value={product.title} required
+                            class="w-full bg-background-dark/80 border border-primary/30 rounded px-4 py-3 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-slate-200 transition-colors" />
+                    </div>
+                    
+                    <div>
+                        <label for="slug" class="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">URL Fija (Slug)</label>
+                        <input type="text" id="slug" name="slug" value={product.slug}
+                            class="w-full bg-background-dark/50 border border-slate-700/50 rounded px-4 py-2.5 text-sm focus:outline-none focus:border-primary/50 text-slate-400 transition-colors" />
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="brand" class="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Marca</label>
+                            <input type="text" id="brand" name="brand" value={product.brand || ''}
+                                class="w-full bg-background-dark/80 border border-primary/30 rounded px-4 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-slate-200 transition-colors" />
+                        </div>
+                        <div>
+                            <label for="year" class="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Año</label>
+                            <input type="number" id="year" name="year" value={product.year || ''} min="1900" max="2100" 
+                                class="w-full bg-background-dark/80 border border-primary/30 rounded px-4 py-2.5 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-slate-200 transition-colors" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Descriptions Card -->
+            <div class="bg-background-light/5 border border-primary/20 rounded-lg p-6">
+                <h2 class="font-serif text-xl font-bold text-slate-200 mb-6 border-b border-primary/10 pb-2">Descripciones</h2>
+                
+                <div class="flex flex-col gap-6">
+                    <div>
+                        <label for="short_description" class="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Resumen Corto</label>
+                        <textarea id="short_description" name="short_description" rows="2"
+                            class="w-full bg-background-dark/80 border border-primary/30 rounded px-4 py-3 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-slate-200 transition-colors">{product.short_description || ''}</textarea>
+                    </div>
+
+                    <div>
+                        <label for="long_description" class="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Descripción Detallada</label>
+                        <textarea id="long_description" name="long_description" rows="8" 
+                            class="w-full bg-background-dark/80 border border-primary/30 rounded px-4 py-3 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-slate-200 transition-colors">{product.long_description || ''}</textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Existing Images Display (Read Only helper for now) -->
+            <div class="bg-background-light/5 border border-primary/20 rounded-lg p-6">
+                <h2 class="font-serif text-xl font-bold text-slate-200 mb-6 border-b border-primary/10 pb-2">Imágenes Actuales</h2>
+                {sortedImages.length > 0 ? (
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        {sortedImages.map((img: any) => (
+                            <div class="relative aspect-square rounded border border-primary/30 bg-background-dark overflow-hidden group">
+                                <img src={getPublicImageUrl(img.storage_path)} class="w-full h-full object-cover" alt="Product Image" />
+                            </div>
+                        ))}
+                    </div>
+                    <p class="text-xs text-slate-500 mt-4">Nota: Para reemplazar imágenes temporalmente deberás eliminar el producto y volverlo a subir, o gestionarlo directamente desde el Storage de Supabase Panel.</p>
+                ) : (
+                    <p class="text-sm text-slate-500 italic">No hay imágenes asociadas a este producto.</p>
+                )}
+            </div>
+        </div>
+
+        <!-- Sidebar Preferences Column -->
+        <div class="flex flex-col gap-6">
+
+                <!-- Status & Visibility -->
+                <div class="bg-background-light/5 border border-primary/20 rounded-lg p-6">
+                <h2 class="font-serif text-xl font-bold text-slate-200 mb-6 border-b border-primary/10 pb-2">Publicación</h2>
+                
+                <div class="flex flex-col gap-5">
+                    <div>
+                        <label for="category_id" class="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Categoría *</label>
+                        <select id="category_id" name="category_id" required class="w-full bg-background-dark/80 border border-primary/30 rounded px-4 py-3 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-slate-200 transition-colors">
+                            {categories?.map(c => (
+                                <option value={c.id} selected={product.category_id === c.id}>{c.name}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="status" class="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Estado de Venta</label>
+                        <select id="status" name="status" class="w-full bg-background-dark/80 border border-primary/30 rounded px-4 py-3 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-slate-200 transition-colors">
+                            <option value="disponible" selected={product.status === 'disponible'}>Disponible</option>
+                            <option value="reservado" selected={product.status === 'reservado'}>Reservado</option>
+                            <option value="vendido" selected={product.status === 'vendido'}>Vendido</option>
+                        </select>
+                    </div>
+
+                    <label class="flex items-center gap-3 p-3 border border-primary/20 rounded-md bg-background-dark/30 hover:bg-primary/5 cursor-pointer transition-colors group">
+                        <input type="checkbox" name="is_featured" checked={product.is_featured} class="w-4 h-4 rounded border-primary/50 text-primary focus:ring-primary bg-background-dark" />
+                        <div class="flex flex-col">
+                            <span class="text-sm font-bold text-slate-200 group-hover:text-primary transition-colors">Destacar Instrumento</span>
+                            <span class="text-xs text-slate-500">Aparecerá iluminado en la portada</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Pricing Card -->
+            <div class="bg-background-light/5 border border-primary/20 rounded-lg p-6">
+                <h2 class="font-serif text-xl font-bold text-slate-200 mb-6 border-b border-primary/10 pb-2">Precio</h2>
+                
+                <div class="flex flex-col gap-4">
+                    <div>
+                        <label for="price" class="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Valor (U$D)</label>
+                        <input type="number" id="price" name="price" value={product.price || ''} step="0.01" 
+                            class="w-full bg-background-dark/80 border border-primary/30 rounded px-4 py-3 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-slate-200 transition-colors font-serif text-lg" />
+                    </div>
+                    
+                    <div>
+                        <label for="price_display" class="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Texto Alternativo</label>
+                        <input type="text" id="price_display" name="price_display" value={product.price_display || ''}
+                            class="w-full bg-background-dark/50 border border-slate-700/50 rounded px-4 py-2 text-sm focus:outline-none focus:border-primary/50 text-slate-400 transition-colors" />
+                    </div>
+                    
+                    <div>
+                        <label for="badge" class="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Etiqueta (Badge)</label>
+                        <input type="text" id="badge" name="badge" value={product.badge || ''}
+                            class="w-full bg-background-dark/50 border border-slate-700/50 rounded px-4 py-2 text-sm focus:outline-none focus:border-primary/50 text-slate-400 transition-colors" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Toolbar -->
+            <div class="bg-background-dark border border-primary p-6 rounded-lg shadow-2xl shadow-primary/10">
+                <button type="submit" id="updateBtn" class="w-full h-14 flex items-center justify-center gap-2 bg-primary text-background-dark text-base font-black tracking-widest uppercase hover:bg-primary/90 transition-all rounded shadow-lg shadow-primary/20 hover:scale-[1.02]">
+                    <span class="material-symbols-outlined font-normal">save</span>
+                    Guardar Cambios
+                </button>
+            </div>
+        </div>
+    </form>
+</AdminLayout>
+
+<script>
+    // Make button show loading state on submit
+    const form = document.querySelector('form');
+    const btn = document.getElementById('updateBtn');
+    form?.addEventListener('submit', () => {
+        if(btn) {
+            btn.innerHTML = `<span class="material-symbols-outlined animate-spin">refresh</span> Actualizando...`;
+            btn.classList.add('opacity-70', 'pointer-events-none');
+        }
+    });
+</script>
