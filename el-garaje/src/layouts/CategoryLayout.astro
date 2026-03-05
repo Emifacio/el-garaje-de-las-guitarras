@@ -1,0 +1,38 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import FilterSidebar from '../components/category/FilterSidebar.astro';
+
+interface Props {
+  title: string;
+  description: string;
+  categoryName: string;
+  categoryDescription: string | null;
+}
+
+const { title, description, categoryName, categoryDescription } = Astro.props;
+---
+
+<BaseLayout title={title} description={description}>
+    <div class="w-full max-w-7xl mx-auto px-4 py-8">
+        <!-- Header Title -->
+        <div class="mb-12 border-b border-primary/20 pb-6">
+            <h1 class="font-serif text-4xl md:text-5xl font-black text-slate-100 tracking-wide mb-4">
+                {categoryName}
+            </h1>
+            {categoryDescription && (
+                <p class="text-slate-400 max-w-2xl text-lg">{categoryDescription}</p>
+            )}
+        </div>
+
+        <!-- Filters & Grid Layout -->
+        <div class="flex flex-col lg:flex-row gap-12">
+            <!-- Sidebar Filters -->
+            <FilterSidebar />
+
+            <!-- Product Grid -->
+            <div class="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <slot />
+            </div>
+        </div>
+    </div>
+</BaseLayout>

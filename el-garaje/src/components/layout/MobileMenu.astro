@@ -1,0 +1,57 @@
+---
+---
+<div id="mobile-menu"
+    class="fixed inset-0 z-[60] bg-background-dark/95 backdrop-blur-xl transform translate-x-full transition-transform duration-300 ease-in-out lg:hidden flex flex-col">
+    <div class="flex justify-between items-center p-4 lg:p-6 border-b border-primary/10">
+        <img src="/logo.jpg" alt="El Garaje de las Guitarras" class="h-10 w-auto object-contain" />
+        <button id="btn-close-menu" class="text-slate-400 hover:text-primary">
+            <span class="material-symbols-outlined text-3xl">close</span>
+        </button>
+    </div>
+    <nav class="flex flex-col gap-6 p-8 overflow-y-auto">
+        <a href="/"
+            class="text-2xl font-serif font-bold tracking-wide hover:text-primary transition-colors">Home</a>
+        <a href="/categoria/electricas"
+            class="text-2xl font-serif font-bold tracking-wide hover:text-primary transition-colors">Guitarras
+            Eléctricas</a>
+        <a href="/categoria/acusticas"
+            class="text-2xl font-serif font-bold tracking-wide hover:text-primary transition-colors">Guitarras
+            Acústicas</a>
+        <a href="/categoria/bajos"
+            class="text-2xl font-serif font-bold tracking-wide hover:text-primary transition-colors">Bajos</a>
+        <a href="/categoria/amplificadores"
+            class="text-2xl font-serif font-bold tracking-wide hover:text-primary transition-colors">Amplificadores</a>
+        <hr class="border-primary/20 my-2" />
+        <a href="/sobre-elgaraje"
+            class="text-2xl font-serif font-bold tracking-wide text-primary/80 hover:text-primary transition-colors">Sobre
+            El Garaje / La Sala de Pruebas</a>
+        <a href="/contacto"
+            class="text-2xl font-serif font-bold tracking-wide hover:text-primary transition-colors">Contacto</a>
+    </nav>
+</div>
+
+<script>
+    // Mobile menu toggle functionality needs to re-run on view transitions if we use them later
+    document.addEventListener('astro:page-load', () => {
+        initMobileMenu();
+    });
+
+    // Run on initial load
+    initMobileMenu();
+
+    function initMobileMenu() {
+        const menuBtn = document.getElementById('btn-menu');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const closeMenuBtn = document.getElementById('btn-close-menu');
+
+        if (menuBtn && mobileMenu && closeMenuBtn) {
+            menuBtn.addEventListener('click', () => {
+                mobileMenu.classList.remove('translate-x-full');
+            });
+
+            closeMenuBtn.addEventListener('click', () => {
+                mobileMenu.classList.add('translate-x-full');
+            });
+        }
+    }
+</script>

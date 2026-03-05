@@ -1,0 +1,82 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Breadcrumbs from '../../components/ui/Breadcrumbs.astro';
+import ProductGallery from '../../components/product/ProductGallery.astro';
+import ProductSpecs from '../../components/product/ProductSpecs.astro';
+import StatusBadge from '../../components/product/StatusBadge.astro';
+import { getProducts } from '../../lib/queries';
+
+export async function getStaticPaths() {
+  const products = await getProducts();
+  return products.map((product) => {
+    return {
+      params: { slug: product.slug },
+      props: { product }
+    };
+  });
+}
+
+const { product } = Astro.props;
+
+// Format Price
+const priceDisplay = product.price_display || (product.price ? `U$D ${product.price.toLocaleString()}` : 'Consultar Precio');
+
+// Breadcrumbs Data
+const breadcrumbs = [
+  { label: 'Home', url: '/' },
+  { label: product.categories?.name || 'Categoría', url: `/categoria/${product.categories?.slug || ''}` },
+  { label: product.title, isCurrent: true }
+];
+
+const pageTitle = `${product.title} | El Garaje de las Guitarras`;
+---
+
+<BaseLayout 
+    title={pageTitle} 
+    description={product.seo_description || product.short_description || ''}
+>
+    <main class="w-full max-w-7xl mx-auto px-4 py-8">
+        <Breadcrumbs items={breadcrumbs} />
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 xl:gap-20">
+            <!-- Image Gallery Column -->
+            <ProductGallery images={product.product_images || null} title={product.title} />
+
+            <!-- Product Detail Column -->
+            <div class="flex flex-col">
+                <div class="mb-2">
+                    <StatusBadge status={product.status} badge={product.badge} />
+                </div>
+
+                <h1 class="font-serif text-4xl md:text-5xl font-black text-slate-100 tracking-wide mb-4 leading-tight">
+                    {product.title}
+                </h1>
+                
+                <p class="font-serif text-2xl text-primary font-bold mb-8 opacity-90">
+                    {product.status === 'vendido' ? 'No Disponible' : priceDisplay}
+                </p>
+
+                {product.long_description || product.short_description ? (
+                    <div class="text-slate-400 text-lg leading-relaxed mb-10 border-l-[3px] border-primary/50 pl-6 italic">
+                        <p>{product.long_description || product.short_description}</p>
+                    </div>
+                ) : null}
+
+                <!-- CTAs -->
+                {product.status !== 'vendido' && (
+                    <div class="flex flex-col sm:flex-row gap-4 mb-12">
+                        <a href="/contacto" class="flex-1 h-16 bg-primary text-background-dark text-sm font-bold tracking-widest uppercase hover:bg-primary/90 transition-all border border-primary rounded-sm flex items-center justify-center gap-3">
+                            Consultar Precio <span class="material-symbols-outlined">chat</span>
+                        </a>
+                        <a href="/contacto" class="flex-1 h-16 bg-transparent text-primary text-sm font-bold tracking-widest uppercase hover:bg-primary/10 transition-all border border-primary rounded-sm flex items-center justify-center gap-3">
+                            Agendar Visita <span class="material-symbols-outlined">event</span>
+                        </a>
+                    </div>
+                )}
+
+                <!-- Specs -->
+                <ProductSpecs product={product} />
+            </div>
+        </div>
+    </main>
+</BaseLayout>

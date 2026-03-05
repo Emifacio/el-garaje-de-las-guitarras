@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html class="dark" lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Contacto | El Garaje de las Guitarras</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="main.js"></script>
+    <link href="style.css" rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&amp;family=Manrope:wght@400;500;700&amp;display=swap"
+        rel="stylesheet" />
+    <meta name="description"
+        content="Contacto de El Garaje de las Guitarras: escribinos para consultas, consignaciones o para agendar una visita a La Sala de Pruebas en Buenos Aires." />
+</head>
+
+<body
+    class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display selection:bg-primary/30 min-h-screen">
+    <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden @container pb-20">
+
+        <!-- Header -->
+        <header
+            class="sticky top-0 z-50 flex flex-col gap-2 bg-background-light/90 dark:bg-background-dark/90 backdrop-blur-md p-4 pb-2 border-b border-primary/20 shadow-lg shadow-black/50">
+            <div class="flex items-center h-12 justify-between max-w-7xl mx-auto w-full">
+                <button id="btn-menu"
+                    class="lg:hidden flex size-12 shrink-0 items-center justify-center text-slate-800 dark:text-slate-200 hover:text-primary transition-colors">
+                    <span class="material-symbols-outlined text-3xl">menu</span>
+                </button>
+                <a href="index.html"
+                    class="font-serif text-2xl lg:text-3xl font-black tracking-widest text-primary uppercase drop-shadow-md">El
+                    Garaje de las Guitarras</a>
+                <nav class="hidden lg:flex items-center gap-8">
+                    <a href="guitarras-electricas.html"
+                        class="text-sm font-bold tracking-widest uppercase hover:text-primary transition-colors">Eléctricas</a>
+                    <a href="guitarras-acusticas.html"
+                        class="text-sm font-bold tracking-widest uppercase hover:text-primary transition-colors">Acústicas</a>
+                    <a href="bajos.html"
+                        class="text-sm font-bold tracking-widest uppercase hover:text-primary transition-colors">Bajos</a>
+                    <a href="amplificadores.html"
+                        class="text-sm font-bold tracking-widest uppercase hover:text-primary transition-colors">Amps</a>
+                    <a href="sobre-elgaraje.html"
+                        class="text-sm font-bold tracking-widest uppercase text-primary/80 hover:text-primary transition-colors border-l border-primary/30 pl-8">El
+                        Sala de Pruebas</a>
+                </nav>
+                <div class="flex items-center justify-end gap-2">
+                    <button type="button" data-role="search-button"
+                        class="flex items-center justify-center h-12 w-12 text-slate-800 dark:text-slate-200 hover:text-primary transition-colors">
+                        <span class="material-symbols-outlined text-2xl">search</span>
+                    </button>
+                    <a href="contacto.html"
+                        class="hidden md:flex h-10 px-6 items-center justify-center rounded-sm bg-primary text-background-dark text-xs font-bold tracking-widest uppercase hover:bg-primary/90 transition-all border border-primary ml-4">
+                        Contacto
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Mobile Menu Overlay -->
+        <div id="mobile-menu"
+            class="fixed inset-0 z-[60] bg-background-dark/95 backdrop-blur-xl transform translate-x-full transition-transform duration-300 ease-in-out lg:hidden flex flex-col">
+            <div class="flex justify-between items-center p-6 border-b border-primary/10">
+                <span class="font-serif text-xl font-black tracking-widest text-primary uppercase">Menú</span>
+                <button id="btn-close-menu" class="text-slate-400 hover:text-primary">
+                    <span class="material-symbols-outlined text-3xl">close</span>
+                </button>
+            </div>
+            <nav class="flex flex-col gap-6 p-8 overflow-y-auto">
+                <a href="index.html"
+                    class="text-2xl font-serif font-bold tracking-wide hover:text-primary transition-colors">Home</a>
+                <a href="guitarras-electricas.html"
+                    class="text-2xl font-serif font-bold tracking-wide hover:text-primary transition-colors">Guitarras
+                    Eléctricas</a>
+                <a href="guitarras-acusticas.html"
+                    class="text-2xl font-serif font-bold tracking-wide hover:text-primary transition-colors">Guitarras
+                    Acústicas</a>
+                <a href="bajos.html"
+                    class="text-2xl font-serif font-bold tracking-wide hover:text-primary transition-colors">Bajos</a>
+                <a href="amplificadores.html"
+                    class="text-2xl font-serif font-bold tracking-wide hover:text-primary transition-colors">Amplificadores</a>
+                <a href="sobre-elgaraje.html"
+                    class="text-2xl font-serif font-bold tracking-wide hover:text-primary transition-colors">Sobre
+                    El Garaje / Sala de Pruebas</a>
+                <a href="contacto.html" class="text-2xl font-serif font-bold tracking-wide text-primary">Contacto</a>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <main class="flex-1 w-full max-w-7xl mx-auto px-4 py-16">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+
+                <!-- Contact Info -->
+                <div class="flex flex-col gap-10">
+                    <div>
+                        <h1 class="font-serif text-4xl md:text-6xl font-black text-slate-100 tracking-wide mb-6">
+                            Contacto</h1>
+                        <p class="text-slate-400 text-lg leading-relaxed max-w-md">Para consultas sobre instrumentos,
+                            consignaciones o para agendar una visita a nuestro Sala de Pruebas, completá el formulario o
+                            contactanos directamente.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="bg-accent-dark/30 p-6 border border-primary/10 rounded-sm">
+                            <span class="material-symbols-outlined text-primary text-3xl mb-4">location_on</span>
+                            <h3 class="font-serif text-xl font-bold text-slate-200 mb-2">La Sala de Pruebas</h3>
+                            <p class="text-slate-400 text-sm">Buenos Aires, Argentina<br />(Dirección exacta por
+                                privado)</p>
+                            <p class="text-primary text-xs font-bold uppercase tracking-widest mt-4">Solo con cita
+                                previa</p>
+                        </div>
+                        <div class="bg-accent-dark/30 p-6 border border-primary/10 rounded-sm">
+                            <span class="material-symbols-outlined text-primary text-3xl mb-4">mail</span>
+                            <h3 class="font-serif text-xl font-bold text-slate-200 mb-2">Consultas</h3>
+                            <p class="text-slate-400 text-sm">info@elgarajedelasguitarras.com</p>
+                            <p class="text-slate-400 text-sm mt-1">+54 9 11 3032-2477</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact Form -->
+                <div
+                    class="bg-accent-dark/20 p-8 md:p-12 border border-primary/20 rounded-sm shadow-2xl relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16">
+                    </div>
+                    <h2 class="font-serif text-2xl font-bold text-slate-100 mb-4 relative z-10">Envianos un mensaje</h2>
+                    <p id="form-status" class="text-sm text-primary mb-4 hidden relative z-10"></p>
+                    <form id="contact-form" class="flex flex-col gap-6 relative z-10" action="#" method="post"
+                        novalidate>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="flex flex-col gap-2">
+                                <label for="nombre"
+                                    class="text-xs font-bold text-slate-400 uppercase tracking-widest">Nombre</label>
+                                <input id="nombre" name="nombre" type="text"
+                                    class="bg-background-dark/50 border border-primary/20 rounded-sm px-4 py-3 text-slate-200 focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none"
+                                    required>
+                            </div>
+                            <div class="flex flex-col gap-2">
+                                <label for="email"
+                                    class="text-xs font-bold text-slate-400 uppercase tracking-widest">Email</label>
+                                <input id="email" name="email" type="email"
+                                    class="bg-background-dark/50 border border-primary/20 rounded-sm px-4 py-3 text-slate-200 focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none"
+                                    required>
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <label for="asunto"
+                                class="text-xs font-bold text-slate-400 uppercase tracking-widest">Asunto</label>
+                            <select id="asunto" name="asunto"
+                                class="bg-background-dark/50 border border-primary/20 rounded-sm px-4 py-3 text-slate-200 focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none appearance-none">
+                                <option value="instrumento">Consulta sobre instrumento</option>
+                                <option value="visita">Agendar visita al Bunker</option>
+                                <option value="consignar">Consignar un instrumento</option>
+                                <option value="otro">Otro</option>
+                            </select>
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <label for="mensaje"
+                                class="text-xs font-bold text-slate-400 uppercase tracking-widest">Mensaje</label>
+                            <textarea id="mensaje" name="mensaje" rows="4"
+                                class="bg-background-dark/50 border border-primary/20 rounded-sm px-4 py-3 text-slate-200 focus:border-primary focus:ring-1 focus:ring-primary transition-colors outline-none resize-none"
+                                required></textarea>
+                        </div>
+                        <button type="submit"
+                            class="mt-4 h-14 bg-primary text-background-dark text-sm font-bold tracking-widest uppercase hover:bg-primary/90 transition-all border border-primary rounded-sm flex items-center justify-center gap-2">
+                            Enviar Mensaje <span class="material-symbols-outlined text-lg">send</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-background-dark border-t border-primary/20 pt-16 pb-8 px-4 mt-20">
+            <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+                <div class="md:col-span-1">
+                    <p class="font-serif text-3xl font-black tracking-widest text-primary uppercase mb-6">El Garaje</p>
+                    <p class="text-slate-400 text-sm leading-relaxed mb-6">
+                        Boutique especializada en la venta de instrumentos vintage premium.
+                    </p>
+                    <div class="flex gap-4">
+                        <a href="#" class="text-slate-400 hover:text-primary transition-colors">
+                            <span class="font-bold text-lg">IG</span>
+                        </a>
+                        <a href="#" class="text-slate-400 hover:text-primary transition-colors">
+                            <span class="font-bold text-lg">FB</span>
+                        </a>
+                        <a href="#" class="text-slate-400 hover:text-primary transition-colors">
+                            <span class="font-bold text-lg">YT</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-serif text-lg text-slate-100 mb-6 font-bold tracking-wide">Catálogo</h4>
+                    <ul class="flex flex-col gap-4 text-sm text-slate-400">
+                        <li><a href="guitarras-electricas.html" class="hover:text-primary transition-colors">Guitarras
+                                Eléctricas</a></li>
+                        <li><a href="guitarras-acusticas.html" class="hover:text-primary transition-colors">Guitarras
+                                Acústicas</a></li>
+                        <li><a href="bajos.html" class="hover:text-primary transition-colors">Bajos</a></li>
+                        <li><a href="amplificadores.html"
+                                class="hover:text-primary transition-colors">Amplificadores</a>
+                        </li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="font-serif text-lg text-slate-100 mb-6 font-bold tracking-wide">Información</h4>
+                    <ul class="flex flex-col gap-4 text-sm text-slate-400">
+                        <li><a href="sobre-elgaraje.html" class="hover:text-primary transition-colors">Sobre El
+                                Garaje</a>
+                        </li>
+                        <li><a href="sobre-elgaraje.html" class="hover:text-primary transition-colors">La Sala de
+                                Pruebas</a></li>
+                        <li><a href="#" class="hover:text-primary transition-colors">Instrumentos Vendidos</a></li>
+                        <li><a href="#" class="hover:text-primary transition-colors">Consignaciones</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="font-serif text-lg text-slate-100 mb-6 font-bold tracking-wide">Visitanos</h4>
+                    <p class="text-slate-400 text-sm leading-relaxed mb-4">
+                        Para probar algún instrumento de nuestro catálogo, solicitanos una visita al bunker.
+                    </p>
+                    <a href="contacto.html"
+                        class="inline-flex h-10 px-6 items-center justify-center rounded-sm bg-primary/10 text-primary text-xs font-bold tracking-widest uppercase hover:bg-primary hover:text-background-dark transition-all border border-primary/50">
+                        Solicitar Visita
+                    </a>
+                </div>
+            </div>
+            <div
+                class="max-w-7xl mx-auto border-t border-primary/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+                <p class="text-slate-500 text-xs">© 2026 El Garaje de las Guitarras. Todos los derechos reservados.</p>
+                <div class="flex gap-4 text-xs text-slate-500">
+                    <a href="#" class="hover:text-primary">Términos de Servicio</a>
+                    <a href="#" class="hover:text-primary">Política de Privacidad</a>
+                </div>
+            </div>
+        </footer>
+    </div>
+</body>
+
+</html>

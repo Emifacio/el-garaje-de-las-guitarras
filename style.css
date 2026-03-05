@@ -1,0 +1,31 @@
+/* 
+  Global custom styles extending Tailwind CSS.
+  Any custom CSS not covered by tailwind utilities goes here.
+*/
+
+body {
+  min-height: max(300px, 100dvh);
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar to match the "vintage noir" theme */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #4a1c1c; 
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #d9b870;
+}

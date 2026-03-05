@@ -1,0 +1,98 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProductCard from '../components/product/ProductCard.astro';
+import { getProducts } from '../lib/queries';
+
+const featuredProducts = await getProducts({ isFeatured: true, limit: 3 });
+---
+
+<BaseLayout title="El Garaje de las Guitarras - Inicio">
+    <!-- Hero Section -->
+    <div class="@[480px]:p-4">
+        <div class="relative flex min-h-[500px] flex-col items-center justify-center gap-8 bg-cover bg-center bg-no-repeat p-6 @[480px]:rounded-xl overflow-hidden shadow-2xl"
+            data-alt="Cinematic shot of rare vintage amplifiers and guitars in dark setting"
+            style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBe_03E6Jf23rc7P9EMd_egkSpFN1oktVXpcsTf_w4J9Ud-hVEbIH02XbI0G8iBs7nUjX6HQtFdGExmPmWD2_d-j9Sxpslw7PaibxoN3xWEoOlC_5eDMnk0UIqW11Dlgqh1Y4uE2QziWS0-kIAqqM1KZFI2KVvMARdM-OXD7dwTRRJFfhLlQP8ps-Fs9Fg5JdzmV0RxA07cb-w3EkHoqtbexpR_yLZAtciMgFIpUA796KHKB0oNpoEtYrh4HRO5edbm-DS_ajPxxqs');">
+            <!-- Dark/Burgundy Overlay -->
+            <div
+                class="absolute inset-0 bg-gradient-to-b from-background-dark/80 via-accent-burgundy/40 to-background-dark/90">
+            </div>
+            <div class="relative z-10 flex flex-col items-center gap-8 max-w-2xl mx-auto text-center">
+                <h1
+                    class="font-serif text-slate-50 text-3xl md:text-4xl lg:text-5xl font-black leading-snug tracking-wide drop-shadow-lg">
+                    Somos una tienda boutique especializada en la venta de instrumentos vintage premium.
+                </h1>
+                <div class="flex flex-wrap gap-4 justify-center w-full">
+                    <a href="/sobre-elgaraje"
+                        class="flex-1 min-w-[160px] max-w-[240px] h-12 flex items-center justify-center rounded-sm bg-primary text-background-dark text-sm font-bold tracking-widest uppercase hover:bg-primary/90 transition-all border border-primary">
+                        Más sobre El Garaje
+                    </a>
+                    <a href="/contacto?motivo=visita-bunker"
+                        class="flex-1 min-w-[160px] max-w-[240px] h-12 flex items-center justify-center rounded-sm bg-transparent text-primary text-sm font-bold tracking-widest uppercase hover:bg-primary/10 transition-all border border-primary">
+                        Visitar La Sala de Pruebas
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Featured Products Showcase -->
+    {featuredProducts.length > 0 && (
+    <section id="featured-products" class="py-12 px-4 max-w-7xl mx-auto w-full">
+        <div class="flex flex-col sm:flex-row items-center justify-between mb-10 border-b border-primary/20 pb-4">
+            <h2 class="font-serif text-3xl font-black tracking-wide text-slate-900 dark:text-slate-50 border-l-4 border-primary pl-4">
+                Colección Destacada
+            </h2>
+            <a href="/categoria/electricas" class="text-sm font-bold text-primary hover:text-primary/80 uppercase tracking-widest flex items-center gap-2 mt-4 sm:mt-0 transition-colors">
+                Ver Catálogo <span class="material-symbols-outlined text-lg">arrow_forward</span>
+            </a>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {featuredProducts.map(product => (
+                <ProductCard product={product} />
+            ))}
+        </div>
+    </section>
+    )}
+
+    <!-- Categories -->
+    <section id="categories" class="py-12 px-4 max-w-7xl mx-auto w-full">
+        <div class="flex items-center justify-between mb-8 border-b border-primary/20 pb-4">
+            <h2
+                class="font-serif text-2xl font-bold tracking-wide text-slate-900 dark:text-slate-50 border-l-4 border-primary pl-4">
+                Categorías
+            </h2>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <a class="group relative flex flex-col gap-3 rounded-sm overflow-hidden aspect-[16/9] border border-primary/20 shadow-lg hover:border-primary/50 transition-colors"
+                href="/categoria/electricas"
+                style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBhOfNVO0e4RrUVMgEYPGzR3gPYgx4edkWPki26H7IZVfC6pAQlashlSjyN7O4XrHlVnteYbk41PzNSRUCzXYVm2y9AqH2uz8OL8HS_JqNHnG5LqGkJJZse5I2DVScaVvlW2LbdOgrDvcEeEjWB2crX116kOCgR0zoSZ8w-CItiWXOrBDJMllbFWTYOUVKC240dcpAVZB6DO0edM03mlO9K1-etE_EXeWpmQAR78OFtb7sNLM0tQvsWO8TYIdi4O_cThYA6jJ_Uo8U'); background-size: cover; background-position: center;">
+                <div
+                    class="absolute inset-0 bg-gradient-to-t from-background-dark/95 via-background-dark/40 to-transparent group-hover:from-background-dark transition-all duration-300">
+                </div>
+                <div class="relative z-10 h-full flex flex-col justify-end p-8">
+                    <p class="font-serif text-primary text-3xl font-black leading-tight tracking-wide drop-shadow-md">
+                        Guitarras Eléctricas</p>
+                    <span
+                        class="text-xs text-slate-300 mt-2 opacity-0 group-hover:opacity-100 transition-opacity tracking-widest uppercase font-bold">
+                        Explorar Colección &rarr;
+                    </span>
+                </div>
+            </a>
+            <a class="group relative flex flex-col gap-3 rounded-sm overflow-hidden aspect-[16/9] border border-primary/20 shadow-lg hover:border-primary/50 transition-colors"
+                href="/categoria/amplificadores"
+                style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCmqNj2JacPW8EE_E-qKLVFd2oP4mfJq3VmIYFjYW8L2xM0BYsJYVLtClXCx7BWyoXWXnLALONLW-LJclLLCktwER8S4YDdnC3gV74iInLlDlsJ7CgL-jFQ_NCE7PlIUf0ai3jwlTYgaIJZ2QJ_zyKLzUll7adSQqglKzv_aWOXK6Irdyf__rBdZCQSvdiGQUCA7-xKy3XAH5eF2a9VgMwhqYCiFbzy7gBoPvVXV1mjfM0_J48Y82K-Ic6OP2GyEgZ2T7onqkaFl2Q'); background-size: cover; background-position: center;">
+                <div
+                    class="absolute inset-0 bg-gradient-to-t from-background-dark/95 via-background-dark/40 to-transparent group-hover:from-background-dark transition-all duration-300">
+                </div>
+                <div class="relative z-10 h-full flex flex-col justify-end p-8">
+                    <p class="font-serif text-primary text-3xl font-black leading-tight tracking-wide drop-shadow-md">
+                        Amplificadores</p>
+                    <span
+                        class="text-xs text-slate-300 mt-2 opacity-0 group-hover:opacity-100 transition-opacity tracking-widest uppercase font-bold">
+                        Explorar Colección &rarr;
+                    </span>
+                </div>
+            </a>
+        </div>
+    </section>
+</BaseLayout>

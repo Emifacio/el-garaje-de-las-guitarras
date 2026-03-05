@@ -1,0 +1,60 @@
+---
+import '../styles/global.css';
+import BaseHead from '../components/layout/BaseHead.astro';
+import Header from '../components/layout/Header.astro';
+import MobileMenu from '../components/layout/MobileMenu.astro';
+import Footer from '../components/layout/Footer.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<!DOCTYPE html>
+<html class="dark" lang="es">
+<head>
+    <BaseHead title={title} description={description} />
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display selection:bg-primary/30 min-h-screen">
+    <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden @container pb-20">
+        <Header />
+        <MobileMenu />
+        
+        <main class="flex-1">
+            <slot />
+        </main>
+
+        <Footer />
+    </div>
+
+    <script>
+        // Simple search behavior: send users to featured categories on home
+        // We use astro:page-load to handle View Transitions if added later
+        document.addEventListener('astro:page-load', () => {
+            const searchButtons = document.querySelectorAll('[data-role="search-button"]');
+            if (searchButtons.length > 0) {
+                searchButtons.forEach((btn) => {
+                    btn.addEventListener('click', () => {
+                        window.location.href = '/#featured-categories';
+                    });
+                });
+            }
+        });
+        
+        // Ensure it runs on first load too
+        if (typeof document !== 'undefined') {
+            const searchButtons = document.querySelectorAll('[data-role="search-button"]');
+            if (searchButtons.length > 0) {
+                searchButtons.forEach((btn) => {
+                    btn.addEventListener('click', () => {
+                        window.location.href = '/#featured-categories';
+                    });
+                });
+            }
+        }
+    </script>
+</body>
+</html>

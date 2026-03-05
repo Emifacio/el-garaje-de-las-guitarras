@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html class="dark" lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>El Garaje de las Guitarras</title>
+    <!-- Tailwind via CDN with arbitrary values enabled -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <!-- Global JS containing Tailwind Config -->
+    <script src="main.js"></script>
+    <!-- Global CSS -->
+    <link href="style.css" rel="stylesheet" />
+
+    <meta name="description"
+        content="El Garaje de las Guitarras es una tienda boutique especializada en instrumentos vintage premium: guitarras eléctricas, acústicas, bajos y amplificadores seleccionados." />
+
+    <!-- Fonts & Icons -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&amp;family=Manrope:wght@400;500;700&amp;display=swap"
+        rel="stylesheet" />
+</head>
+
+<body
+    class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display selection:bg-primary/30 min-h-screen">
+    <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden @container pb-20">
+
+        <!-- Header -->
+        <header
+            class="sticky top-0 z-50 flex flex-col gap-2 bg-background-light/90 dark:bg-background-dark/90 backdrop-blur-md p-4 pb-2 border-b border-primary/20 shadow-lg shadow-black/50">
+            <div class="flex items-center h-12 justify-between max-w-7xl mx-auto w-full">
+                <!-- Mobile Menu Button -->
+                <button id="btn-menu"
+                    class="lg:hidden flex size-12 shrink-0 items-center justify-center text-slate-800 dark:text-slate-200 hover:text-primary transition-colors">
+                    <span class="material-symbols-outlined text-3xl">menu</span>
+                </button>
+
+                <!-- Logo -->
+                <a href="index.html"
+                    class="font-serif text-2xl lg:text-3xl font-black tracking-widest text-primary uppercase drop-shadow-md">El
+                    Garaje</a>
+
+                <!-- Desktop Navigation -->
+                <nav class="hidden lg:flex items-center gap-8">
+                    <a href="guitarras-electricas.html"
+                        class="text-sm font-bold tracking-widest uppercase hover:text-primary transition-colors">Eléctricas</a>
+                    <a href="guitarras-acusticas.html"
+                        class="text-sm font-bold tracking-widest uppercase hover:text-primary transition-colors">Acústicas</a>
+                    <a href="bajos.html"
+                        class="text-sm font-bold tracking-widest uppercase hover:text-primary transition-colors">Bajos</a>
+                    <a href="amplificadores.html"
+                        class="text-sm font-bold tracking-widest uppercase hover:text-primary transition-colors">Amps</a>
+                    <a href="sobre-elgaraje.html"
+                        class="text-sm font-bold tracking-widest uppercase text-primary/80 hover:text-primary transition-colors border-l border-primary/30 pl-8">El
+                        Bunker</a>
+                </nav>
+
+                <!-- Search / Cart Icons -->
+                <div class="flex items-center justify-end gap-2">
+                    <button type="button" data-role="search-button"
+                        class="flex items-center justify-center h-12 w-12 text-slate-800 dark:text-slate-200 hover:text-primary transition-colors">
+                        <span class="material-symbols-outlined text-2xl">search</span>
+                    </button>
+                    <a href="contacto.html"
+                        class="hidden md:flex h-10 px-6 items-center justify-center rounded-sm bg-primary/10 text-primary text-xs font-bold tracking-widest uppercase hover:bg-primary hover:text-background-dark transition-all border border-primary/50 ml-4">
+                        Contacto
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Mobile Menu Overlay -->
+        <div id="mobile-menu"
+            class="fixed inset-0 z-[60] bg-background-dark/95 backdrop-blur-xl transform translate-x-full transition-transform duration-300 ease-in-out lg:hidden flex flex-col">
+            <div class="flex justify-between items-center p-6 border-b border-primary/10">
+                <span class="font-serif text-xl font-black tracking-widest text-primary uppercase">Menú</span>
+                <button id="btn-close-menu" class="text-slate-400 hover:text-primary">
+                    <span class="material-symbols-outlined text-3xl">close</span>
+                </button>
+            </div>
+            <nav class="flex flex-col gap-6 p-8 overflow-y-auto">
+                <a href="index.html"
+                    class="text-2xl font-serif font-bold tracking-wide hover:text-primary transition-colors">Home</a>
+                <a href="guitarras-electricas.html"
+                    class="text-2xl font-serif font-bold tracking-wide hover:text-primary transition-colors">Guitarras
+                    Eléctricas</a>
+                <a href="guitarras-acusticas.html"
+                    class="text-2xl font-serif font-bold tracking-wide hover:text-primary transition-colors">Guitarras
+                    Acústicas</a>
+                <a href="bajos.html"
+                    class="text-2xl font-serif font-bold tracking-wide hover:text-primary transition-colors">Bajos</a>
+                <a href="amplificadores.html"
+                    class="text-2xl font-serif font-bold tracking-wide hover:text-primary transition-colors">Amplificadores</a>
+                <hr class="border-primary/20 my-2" />
+                <a href="sobre-elgaraje.html"
+                    class="text-2xl font-serif font-bold tracking-wide text-primary/80 hover:text-primary transition-colors">Sobre
+                    El Garaje / La Sala de Pruebas</a>
+                <a href="contacto.html"
+                    class="text-2xl font-serif font-bold tracking-wide hover:text-primary transition-colors">Contacto</a>
+            </nav>
+        </div>
+        <!-- Main Content -->
+        <main class="flex-1">
+            <!-- Hero Section -->
+            <div class="@[480px]:p-4">
+                <div class="relative flex min-h-[500px] flex-col items-center justify-center gap-8 bg-cover bg-center bg-no-repeat p-6 @[480px]:rounded-xl overflow-hidden shadow-2xl"
+                    data-alt="Cinematic shot of rare vintage amplifiers and guitars in dark setting"
+                    style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBe_03E6Jf23rc7P9EMd_egkSpFN1oktVXpcsTf_w4J9Ud-hVEbIH02XbI0G8iBs7nUjX6HQtFdGExmPmWD2_d-j9Sxpslw7PaibxoN3xWEoOlC_5eDMnk0UIqW11Dlgqh1Y4uE2QziWS0-kIAqqM1KZFI2KVvMARdM-OXD7dwTRRJFfhLlQP8ps-Fs9Fg5JdzmV0RxA07cb-w3EkHoqtbexpR_yLZAtciMgFIpUA796KHKB0oNpoEtYrh4HRO5edbm-DS_ajPxxqs');">
+                    <!-- Dark/Burgundy Overlay -->
+                    <div
+                        class="absolute inset-0 bg-gradient-to-b from-background-dark/80 via-accent-burgundy/40 to-background-dark/90">
+                    </div>
+                    <div class="relative z-10 flex flex-col items-center gap-8 max-w-2xl mx-auto text-center">
+                        <h1
+                            class="font-serif text-slate-50 text-3xl md:text-4xl lg:text-5xl font-black leading-snug tracking-wide drop-shadow-lg">
+                            Somos una tienda boutique especializada en la venta de instrumentos vintage premium.
+                        </h1>
+                        <div class="flex flex-wrap gap-4 justify-center w-full">
+                            <a href="sobre-elgaraje.html"
+                                class="flex-1 min-w-[160px] max-w-[240px] h-12 flex items-center justify-center rounded-sm bg-primary text-background-dark text-sm font-bold tracking-widest uppercase hover:bg-primary/90 transition-all border border-primary">
+                                Más sobre El Garaje
+                            </a>
+                            <a href="contacto.html?motivo=visita-bunker"
+                                class="flex-1 min-w-[160px] max-w-[240px] h-12 flex items-center justify-center rounded-sm bg-transparent text-primary text-sm font-bold tracking-widest uppercase hover:bg-primary/10 transition-all border border-primary">
+                                Visitar La Sala de Pruebas
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Featured Categories -->
+            <section id="featured-categories" class="py-8 px-4">
+                <div class="flex items-center justify-between mb-6">
+                    <h2
+                        class="font-serif text-2xl font-bold tracking-wide text-slate-900 dark:text-slate-50 border-l-4 border-primary pl-3">
+                        Featured Categories</h2>
+                    <a class="text-sm font-medium text-primary hover:text-primary/80 uppercase tracking-wider flex items-center gap-1"
+                        href="#">
+                        View All <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                    </a>
+                </div>
+                <div class="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-4">
+                    <a class="group relative flex flex-col gap-3 rounded-lg overflow-hidden aspect-[3/4] border border-primary/20 shadow-lg hover:border-primary/50 transition-colors"
+                        data-alt="Vintage electric guitar leaning against dark velvet" href="#"
+                        style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBhOfNVO0e4RrUVMgEYPGzR3gPYgx4edkWPki26H7IZVfC6pAQlashlSjyN7O4XrHlVnteYbk41PzNSRUCzXYVm2y9AqH2uz8OL8HS_JqNHnG5LqGkJJZse5I2DVScaVvlW2LbdOgrDvcEeEjWB2crX116kOCgR0zoSZ8w-CItiWXOrBDJMllbFWTYOUVKC240dcpAVZB6DO0edM03mlO9K1-etE_EXeWpmQAR78OFtb7sNLM0tQvsWO8TYIdi4O_cThYA6jJ_Uo8U');">
+                        <div
+                            class="absolute inset-0 bg-gradient-to-t from-background-dark/90 via-background-dark/20 to-transparent group-hover:from-background-dark transition-all">
+                        </div>
+                        <div class="relative z-10 h-full flex flex-col justify-end p-4">
+                            <p class="font-serif text-primary text-lg font-bold leading-tight tracking-wide">Guitarras
+                            </p>
+                            <span
+                                class="text-xs text-slate-300 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Explore
+                                collection</span>
+                        </div>
+                    </a>
+                    <a class="group relative flex flex-col gap-3 rounded-lg overflow-hidden aspect-[3/4] border border-primary/20 shadow-lg hover:border-primary/50 transition-colors"
+                        data-alt="Classic tube amplifier with glowing tubes" href="#"
+                        style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCmqNj2JacPW8EE_E-qKLVFd2oP4mfJq3VmIYFjYW8L2xM0BYsJYVLtClXCx7BWyoXWXnLALONLW-LJclLLCktwER8S4YDdnC3gV74iInLlDlsJ7CgL-jFQ_NCE7PlIUf0ai3jwlTYgaIJZ2QJ_zyKLzUll7adSQqglKzv_aWOXK6Irdyf__rBdZCQSvdiGQUCA7-xKy3XAH5eF2a9VgMwhqYCiFbzy7gBoPvVXV1mjfM0_J48Y82K-Ic6OP2GyEgZ2T7onqkaFl2Q');">
+                        <div
+                            class="absolute inset-0 bg-gradient-to-t from-background-dark/90 via-background-dark/20 to-transparent group-hover:from-background-dark transition-all">
+                        </div>
+                        <div class="relative z-10 h-full flex flex-col justify-end p-4">
+                            <p class="font-serif text-primary text-lg font-bold leading-tight tracking-wide">
+                                Amplificadores</p>
+                            <span
+                                class="text-xs text-slate-300 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Explore
+                                collection</span>
+                        </div>
+                    </a>
+                </div>
+            </section>
+        </main>
+        <!-- Footer -->
+        <footer class="bg-background-dark border-t border-primary/20 pt-16 pb-8 px-4 mt-20">
+            <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+                <div class="md:col-span-1">
+                    <p class="font-serif text-3xl font-black tracking-widest text-primary uppercase mb-6">El Garaje</p>
+                    <p class="text-slate-400 text-sm leading-relaxed mb-6">
+                        Boutique especializada en la venta de instrumentos vintage premium.
+                    </p>
+                    <div class="flex gap-4">
+                        <a href="#" class="text-slate-400 hover:text-primary transition-colors">
+                            <span class="font-bold text-lg">IG</span>
+                        </a>
+                        <a href="#" class="text-slate-400 hover:text-primary transition-colors">
+                            <span class="font-bold text-lg">FB</span>
+                        </a>
+                        <a href="#" class="text-slate-400 hover:text-primary transition-colors">
+                            <span class="font-bold text-lg">YT</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="font-serif text-lg text-slate-100 mb-6 font-bold tracking-wide">Catálogo</h4>
+                    <ul class="flex flex-col gap-4 text-sm text-slate-400">
+                        <li><a href="guitarras-electricas.html" class="hover:text-primary transition-colors">Guitarras
+                                Eléctricas</a></li>
+                        <li><a href="guitarras-acusticas.html" class="hover:text-primary transition-colors">Guitarras
+                                Acústicas</a></li>
+                        <li><a href="bajos.html" class="hover:text-primary transition-colors">Bajos</a></li>
+                        <li><a href="amplificadores.html"
+                                class="hover:text-primary transition-colors">Amplificadores</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="font-serif text-lg text-slate-100 mb-6 font-bold tracking-wide">Información</h4>
+                    <ul class="flex flex-col gap-4 text-sm text-slate-400">
+                        <li><a href="sobre-elgaraje.html" class="hover:text-primary transition-colors">Sobre El
+                                Garaje</a>
+                        </li>
+                        <li><a href="sobre-elgaraje.html" class="hover:text-primary transition-colors">La Sala de
+                                Pruebas</a>
+                        </li>
+                        <li><a href="#" class="hover:text-primary transition-colors">Instrumentos Vendidos</a></li>
+                        <li><a href="#" class="hover:text-primary transition-colors">Consignaciones</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="font-serif text-lg text-slate-100 mb-6 font-bold tracking-wide">Visitanos</h4>
+                    <p class="text-slate-400 text-sm leading-relaxed mb-4">
+                        Para probar algún instrumento de nuestro catálogo, solicitanos una visita al bunker.
+                    </p>
+                    <a href="contacto.html"
+                        class="inline-flex h-10 px-6 items-center justify-center rounded-sm bg-primary/10 text-primary text-xs font-bold tracking-widest uppercase hover:bg-primary hover:text-background-dark transition-all border border-primary/50">
+                        Solicitar Visita
+                    </a>
+                </div>
+            </div>
+            <div
+                class="max-w-7xl mx-auto border-t border-primary/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+                <p class="text-slate-500 text-xs">© 2026 El Garaje de las Guitarras. Todos los derechos reservados.</p>
+                <div class="flex gap-4 text-xs text-slate-500">
+                    <a href="#" class="hover:text-primary">Términos de Servicio</a>
+                    <a href="#" class="hover:text-primary">Política de Privacidad</a>
+                </div>
+            </div>
+        </footer>
+    </div> <!-- End of outmost div -->
+</body>
+
+</html>

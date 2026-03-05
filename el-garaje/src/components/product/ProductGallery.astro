@@ -1,0 +1,87 @@
+---
+import type { ProductImage } from '../../lib/types';
+import { getPublicImageUrl } from '../../lib/image-utils';
+
+interface Props {
+  images: ProductImage[] | null;
+  title: string;
+}
+
+const { images, title } = Astro.props;
+
+// Sort images and map to public URLs
+const sortedImages = images 
+    ? [...images].sort((a, b) => a.sort_order - b.sort_order) 
+    : [];
+
+let mainImage = sortedImages.length > 0 
+    ? getPublicImageUrl(sortedImages[0].storage_path) 
+    : 'https://images.unsplash.com/photo-1550291652-6ea9114a47b1?q=80&w=1200&auto=format&fit=crop';
+---
+
+<div class="flex flex-col gap-4">
+    <!-- Main Image -->
+    <div class="aspect-square bg-accent-dark/20 border border-primary/20 rounded-sm overflow-hidden relative group cursor-crosshair">
+        <img 
+            id="gallery-main-image"
+            src={mainImage}
+            alt={title}
+            class="object-cover h-full w-full opacity-90 transition-opacity duration-300" 
+        />
+    </div>
+
+    <!-- Thumbnails -->
+    {sortedImages.length > 1 && (
+        <div class="grid grid-cols-4 gap-4" id="gallery-thumbnails">
+            {sortedImages.map((img, index) => {
+                const url = getPublicImageUrl(img.storage_path);
+                return (
+                    <button
+                        type="button"
+                        class={`gallery-thumb aspect-square bg-black border ${index === 0 ? 'border-primary opacity-100' : 'border-primary/20 opacity-60'} rounded-sm overflow-hidden hover:opacity-100 transition-all`}
+                        data-src={url}
+                    >
+                        <img 
+                            src={url}
+                            alt={`${title} - View ${index + 1}`}
+                            class="object-cover h-full w-full opacity-70" 
+                        />
+                    </button>
+                );
+            })}
+        </div>
+    )}
+</div>
+
+<script>
+    // Setup Gallery interactions
+    function setupGallery() {
+        const mainImage = document.getElementById('gallery-main-image') as HTMLImageElement;
+        const thumbnails = document.querySelectorAll('.gallery-thumb');
+
+        if (!mainImage || thumbnails.length === 0) return;
+
+        thumbnails.forEach(thumb => {
+            thumb.addEventListener('click', (e) => {
+                const btn = e.currentTarget as HTMLButtonElement;
+                const newSrc = btn.getAttribute('data-src');
+                if (newSrc) {
+                    // Update main image
+                    mainImage.src = newSrc;
+                    
+                    // Update borders/opacity on thumbnails
+                    thumbnails.forEach(t => {
+                        t.classList.remove('border-primary', 'opacity-100');
+                        t.classList.add('border-primary/20', 'opacity-60');
+                    });
+                    btn.classList.remove('border-primary/20', 'opacity-60');
+                    btn.classList.add('border-primary', 'opacity-100');
+                }
+            });
+        });
+    }
+
+    // Run on init and page transitions
+    setupGallery();
+    document.addEventListener('astro:page-load', setupGallery);
+</script>

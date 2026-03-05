@@ -1,0 +1,65 @@
+---
+import type { Product } from '../../lib/types';
+
+interface Props {
+  product: Product;
+}
+
+const { product } = Astro.props;
+
+interface SpecRow {
+    label: string;
+    value: string | number | null;
+}
+
+// Build standard specs
+const stdSpecs: SpecRow[] = [];
+if (product.brand) stdSpecs.push({ label: 'Marca', value: product.brand });
+if (product.year) stdSpecs.push({ label: 'Año', value: product.year });
+
+// Build arbitrary custom specs
+const customSpecs: SpecRow[] = (product.specifications || []).map(s => {
+    // Assuming specifications JSONB is array of objects like {"label": "Body", "value": "Mahogany"}
+    const label = Object.keys(s)[0];
+    const value = s[label];
+    return { label: label || 'Dato', value };
+});
+
+const allSpecs = [...stdSpecs, ...customSpecs].filter(s => s.value !== null && s.value !== undefined && s.label !== 'label' && s.label !== 'value');
+
+// Fallback if empty JSON
+let parsedSpecs: {label: string, value: string}[] = [];
+
+if (product.specifications && Array.isArray(product.specifications)) {
+    product.specifications.forEach(spec => {
+       if (spec.label && spec.value) {
+           parsedSpecs.push({label: spec.label, value: spec.value});
+       }
+    });
+}
+
+// Combine all 
+const finalSpecs = [
+    ...(product.brand ? [{label: 'Marca', value: product.brand}] : []),
+    ...(product.year ? [{label: 'Año', value: product.year.toString()}] : []),
+    ...parsedSpecs
+];
+
+---
+
+<div class="flex flex-col gap-4">
+    <h3 class="font-serif text-2xl font-bold text-slate-200 mb-2 border-b border-primary/20 pb-4">
+        Especificaciones
+    </h3>
+
+    {finalSpecs.length > 0 ? (
+        finalSpecs.map(spec => (
+            <div class="grid grid-cols-3 py-4 border-b border-white/5">
+                <div class="col-span-1 text-slate-500 font-bold text-xs uppercase tracking-widest">{spec.label}</div>
+                <div class="col-span-2 text-slate-300">{spec.value}</div>
+            </div>
+        ))
+    ) : (
+        <p class="text-slate-500 italic py-4">No hay especificaciones detalladas para este instrumento.</p>
+    )}
+</div>

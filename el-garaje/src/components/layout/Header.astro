@@ -1,0 +1,45 @@
+---
+---
+<header
+    class="sticky top-0 z-50 flex flex-col gap-2 bg-background-light/90 dark:bg-background-dark/90 backdrop-blur-md p-4 pb-2 border-b border-primary/20 shadow-lg shadow-black/50">
+    <div class="flex items-center h-12 justify-between max-w-7xl mx-auto w-full">
+        <!-- Mobile Menu Button -->
+        <button id="btn-menu"
+            class="lg:hidden flex size-12 shrink-0 items-center justify-center text-slate-800 dark:text-slate-200 hover:text-primary transition-colors">
+            <span class="material-symbols-outlined text-3xl">menu</span>
+        </button>
+
+        <!-- Logo -->
+        <a href="/"
+            class="flex items-center drop-shadow-md">
+            <img src="/logo.jpg" alt="El Garaje de las Guitarras" class="h-12 lg:h-16 w-auto object-contain" />
+        </a>
+
+        <!-- Desktop Navigation -->
+        <nav class="hidden lg:flex items-center gap-8">
+            <a href="/categoria/electricas"
+                class="text-sm font-bold tracking-widest uppercase hover:text-primary transition-colors">Eléctricas</a>
+            <a href="/categoria/acusticas"
+                class="text-sm font-bold tracking-widest uppercase hover:text-primary transition-colors">Acústicas</a>
+            <a href="/categoria/bajos"
+                class="text-sm font-bold tracking-widest uppercase hover:text-primary transition-colors">Bajos</a>
+            <a href="/categoria/amplificadores"
+                class="text-sm font-bold tracking-widest uppercase hover:text-primary transition-colors">Amps</a>
+            <a href="/sobre-elgaraje"
+                class="text-sm font-bold tracking-widest uppercase text-primary/80 hover:text-primary transition-colors border-l border-primary/30 pl-8">El
+                Bunker</a>
+        </nav>
+
+        <!-- Search / Cart Icons -->
+        <div class="flex items-center justify-end gap-2">
+            <button type="button" data-role="search-button"
+                class="flex items-center justify-center h-12 w-12 text-slate-800 dark:text-slate-200 hover:text-primary transition-colors">
+                <span class="material-symbols-outlined text-2xl">search</span>
+            </button>
+            <a href="/contacto"
+                class="hidden md:flex h-10 px-6 items-center justify-center rounded-sm bg-primary/10 text-primary text-xs font-bold tracking-widest uppercase hover:bg-primary hover:text-background-dark transition-all border border-primary/50 ml-4">
+                Contacto
+            </a>
+        </div>
+    </div>
+</header>

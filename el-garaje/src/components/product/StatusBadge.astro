@@ -1,0 +1,41 @@
+---
+import type { ProductStatus } from '../../lib/types';
+
+interface Props {
+  status: ProductStatus;
+  badge?: string | null;
+}
+
+const { status, badge } = Astro.props;
+
+// Determine badge details
+let showStatus = true;
+let statusClasses = '';
+let statusText = '';
+let showCustomBadge = false;
+let customBadgeClasses = '';
+let customBadgeText = badge || '';
+
+if (status === 'vendido') {
+    statusClasses = 'bg-accent-burgundy text-white border border-primary/50 text-xs font-bold px-2 py-1 uppercase tracking-widest';
+    statusText = 'Vendido';
+} else if (status === 'reservado') {
+    statusClasses = 'bg-background-dark text-primary border border-primary text-xs font-bold px-2 py-1 uppercase tracking-widest';
+    statusText = 'Reservado';
+} else {
+    // If it's disponible, we only show the custom badge if one exists (e.g. 'Premium', 'Vintage')
+    showStatus = false;
+    if (badge) {
+        showCustomBadge = true;
+        customBadgeClasses = 'bg-primary text-background-dark text-xs font-bold px-2 py-1 uppercase tracking-widest';
+    }
+}
+---
+
+{showStatus && (
+  <span class={statusClasses}>{statusText}</span>
+)}
+
+{showCustomBadge && !showStatus && (
+  <span class={customBadgeClasses}>{customBadgeText}</span>
+)}

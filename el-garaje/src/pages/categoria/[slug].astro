@@ -1,0 +1,37 @@
+---
+import CategoryLayout from '../../layouts/CategoryLayout.astro';
+import ProductCard from '../../components/product/ProductCard.astro';
+import { getCategories, getProducts } from '../../lib/queries';
+
+export async function getStaticPaths() {
+  const categories = await getCategories();
+  return categories.map((category) => {
+    return {
+      params: { slug: category.slug },
+      props: { category }
+    };
+  });
+}
+
+const { category } = Astro.props;
+const products = await getProducts({ categoryId: category.id });
+
+const pageTitle = `${category.name} | El Garaje de las Guitarras`;
+---
+
+<CategoryLayout 
+    title={pageTitle} 
+    description={category.seo_description || category.description || ''}
+    categoryName={category.name}
+    categoryDescription={category.description}
+>
+    {products.length > 0 ? (
+        products.map(product => (
+            <ProductCard product={product} />
+        ))
+    ) : (
+        <div class="col-span-full py-12 text-center text-slate-400">
+            <p>No hay productos disponibles en esta categoría actualmente.</p>
+        </div>
+    )}
+</CategoryLayout>
