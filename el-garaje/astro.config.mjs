@@ -11,5 +11,8 @@ export default defineConfig({
     plugins: [tailwindcss()]
   },
   output: 'static',
-  adapter: vercel()
+  adapter: vercel(),
+  security: {
+    checkOrigin: false // Fixes "Cross-site POST form submissions are forbidden" in Astro on Vercel Edge Server
+  }
 });
