@@ -1,0 +1,58 @@
+---
+import BaseHead from '../components/layout/BaseHead.astro';
+import { createSupabaseServerClient } from '../lib/supabase-server';
+
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+
+// We no longer redirect here due to ResponseSentError in Astro 5
+// Redirects must happen at the page level
+const currentPath = new URL(Astro.request.url).pathname;
+---
+
+<!DOCTYPE html>
+<html class="dark" lang="es">
+<head>
+    <BaseHead title={`${title} | Panel de Administración`} />
+</head>
+<body class="bg-background-dark text-slate-100 font-display min-h-screen flex selection:bg-primary/30">
+    <div class="flex h-screen w-full bg-background-dark/50">
+        
+        {currentPath !== '/admin/login' && (
+            <aside class="w-64 border-r border-primary/20 bg-background-dark/80 shrink-0 flex flex-col h-full sticky top-0">
+                <div class="h-16 flex items-center px-6 border-b border-primary/20">
+                    <a href="/" class="font-serif text-xl font-black tracking-widest text-primary uppercase drop-shadow-md">
+                        El Garaje
+                    </a>
+                </div>
+                <nav class="flex-1 overflow-y-auto py-6 px-4 flex flex-col gap-2">
+                    <span class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 px-2">Administración</span>
+                    <a href="/admin" class={`px-4 py-2.5 rounded hover:bg-primary/10 transition-colors text-sm font-medium flex items-center gap-3 ${currentPath === '/admin' ? 'bg-primary/10 text-primary' : 'text-slate-300'}`}>
+                        <span class="material-symbols-outlined text-lg">dashboard</span>
+                        Dashboard
+                    </a>
+                    <a href="/admin/productos" class={`px-4 py-2.5 rounded hover:bg-primary/10 transition-colors text-sm font-medium flex items-center gap-3 ${currentPath.startsWith('/admin/productos') ? 'bg-primary/10 text-primary' : 'text-slate-300'}`}>
+                        <span class="material-symbols-outlined text-lg">inventory_2</span>
+                        Productos
+                    </a>
+                </nav>
+                <div class="p-4 border-t border-primary/20">
+                    <form action="/api/auth/logout" method="post">
+                        <button type="submit" class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-950/30 text-red-500 hover:bg-red-900/40 transition-colors rounded text-sm font-bold border border-red-900/50">
+                            Cerrar Sesión <span class="material-symbols-outlined text-lg">logout</span>
+                        </button>
+                    </form>
+                </div>
+            </aside>
+        )}
+
+        <main class="flex-1 overflow-y-auto p-8 lg:p-12 relative w-full h-full">
+            <slot />
+        </main>
+
+    </div>
+</body>
+</html>

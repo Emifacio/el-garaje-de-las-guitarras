@@ -1,0 +1,68 @@
+---
+export const prerender = false;
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { createSupabaseServerClient } from '../../lib/supabase-server';
+
+const supabase = createSupabaseServerClient(Astro.cookies);
+
+// Verify session at the page level to avoid ResponseSentError
+console.log(`[Admin Dashboard] Checking session...`);
+console.log(`[Admin Dashboard] All Cookies received:`, Object.keys(Astro.cookies).join(', '));
+
+const { data: { session }, error } = await supabase.auth.getSession();
+
+if (error) {
+  console.error(`[Admin Dashboard] Session error:`, error.message);
+}
+if (!session) {
+  console.log(`[Admin Dashboard] Session is null, redirecting back to login...`);
+  return Astro.redirect('/admin/login');
+}
+console.log(`[Admin Dashboard] Session valid for user:`, session.user.email);
+
+// We get the user to greet them
+const { data: { user } } = await supabase.auth.getUser();
+
+// Quick statistics queries
+const { count: productCount } = await supabase.from('products').select('*', { count: 'exact', head: true });
+const { count: categoryCount } = await supabase.from('categories').select('*', { count: 'exact', head: true });
+---
+
+<AdminLayout title="Dashboard">
+    <div class="mb-10">
+        <h1 class="font-serif text-3xl font-black text-slate-100 tracking-wide mb-2">Panel de Control</h1>
+        <p class="text-slate-400">¡Hola, {user?.email}! Bienvenido a la administración de El Garaje.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        <!-- Stat Card 1 -->
+        <div class="bg-background-light/5 border border-primary/20 rounded-lg p-6 flex flex-col gap-2 relative overflow-hidden group">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl transform translate-x-1/2 -translate-y-1/2"></div>
+            <div class="flex justify-between items-start relative z-10">
+                <span class="text-sm font-bold tracking-widest text-slate-400 uppercase">Productos Activos</span>
+                <span class="material-symbols-outlined text-primary/80">inventory_2</span>
+            </div>
+            <span class="font-serif text-4xl text-slate-100 font-black relative z-10">{productCount || 0}</span>
+            <a href="/admin/productos" class="text-xs text-primary/80 hover:text-primary transition-colors flex items-center gap-1 mt-2 relative z-10">
+                Ver todos <span class="material-symbols-outlined text-[1rem]">arrow_forward</span>
+            </a>
+        </div>
+
+        <!-- Stat Card 2 -->
+        <div class="bg-background-light/5 border border-primary/20 rounded-lg p-6 flex flex-col gap-2 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-2xl transform translate-x-1/2 -translate-y-1/2"></div>
+            <div class="flex justify-between items-start relative z-10">
+                <span class="text-sm font-bold tracking-widest text-slate-400 uppercase">Categorías</span>
+                <span class="material-symbols-outlined text-primary/80">category</span>
+            </div>
+            <span class="font-serif text-4xl text-slate-100 font-black relative z-10">{categoryCount || 0}</span>
+        </div>
+    </div>
+    
+    <div class="flex gap-4">
+        <a href="/admin/productos/nuevo" class="h-12 px-6 flex items-center justify-center gap-2 bg-primary text-background-dark text-sm font-bold tracking-widest uppercase hover:bg-primary/90 transition-all rounded-sm shadow-lg shadow-primary/20 border border-primary">
+            <span class="material-symbols-outlined">add</span> Nuevo Producto
+        </a>
+    </div>
+
+</AdminLayout>
