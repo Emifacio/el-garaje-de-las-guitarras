@@ -1,16 +1,17 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { createServerClient, parseCookieHeader, type CookieOptions } from '@supabase/ssr';
 import type { AstroCookies } from 'astro';
 
-export const createSupabaseServerClient = (cookies: AstroCookies) => {
+export const createSupabaseServerClient = (cookies: AstroCookies, request: Request) => {
     return createServerClient(
         import.meta.env.PUBLIC_SUPABASE_URL,
         import.meta.env.PUBLIC_SUPABASE_ANON_KEY,
         {
             cookies: {
                 getAll() {
-                    return Object.keys(cookies).map((name) => ({
-                        name,
-                        value: cookies.get(name)?.value || '',
+                    const parsed = parseCookieHeader(request.headers.get('Cookie') ?? '');
+                    return parsed.map(cookie => ({
+                        name: cookie.name,
+                        value: cookie.value ?? ''
                     }));
                 },
                 setAll(cookiesToSet) {

@@ -3,7 +3,7 @@ export const prerender = false;
 import BaseHead from '../../components/layout/BaseHead.astro';
 import { createSupabaseServerClient } from '../../lib/supabase-server';
 
-const supabase = createSupabaseServerClient(Astro.cookies);
+const supabase = createSupabaseServerClient(Astro.cookies, Astro.request);
 let error = Astro.url.searchParams.get('error');
 
 // Handle the login POST request natively in the page

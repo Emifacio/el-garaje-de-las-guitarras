@@ -3,7 +3,7 @@ export const prerender = false;
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import { createSupabaseServerClient } from '../../lib/supabase-server';
 
-const supabase = createSupabaseServerClient(Astro.cookies);
+const supabase = createSupabaseServerClient(Astro.cookies, Astro.request);
 
 // Verify session at the page level to avoid ResponseSentError
 console.log(`[Admin Dashboard] Checking session...`);
