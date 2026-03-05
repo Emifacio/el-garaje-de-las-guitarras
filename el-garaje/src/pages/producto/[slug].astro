@@ -1,22 +1,18 @@
 ---
+export const prerender = false;
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Breadcrumbs from '../../components/ui/Breadcrumbs.astro';
 import ProductGallery from '../../components/product/ProductGallery.astro';
 import ProductSpecs from '../../components/product/ProductSpecs.astro';
 import StatusBadge from '../../components/product/StatusBadge.astro';
-import { getProducts } from '../../lib/queries';
+import { getProductBySlug } from '../../lib/queries';
 
-export async function getStaticPaths() {
-  const products = await getProducts();
-  return products.map((product) => {
-    return {
-      params: { slug: product.slug },
-      props: { product }
-    };
-  });
+const { slug } = Astro.params;
+const product = await getProductBySlug(slug as string);
+
+if (!product) {
+  return new Response("Not Found", { status: 404 });
 }
-
-const { product } = Astro.props;
 
 // Format Price
 const priceDisplay = product.price_display || (product.price ? `U$D ${product.price.toLocaleString()}` : 'Consultar Precio');

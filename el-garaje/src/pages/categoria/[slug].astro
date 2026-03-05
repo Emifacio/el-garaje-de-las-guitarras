@@ -1,21 +1,17 @@
 ---
+export const prerender = false;
 import CategoryLayout from '../../layouts/CategoryLayout.astro';
 import ProductCard from '../../components/product/ProductCard.astro';
-import { getCategories, getProducts } from '../../lib/queries';
+import { getCategoryBySlug, getProducts } from '../../lib/queries';
 
-export async function getStaticPaths() {
-  const categories = await getCategories();
-  return categories.map((category) => {
-    return {
-      params: { slug: category.slug },
-      props: { category }
-    };
-  });
+const { slug } = Astro.params;
+const category = await getCategoryBySlug(slug as string);
+
+if (!category) {
+  return new Response("Not Found", { status: 404 });
 }
 
-const { category } = Astro.props;
 const products = await getProducts({ categoryId: category.id });
-
 const pageTitle = `${category.name} | El Garaje de las Guitarras`;
 ---
 
