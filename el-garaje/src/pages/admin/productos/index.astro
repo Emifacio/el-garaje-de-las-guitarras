@@ -134,8 +134,8 @@ const getToggleIcon = (status: string) => {
                                     </div>
                                 )}
                             </div>
-                            <div class="flex-1 min-w-0">
-                                <h3 class="font-bold text-slate-200 truncate">{product.title}</h3>
+                            <div class="flex-1 min-w-0 overflow-x-auto">
+                                <h3 class="font-bold text-slate-200 whitespace-nowrap">{product.title}</h3>
                                 <p class="text-xs text-slate-500">{product.brand || 'Sin marca'} {product.year ? `• ${product.year}` : ''}</p>
                                 <p class="text-xs text-slate-400 mt-1">{product.categories?.name || '---'}</p>
                             </div>
