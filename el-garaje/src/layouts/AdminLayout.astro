@@ -12,6 +12,7 @@ const { title } = Astro.props;
 // We no longer redirect here due to ResponseSentError in Astro 5
 // Redirects must happen at the page level
 const currentPath = new URL(Astro.request.url).pathname;
+const showSidebar = currentPath !== '/admin/login';
 ---
 
 <!DOCTYPE html>
@@ -19,41 +20,111 @@ const currentPath = new URL(Astro.request.url).pathname;
 <head>
     <BaseHead title={`${title} | Panel de Administración`} />
 </head>
-<body class="bg-background-dark text-slate-100 font-display min-h-screen flex selection:bg-primary/30">
+<body class="bg-background-dark text-slate-100 font-display min-h-screen selection:bg-primary/30">
     <div class="flex h-screen w-full bg-background-dark/50">
         
-        {currentPath !== '/admin/login' && (
-            <aside class="w-64 border-r border-primary/20 bg-background-dark/80 shrink-0 flex flex-col h-full sticky top-0">
-                <div class="h-16 flex items-center px-6 border-b border-primary/20">
+        {showSidebar && (
+            <>
+            <!-- Mobile Top Bar -->
+            <div class="lg:hidden fixed top-0 left-0 right-0 z-50 h-14 bg-background-dark/95 backdrop-blur-md border-b border-primary/20 flex items-center justify-between px-4">
+                <button id="admin-menu-toggle" class="w-10 h-10 flex items-center justify-center text-slate-200 hover:text-primary transition-colors rounded-md">
+                    <span class="material-symbols-outlined text-2xl">menu</span>
+                </button>
+                <a href="/" class="font-serif text-lg font-black tracking-widest text-primary uppercase">
+                    El Garaje
+                </a>
+                <a href="/" class="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-primary transition-colors rounded-md" title="Ir al sitio">
+                    <span class="material-symbols-outlined text-xl">home</span>
+                </a>
+            </div>
+
+            <!-- Mobile Overlay -->
+            <div id="admin-menu-overlay" class="lg:hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden transition-opacity duration-300"></div>
+
+            <!-- Sidebar (hidden on mobile, visible on desktop) -->
+            <aside id="admin-sidebar" class="fixed lg:sticky top-0 left-0 z-50 w-72 lg:w-64 h-full border-r border-primary/20 bg-background-dark shrink-0 flex flex-col transition-transform duration-300 -translate-x-full lg:translate-x-0">
+                <div class="h-16 flex items-center justify-between px-6 border-b border-primary/20">
                     <a href="/" class="font-serif text-xl font-black tracking-widest text-primary uppercase drop-shadow-md">
                         El Garaje
                     </a>
+                    <button id="admin-menu-close" class="lg:hidden w-8 h-8 flex items-center justify-center text-slate-400 hover:text-primary transition-colors">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
                 </div>
                 <nav class="flex-1 overflow-y-auto py-6 px-4 flex flex-col gap-2">
                     <span class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 px-2">Administración</span>
-                    <a href="/admin" class={`px-4 py-2.5 rounded hover:bg-primary/10 transition-colors text-sm font-medium flex items-center gap-3 ${currentPath === '/admin' ? 'bg-primary/10 text-primary' : 'text-slate-300'}`}>
+                    <a href="/admin" class={`px-4 py-3 lg:py-2.5 rounded hover:bg-primary/10 transition-colors text-sm font-medium flex items-center gap-3 ${currentPath === '/admin' ? 'bg-primary/10 text-primary' : 'text-slate-300'}`}>
                         <span class="material-symbols-outlined text-lg">dashboard</span>
                         Dashboard
                     </a>
-                    <a href="/admin/productos" class={`px-4 py-2.5 rounded hover:bg-primary/10 transition-colors text-sm font-medium flex items-center gap-3 ${currentPath.startsWith('/admin/productos') ? 'bg-primary/10 text-primary' : 'text-slate-300'}`}>
+                    <a href="/admin/productos" class={`px-4 py-3 lg:py-2.5 rounded hover:bg-primary/10 transition-colors text-sm font-medium flex items-center gap-3 ${currentPath.startsWith('/admin/productos') ? 'bg-primary/10 text-primary' : 'text-slate-300'}`}>
                         <span class="material-symbols-outlined text-lg">inventory_2</span>
                         Productos
+                    </a>
+                    
+                    <hr class="border-primary/10 my-4" />
+                    <span class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 px-2">Sitio</span>
+                    <a href="/" target="_blank" class="px-4 py-3 lg:py-2.5 rounded hover:bg-primary/10 transition-colors text-sm font-medium flex items-center gap-3 text-slate-300">
+                        <span class="material-symbols-outlined text-lg">language</span>
+                        Ver Sitio Público
                     </a>
                 </nav>
                 <div class="p-4 border-t border-primary/20">
                     <form action="/api/auth/logout" method="post">
-                        <button type="submit" class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-950/30 text-red-500 hover:bg-red-900/40 transition-colors rounded text-sm font-bold border border-red-900/50">
+                        <button type="submit" class="w-full flex items-center justify-center gap-2 px-4 py-3 lg:py-2 bg-red-950/30 text-red-500 hover:bg-red-900/40 transition-colors rounded text-sm font-bold border border-red-900/50">
                             Cerrar Sesión <span class="material-symbols-outlined text-lg">logout</span>
                         </button>
                     </form>
                 </div>
             </aside>
+            </>
         )}
 
-        <main class="flex-1 overflow-y-auto p-8 lg:p-12 relative w-full h-full">
+        <main class={`flex-1 overflow-y-auto p-4 pt-20 lg:p-8 lg:pt-8 xl:p-12 relative w-full h-full ${showSidebar ? '' : ''}`}>
             <slot />
         </main>
 
     </div>
+
+    {showSidebar && (
+    <script>
+        function initAdminMenu() {
+            const toggle = document.getElementById('admin-menu-toggle');
+            const close = document.getElementById('admin-menu-close');
+            const sidebar = document.getElementById('admin-sidebar');
+            const overlay = document.getElementById('admin-menu-overlay');
+
+            if (!toggle || !sidebar || !overlay) return;
+
+            function openMenu() {
+                sidebar!.classList.remove('-translate-x-full');
+                sidebar!.classList.add('translate-x-0');
+                overlay!.classList.remove('hidden');
+            }
+
+            function closeMenu() {
+                sidebar!.classList.add('-translate-x-full');
+                sidebar!.classList.remove('translate-x-0');
+                overlay!.classList.add('hidden');
+            }
+
+            toggle.addEventListener('click', openMenu);
+            close?.addEventListener('click', closeMenu);
+            overlay.addEventListener('click', closeMenu);
+
+            // Close on link click (mobile navigation)
+            sidebar.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', () => {
+                    if (window.innerWidth < 1024) {
+                        closeMenu();
+                    }
+                });
+            });
+        }
+
+        initAdminMenu();
+        document.addEventListener('astro:page-load', initAdminMenu);
+    </script>
+    )}
 </body>
 </html>
