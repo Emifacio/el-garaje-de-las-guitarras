@@ -12,7 +12,7 @@ if (!session) {
   return Astro.redirect('/admin/login');
 }
 
-// Handle POST actions (like Delete)
+// Handle POST actions (Delete, Toggle Status)
 let actionMessage = '';
 let actionError = '';
 
@@ -31,6 +31,20 @@ if (Astro.request.method === 'POST') {
       actionError = 'Error al eliminar el producto: ' + deleteError.message;
     } else {
       actionMessage = 'Producto eliminado exitosamente.';
+    }
+  }
+
+  if (action === 'toggle_status' && productId) {
+    const newStatus = formData.get('newStatus')?.toString() || 'disponible';
+    const { error: toggleError } = await supabase
+      .from('products')
+      .update({ status: newStatus, updated_at: new Date().toISOString() })
+      .eq('id', productId);
+
+    if (toggleError) {
+      actionError = 'Error al cambiar estado: ' + toggleError.message;
+    } else {
+      actionMessage = `Estado cambiado a "${newStatus}" exitosamente.`;
     }
   }
 }
@@ -65,15 +79,28 @@ const getStatusClasses = (status: string) => {
     default: return 'bg-slate-800 text-slate-400 border-slate-700';
   }
 };
+
+// Helper for next toggle status
+const getNextStatus = (status: string) => {
+  return status === 'vendido' ? 'disponible' : 'vendido';
+};
+
+const getToggleLabel = (status: string) => {
+  return status === 'vendido' ? 'Marcar Disponible' : 'Marcar Vendido';
+};
+
+const getToggleIcon = (status: string) => {
+  return status === 'vendido' ? 'check_circle' : 'sell';
+};
 ---
 
 <AdminLayout title="Inventario de Productos">
-    <div class="flex justify-between items-end mb-8">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 gap-4">
         <div>
             <h1 class="font-serif text-3xl font-black text-slate-100 tracking-wide mb-2">Inventario</h1>
             <p class="text-slate-400">Gestiona las guitarras y accesorios del catálogo.</p>
         </div>
-        <a href="/admin/productos/nuevo" class="h-10 px-5 flex items-center justify-center gap-2 bg-primary text-background-dark text-sm font-bold tracking-widest uppercase hover:bg-primary/90 transition-all rounded-sm shadow-lg shadow-primary/20 border border-primary">
+        <a href="/admin/productos/nuevo" class="h-10 px-5 flex items-center justify-center gap-2 bg-primary text-background-dark text-sm font-bold tracking-widest uppercase hover:bg-primary/90 transition-all rounded-sm shadow-lg shadow-primary/20 border border-primary w-full sm:w-auto">
             <span class="material-symbols-outlined text-[1.25rem]">add</span> Nuevo Producto
         </a>
     </div>
@@ -90,7 +117,75 @@ const getStatusClasses = (status: string) => {
         </div>
     )}
 
-    <div class="bg-background-light/5 border border-primary/20 rounded-lg overflow-hidden">
+    <!-- Mobile Card Layout -->
+    <div class="flex flex-col gap-4 lg:hidden">
+        {products && products.length > 0 ? (
+            products.map((product) => {
+                const mainImageUrl = getMainImage(product.product_images);
+                return (
+                    <div class="bg-background-light/5 border border-primary/20 rounded-lg p-4 flex flex-col gap-4">
+                        <div class="flex items-center gap-4">
+                            <div class="w-16 h-16 rounded bg-background-dark border border-primary/20 overflow-hidden flex-shrink-0">
+                                {mainImageUrl ? (
+                                    <img src={mainImageUrl} alt={product.title} class="w-full h-full object-cover" />
+                                ) : (
+                                    <div class="w-full h-full flex items-center justify-center">
+                                        <span class="material-symbols-outlined text-slate-600">image</span>
+                                    </div>
+                                )}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="font-bold text-slate-200 truncate">{product.title}</h3>
+                                <p class="text-xs text-slate-500">{product.brand || 'Sin marca'} {product.year ? `• ${product.year}` : ''}</p>
+                                <p class="text-xs text-slate-400 mt-1">{product.categories?.name || '---'}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center justify-between">
+                            <span class="font-serif text-slate-200">
+                                {product.price ? `U$D ${product.price.toLocaleString()}` : <span class="text-slate-500 text-sm">N/C</span>}
+                            </span>
+                            <span class={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 border rounded-sm ${getStatusClasses(product.status)}`}>
+                                {product.status}
+                            </span>
+                        </div>
+
+                        <div class="flex gap-2 flex-wrap">
+                            <!-- Quick Status Toggle -->
+                            <form method="post" class="flex-1">
+                                <input type="hidden" name="action" value="toggle_status" />
+                                <input type="hidden" name="productId" value={product.id} />
+                                <input type="hidden" name="newStatus" value={getNextStatus(product.status)} />
+                                <button type="submit" class={`w-full h-10 flex items-center justify-center gap-2 text-xs font-bold tracking-widest uppercase rounded-sm border transition-all ${product.status === 'vendido' ? 'bg-emerald-900/20 text-emerald-400 border-emerald-500/30 hover:bg-emerald-900/40' : 'bg-red-900/20 text-red-400 border-red-500/30 hover:bg-red-900/40'}`}>
+                                    <span class="material-symbols-outlined text-[1rem]">{getToggleIcon(product.status)}</span>
+                                    {getToggleLabel(product.status)}
+                                </button>
+                            </form>
+
+                            <a href={`/admin/productos/${product.id}`} class="h-10 px-4 flex items-center justify-center gap-1 text-slate-400 hover:text-primary transition-colors bg-background-dark/50 rounded border border-primary/20 hover:border-primary/50 text-xs font-bold uppercase tracking-widest">
+                                <span class="material-symbols-outlined text-[1rem]">edit</span> Editar
+                            </a>
+
+                            <form method="post" onsubmit="return confirm('¿Estás seguro de que deseas eliminar este producto de forma permanente?');">
+                                <input type="hidden" name="action" value="delete" />
+                                <input type="hidden" name="productId" value={product.id} />
+                                <button type="submit" class="h-10 px-4 flex items-center justify-center gap-1 text-red-400 hover:text-red-300 transition-colors bg-red-900/10 rounded border border-red-500/20 hover:border-red-500/40 text-xs font-bold uppercase tracking-widest">
+                                    <span class="material-symbols-outlined text-[1rem]">delete_forever</span> Eliminar
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                );
+            })
+        ) : (
+            <div class="p-8 text-center text-slate-500 bg-background-light/5 border border-primary/20 rounded-lg">
+                No hay productos registrados en la base de datos.
+            </div>
+        )}
+    </div>
+
+    <!-- Desktop Table Layout -->
+    <div class="bg-background-light/5 border border-primary/20 rounded-lg overflow-hidden hidden lg:block">
         <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
                 <thead>
@@ -134,14 +229,23 @@ const getStatusClasses = (status: string) => {
                                         </span>
                                     </td>
                                     <td class="p-4 align-middle text-right">
-                                        <div class="flex justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                                        <div class="flex justify-end gap-2">
+                                            <!-- Quick Status Toggle -->
+                                            <form method="post" class="inline">
+                                                <input type="hidden" name="action" value="toggle_status" />
+                                                <input type="hidden" name="productId" value={product.id} />
+                                                <input type="hidden" name="newStatus" value={getNextStatus(product.status)} />
+                                                <button type="submit" class={`p-2 transition-colors bg-background-dark/50 rounded border border-transparent hover:border-primary/30 ${product.status === 'vendido' ? 'text-emerald-400 hover:text-emerald-300' : 'text-amber-400 hover:text-amber-300'}`} title={getToggleLabel(product.status)}>
+                                                    <span class="material-symbols-outlined text-[1.25rem]">{getToggleIcon(product.status)}</span>
+                                                </button>
+                                            </form>
                                             <a href={`/admin/productos/${product.id}`} class="p-2 text-slate-400 hover:text-primary transition-colors bg-background-dark/50 rounded border border-transparent hover:border-primary/30" title="Editar">
                                                 <span class="material-symbols-outlined text-[1.25rem]">edit</span>
                                             </a>
                                             <form method="post" onsubmit="return confirm('¿Estás seguro de que deseas eliminar este producto de forma permanente?');">
                                                 <input type="hidden" name="action" value="delete" />
                                                 <input type="hidden" name="productId" value={product.id} />
-                                                <button type="submit" class="p-2 text-slate-400 hover:text-red-400 transition-colors bg-background-dark/50 rounded border border-transparent hover:border-red-500/30" title="Eliminar">
+                                                <button type="submit" class="p-2 text-red-400 hover:text-red-300 transition-colors bg-background-dark/50 rounded border border-transparent hover:border-red-500/30" title="Eliminar">
                                                     <span class="material-symbols-outlined text-[1.25rem]">delete_forever</span>
                                                 </button>
                                             </form>

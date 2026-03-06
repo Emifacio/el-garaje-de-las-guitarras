@@ -39,3 +39,43 @@ html {
 ::-webkit-scrollbar-thumb:hover {
   background: #d9b870;
 }
+
+/* VENDIDO diagonal ribbon */
+.sold-ribbon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.sold-ribbon::after {
+  content: 'VENDIDO';
+  position: absolute;
+  display: block;
+  width: 150%;
+  padding: 12px 0;
+  background: linear-gradient(135deg, #7a1a1a, #b22222, #7a1a1a);
+  color: white;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem;
+  font-weight: 900;
+  letter-spacing: 0.35em;
+  text-align: center;
+  text-transform: uppercase;
+  transform: rotate(-35deg);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  border-top: 2px solid rgba(255,255,255,0.15);
+  border-bottom: 2px solid rgba(255,255,255,0.15);
+}
+
+.sold-ribbon.sold-ribbon--large::after {
+  font-size: 1.8rem;
+  padding: 16px 0;
+  letter-spacing: 0.4em;
+}

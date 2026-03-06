@@ -8,31 +8,104 @@ const featuredProducts = await getProducts({ isFeatured: true, limit: 3 });
 ---
 
 <BaseLayout title="El Garaje de las Guitarras - Inicio">
-    <!-- Hero Section -->
-    <div class="@[480px]:p-4">
-        <div class="relative flex min-h-[500px] flex-col items-center justify-center gap-8 bg-cover bg-center bg-no-repeat p-6 @[480px]:rounded-xl overflow-hidden shadow-2xl"
-            data-alt="Cinematic shot of rare vintage amplifiers and guitars in dark setting"
-            style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBe_03E6Jf23rc7P9EMd_egkSpFN1oktVXpcsTf_w4J9Ud-hVEbIH02XbI0G8iBs7nUjX6HQtFdGExmPmWD2_d-j9Sxpslw7PaibxoN3xWEoOlC_5eDMnk0UIqW11Dlgqh1Y4uE2QziWS0-kIAqqM1KZFI2KVvMARdM-OXD7dwTRRJFfhLlQP8ps-Fs9Fg5JdzmV0RxA07cb-w3EkHoqtbexpR_yLZAtciMgFIpUA796KHKB0oNpoEtYrh4HRO5edbm-DS_ajPxxqs');">
-            <!-- Dark/Burgundy Overlay -->
-            <div
-                class="absolute inset-0 bg-gradient-to-b from-background-dark/80 via-accent-burgundy/40 to-background-dark/90">
-            </div>
-            <div class="relative z-10 flex flex-col items-center gap-8 max-w-2xl mx-auto text-center">
-                <h1
-                    class="font-serif text-slate-50 text-3xl md:text-4xl lg:text-5xl font-black leading-snug tracking-wide drop-shadow-lg">
-                    Somos una tienda boutique especializada en la venta de instrumentos vintage premium.
-                </h1>
-                <div class="flex flex-wrap gap-4 justify-center w-full">
-                    <a href="/sobre-elgaraje"
-                        class="flex-1 min-w-[160px] max-w-[240px] h-12 flex items-center justify-center rounded-sm bg-primary text-background-dark text-sm font-bold tracking-widest uppercase hover:bg-primary/90 transition-all border border-primary">
-                        Más sobre El Garaje
-                    </a>
-                    <a href="/contacto?motivo=visita-bunker"
-                        class="flex-1 min-w-[160px] max-w-[240px] h-12 flex items-center justify-center rounded-sm bg-transparent text-primary text-sm font-bold tracking-widest uppercase hover:bg-primary/10 transition-all border border-primary">
-                        Visitar La Sala de Pruebas
-                    </a>
+    <!-- Hero Carousel -->
+    <div class="relative w-full overflow-hidden" id="hero-carousel">
+        <!-- Slides -->
+        <div class="flex transition-transform duration-700 ease-in-out" id="carousel-track">
+            <!-- Slide 1 -->
+            <div class="w-full flex-shrink-0 relative min-h-[550px] md:min-h-[650px] lg:min-h-[720px] flex items-center justify-center bg-cover bg-center bg-no-repeat"
+                style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBe_03E6Jf23rc7P9EMd_egkSpFN1oktVXpcsTf_w4J9Ud-hVEbIH02XbI0G8iBs7nUjX6HQtFdGExmPmWD2_d-j9Sxpslw7PaibxoN3xWEoOlC_5eDMnk0UIqW11Dlgqh1Y4uE2QziWS0-kIAqqM1KZFI2KVvMARdM-OXD7dwTRRJFfhLlQP8ps-Fs9Fg5JdzmV0RxA07cb-w3EkHoqtbexpR_yLZAtciMgFIpUA796KHKB0oNpoEtYrh4HRO5edbm-DS_ajPxxqs');">
+                <div class="absolute inset-0 bg-gradient-to-b from-background-dark/70 via-background-dark/40 to-background-dark/95"></div>
+                <div class="relative z-10 flex flex-col items-center gap-6 max-w-3xl mx-auto text-center px-6">
+                    <span class="text-primary text-xs font-bold tracking-[0.4em] uppercase">El Garaje de las Guitarras</span>
+                    <h2 class="font-serif text-slate-50 text-4xl md:text-5xl lg:text-6xl font-black leading-tight tracking-wide drop-shadow-xl">
+                        Guitarras de gama media y alta
+                    </h2>
+                    <p class="text-slate-300 text-lg md:text-xl font-light tracking-wide max-w-xl">
+                        Un ambiente cálido, sin apuros y distendido para encontrar tu próximo instrumento.
+                    </p>
+                    <div class="flex flex-wrap gap-4 justify-center mt-4">
+                        <a href="/categoria/electricas"
+                            class="min-w-[180px] h-14 flex items-center justify-center rounded-sm bg-primary text-background-dark text-sm font-bold tracking-widest uppercase hover:bg-primary/90 transition-all border border-primary shadow-lg shadow-primary/20 px-8">
+                            Comprá Ahora
+                        </a>
+                        <a href="/sobre-elgaraje"
+                            class="min-w-[180px] h-14 flex items-center justify-center rounded-sm bg-transparent text-primary text-sm font-bold tracking-widest uppercase hover:bg-primary/10 transition-all border border-primary px-8">
+                            Lee Más
+                        </a>
+                    </div>
                 </div>
             </div>
+
+            <!-- Slide 2 -->
+            <div class="w-full flex-shrink-0 relative min-h-[550px] md:min-h-[650px] lg:min-h-[720px] flex items-center justify-center bg-cover bg-center bg-no-repeat"
+                style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBhOfNVO0e4RrUVMgEYPGzR3gPYgx4edkWPki26H7IZVfC6pAQlashlSjyN7O4XrHlVnteYbk41PzNSRUCzXYVm2y9AqH2uz8OL8HS_JqNHnG5LqGkJJZse5I2DVScaVvlW2LbdOgrDvcEeEjWB2crX116kOCgR0zoSZ8w-CItiWXOrBDJMllbFWTYOUVKC240dcpAVZB6DO0edM03mlO9K1-etE_EXeWpmQAR78OFtb7sNLM0tQvsWO8TYIdi4O_cThYA6jJ_Uo8U');">
+                <div class="absolute inset-0 bg-gradient-to-b from-background-dark/70 via-accent-burgundy/30 to-background-dark/95"></div>
+                <div class="relative z-10 flex flex-col items-center gap-6 max-w-3xl mx-auto text-center px-6">
+                    <span class="text-primary text-xs font-bold tracking-[0.4em] uppercase">La Sala de Pruebas</span>
+                    <h2 class="font-serif text-slate-50 text-4xl md:text-5xl lg:text-6xl font-black leading-tight tracking-wide drop-shadow-xl">
+                        Probá sin apuros
+                    </h2>
+                    <p class="text-slate-300 text-lg md:text-xl font-light tracking-wide max-w-xl">
+                        Nuestra sala privada, equipada con amplificadores y todo lo que necesitás. Sin presiones.
+                    </p>
+                    <div class="flex flex-wrap gap-4 justify-center mt-4">
+                        <a href="/categoria/electricas"
+                            class="min-w-[180px] h-14 flex items-center justify-center rounded-sm bg-primary text-background-dark text-sm font-bold tracking-widest uppercase hover:bg-primary/90 transition-all border border-primary shadow-lg shadow-primary/20 px-8">
+                            Comprá Ahora
+                        </a>
+                        <a href="/sobre-elgaraje"
+                            class="min-w-[180px] h-14 flex items-center justify-center rounded-sm bg-transparent text-primary text-sm font-bold tracking-widest uppercase hover:bg-primary/10 transition-all border border-primary px-8">
+                            Lee Más
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Slide 3 -->
+            <div class="w-full flex-shrink-0 relative min-h-[550px] md:min-h-[650px] lg:min-h-[720px] flex items-center justify-center bg-cover bg-center bg-no-repeat"
+                style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCmqNj2JacPW8EE_E-qKLVFd2oP4mfJq3VmIYFjYW8L2xM0BYsJYVLtClXCx7BWyoXWXnLALONLW-LJclLLCktwER8S4YDdnC3gV74iInLlDlsJ7CgL-jFQ_NCE7PlIUf0ai3jwlTYgaIJZ2QJ_zyKLzUll7adSQqglKzv_aWOXK6Irdyf__rBdZCQSvdiGQUCA7-xKy3XAH5eF2a9VgMwhqYCiFbzy7gBoPvVXV1mjfM0_J48Y82K-Ic6OP2GyEgZ2T7onqkaFl2Q');">
+                <div class="absolute inset-0 bg-gradient-to-b from-background-dark/70 via-background-dark/50 to-background-dark/95"></div>
+                <div class="relative z-10 flex flex-col items-center gap-6 max-w-3xl mx-auto text-center px-6">
+                    <span class="text-primary text-xs font-bold tracking-[0.4em] uppercase">Consignaciones</span>
+                    <h2 class="font-serif text-slate-50 text-4xl md:text-5xl lg:text-6xl font-black leading-tight tracking-wide drop-shadow-xl">
+                        Vendé tu instrumento
+                    </h2>
+                    <p class="text-slate-300 text-lg md:text-xl font-light tracking-wide max-w-xl">
+                        Dejalo en nuestras manos. Nosotros nos encargamos de encontrarle un nuevo dueño.
+                    </p>
+                    <div class="flex flex-wrap gap-4 justify-center mt-4">
+                        <a href="/categoria/electricas"
+                            class="min-w-[180px] h-14 flex items-center justify-center rounded-sm bg-primary text-background-dark text-sm font-bold tracking-widest uppercase hover:bg-primary/90 transition-all border border-primary shadow-lg shadow-primary/20 px-8">
+                            Comprá Ahora
+                        </a>
+                        <a href="/consignaciones"
+                            class="min-w-[180px] h-14 flex items-center justify-center rounded-sm bg-transparent text-primary text-sm font-bold tracking-widest uppercase hover:bg-primary/10 transition-all border border-primary px-8">
+                            Lee Más
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Arrows -->
+        <button id="carousel-prev" class="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-20 w-12 h-12 md:w-14 md:h-14 rounded-full bg-background-dark/50 border border-primary/30 backdrop-blur-sm flex items-center justify-center text-primary hover:bg-primary hover:text-background-dark transition-all duration-300 group">
+            <span class="material-symbols-outlined text-2xl group-hover:scale-110 transition-transform">chevron_left</span>
+        </button>
+        <button id="carousel-next" class="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-20 w-12 h-12 md:w-14 md:h-14 rounded-full bg-background-dark/50 border border-primary/30 backdrop-blur-sm flex items-center justify-center text-primary hover:bg-primary hover:text-background-dark transition-all duration-300 group">
+            <span class="material-symbols-outlined text-2xl group-hover:scale-110 transition-transform">chevron_right</span>
+        </button>
+
+        <!-- Dot Indicators -->
+        <div class="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-3" id="carousel-dots">
+            <button class="carousel-dot w-3 h-3 rounded-full bg-primary transition-all duration-300 scale-100" data-index="0"></button>
+            <button class="carousel-dot w-3 h-3 rounded-full bg-slate-500 hover:bg-primary/60 transition-all duration-300 scale-75" data-index="1"></button>
+            <button class="carousel-dot w-3 h-3 rounded-full bg-slate-500 hover:bg-primary/60 transition-all duration-300 scale-75" data-index="2"></button>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="absolute bottom-0 left-0 right-0 z-20 h-[3px] bg-primary/10">
+            <div id="carousel-progress" class="h-full bg-primary transition-all" style="width: 0%"></div>
         </div>
     </div>
 
@@ -97,3 +170,120 @@ const featuredProducts = await getProducts({ isFeatured: true, limit: 3 });
         </div>
     </section>
 </BaseLayout>
+
+<script>
+    function initCarousel() {
+        const track = document.getElementById('carousel-track') as HTMLElement;
+        const dots = document.querySelectorAll('.carousel-dot');
+        const prevBtn = document.getElementById('carousel-prev');
+        const nextBtn = document.getElementById('carousel-next');
+        const progressBar = document.getElementById('carousel-progress') as HTMLElement;
+
+        if (!track || dots.length === 0) return;
+
+        const totalSlides = dots.length;
+        let currentSlide = 0;
+        let autoPlayTimer: ReturnType<typeof setInterval>;
+        let progressTimer: ReturnType<typeof setInterval>;
+        const SLIDE_DURATION = 6000; // 6 seconds per slide
+        const PROGRESS_INTERVAL = 30; // update progress every 30ms
+
+        function goToSlide(index: number) {
+            currentSlide = ((index % totalSlides) + totalSlides) % totalSlides;
+            track.style.transform = `translateX(-${currentSlide * 100}%)`;
+            
+            // Update dots
+            dots.forEach((dot, i) => {
+                if (i === currentSlide) {
+                    dot.classList.remove('bg-slate-500', 'scale-75');
+                    dot.classList.add('bg-primary', 'scale-100');
+                } else {
+                    dot.classList.remove('bg-primary', 'scale-100');
+                    dot.classList.add('bg-slate-500', 'scale-75');
+                }
+            });
+
+            // Reset progress
+            resetProgress();
+        }
+
+        function nextSlide() {
+            goToSlide(currentSlide + 1);
+        }
+
+        function prevSlide() {
+            goToSlide(currentSlide - 1);
+        }
+
+        function resetProgress() {
+            if (progressBar) {
+                progressBar.style.transition = 'none';
+                progressBar.style.width = '0%';
+                // Force reflow
+                progressBar.offsetHeight;
+                progressBar.style.transition = `width ${SLIDE_DURATION}ms linear`;
+                progressBar.style.width = '100%';
+            }
+        }
+
+        function startAutoPlay() {
+            stopAutoPlay();
+            resetProgress();
+            autoPlayTimer = setInterval(nextSlide, SLIDE_DURATION);
+        }
+
+        function stopAutoPlay() {
+            clearInterval(autoPlayTimer);
+            clearInterval(progressTimer);
+        }
+
+        // Event listeners
+        prevBtn?.addEventListener('click', () => {
+            prevSlide();
+            startAutoPlay(); // Reset timer on manual navigation
+        });
+
+        nextBtn?.addEventListener('click', () => {
+            nextSlide();
+            startAutoPlay();
+        });
+
+        dots.forEach(dot => {
+            dot.addEventListener('click', () => {
+                const index = parseInt(dot.getAttribute('data-index') || '0');
+                goToSlide(index);
+                startAutoPlay();
+            });
+        });
+
+        // Touch/swipe support for mobile
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        track.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+            stopAutoPlay();
+        }, { passive: true });
+
+        track.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            const diff = touchStartX - touchEndX;
+            if (Math.abs(diff) > 50) {
+                if (diff > 0) nextSlide();
+                else prevSlide();
+            }
+            startAutoPlay();
+        }, { passive: true });
+
+        // Pause on hover (desktop)
+        const carousel = document.getElementById('hero-carousel');
+        carousel?.addEventListener('mouseenter', stopAutoPlay);
+        carousel?.addEventListener('mouseleave', startAutoPlay);
+
+        // Start autoplay
+        startAutoPlay();
+    }
+
+    initCarousel();
+    document.addEventListener('astro:page-load', initCarousel);
+</script>

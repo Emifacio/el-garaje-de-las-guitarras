@@ -1,0 +1,147 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { generateWhatsAppUrl } from '../lib/whatsapp';
+
+const whatsAppUrl = generateWhatsAppUrl('consulta_consignacion');
+---
+
+<BaseLayout title="Consignaciones | El Garaje de las Guitarras" description="Vendé tu guitarra o instrumento a través de El Garaje. Servicio de consignación profesional, con exposición en la web y atención personalizada a compradores.">
+    <!-- Hero -->
+    <div class="relative flex min-h-[350px] flex-col items-center justify-center bg-cover bg-center bg-no-repeat p-6 overflow-hidden md:mt-4 md:mx-4 md:rounded-lg"
+        style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCmqNj2JacPW8EE_E-qKLVFd2oP4mfJq3VmIYFjYW8L2xM0BYsJYVLtClXCx7BWyoXWXnLALONLW-LJclLLCktwER8S4YDdnC3gV74iInLlDlsJ7CgL-jFQ_NCE7PlIUf0ai3jwlTYgaIJZ2QJ_zyKLzUll7adSQqglKzv_aWOXK6Irdyf__rBdZCQSvdiGQUCA7-xKy3XAH5eF2a9VgMwhqYCiFbzy7gBoPvVXV1mjfM0_J48Y82K-Ic6OP2GyEgZ2T7onqkaFl2Q');">
+        <div class="absolute inset-0 bg-gradient-to-t from-background-dark via-background-dark/80 to-background-dark/60"></div>
+        <div class="relative z-10 flex flex-col items-center gap-6 max-w-3xl mx-auto text-center mt-20">
+            <h1 class="font-serif text-primary text-4xl md:text-5xl lg:text-6xl font-black leading-snug tracking-wide drop-shadow-lg uppercase">
+                Consignaciones
+            </h1>
+            <p class="text-slate-300 text-lg md:text-xl font-light tracking-wide max-w-2xl px-4">
+                ¿Tenés un instrumento que ya no usás? Dejalo en nuestras manos y nosotros nos encargamos de encontrarle un nuevo dueño.
+            </p>
+        </div>
+    </div>
+
+    <div class="w-full max-w-4xl mx-auto px-4 py-16">
+
+        <!-- Intro -->
+        <section class="mb-20">
+            <p class="font-serif text-2xl text-slate-200 leading-relaxed border-l-4 border-primary pl-6 mb-8">
+                En El Garaje nos especializamos en conectar instrumentos con músicos que los van a disfrutar. Si tenés una guitarra, bajo o amplificador de gama media o alta que quieras vender, nosotros nos ocupamos de todo.
+            </p>
+            <p class="text-slate-400 text-lg leading-relaxed">
+                Tu instrumento va a tener exposición en nuestra web, fotos profesionales y la atención directa de nuestro equipo con cada comprador interesado. Vos solo te relajás y esperás que aparezca la persona indicada.
+            </p>
+        </section>
+
+        <!-- How it works -->
+        <section class="mb-20">
+            <h2 class="font-serif text-3xl font-black text-slate-100 tracking-wide mb-10 border-l-4 border-primary pl-4">
+                ¿Cómo funciona?
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Step 1 -->
+                <div class="bg-accent-dark/30 border border-primary/10 rounded-sm p-8 relative">
+                    <div class="w-12 h-12 bg-primary text-background-dark rounded-full flex items-center justify-center font-serif text-xl font-black mb-6">
+                        1
+                    </div>
+                    <h3 class="font-serif text-xl font-bold text-slate-200 mb-3">Contactanos</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        Escribinos por WhatsApp contándonos qué instrumento tenés, su estado y el precio que buscás. Podés incluir fotos.
+                    </p>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="bg-accent-dark/30 border border-primary/10 rounded-sm p-8 relative">
+                    <div class="w-12 h-12 bg-primary text-background-dark rounded-full flex items-center justify-center font-serif text-xl font-black mb-6">
+                        2
+                    </div>
+                    <h3 class="font-serif text-xl font-bold text-slate-200 mb-3">Lo publicamos</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        Si el instrumento cumple nuestros estándares, lo sacamos en fotos, lo listamos en la web y lo mostramos a nuestra comunidad de compradores.
+                    </p>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="bg-accent-dark/30 border border-primary/10 rounded-sm p-8 relative">
+                    <div class="w-12 h-12 bg-primary text-background-dark rounded-full flex items-center justify-center font-serif text-xl font-black mb-6">
+                        3
+                    </div>
+                    <h3 class="font-serif text-xl font-bold text-slate-200 mb-3">Se vende</h3>
+                    <p class="text-slate-400 text-sm leading-relaxed">
+                        Cuando aparece el comprador, coordinamos todo. Vos cobrás y nosotros retenemos una comisión acordada previamente.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Benefits -->
+        <section class="mb-20 bg-accent-dark/20 border border-primary/20 rounded-sm p-8 md:p-12">
+            <h2 class="font-serif text-2xl font-bold text-slate-100 mb-8">¿Por qué consignar con nosotros?</h2>
+            <ul class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <li class="flex items-start gap-4">
+                    <span class="material-symbols-outlined text-primary text-2xl mt-1 shrink-0">visibility</span>
+                    <div>
+                        <p class="text-slate-200 font-bold mb-1">Visibilidad online</p>
+                        <p class="text-slate-400 text-sm">Tu instrumento publicado en nuestra web con fotos y descripción detallada.</p>
+                    </div>
+                </li>
+                <li class="flex items-start gap-4">
+                    <span class="material-symbols-outlined text-primary text-2xl mt-1 shrink-0">groups</span>
+                    <div>
+                        <p class="text-slate-200 font-bold mb-1">Comunidad activa</p>
+                        <p class="text-slate-400 text-sm">Compradores que confían en El Garaje y buscan instrumentos constantemente.</p>
+                    </div>
+                </li>
+                <li class="flex items-start gap-4">
+                    <span class="material-symbols-outlined text-primary text-2xl mt-1 shrink-0">handshake</span>
+                    <div>
+                        <p class="text-slate-200 font-bold mb-1">Negociación profesional</p>
+                        <p class="text-slate-400 text-sm">Nosotros nos encargamos de atender consultas y negociar con seriedad.</p>
+                    </div>
+                </li>
+                <li class="flex items-start gap-4">
+                    <span class="material-symbols-outlined text-primary text-2xl mt-1 shrink-0">verified</span>
+                    <div>
+                        <p class="text-slate-200 font-bold mb-1">Confianza</p>
+                        <p class="text-slate-400 text-sm">Operamos desde agosto 2023, con trayectoria y reputación en el mercado.</p>
+                    </div>
+                </li>
+            </ul>
+        </section>
+
+        <!-- CTA -->
+        <section class="text-center py-12 border-t border-primary/20">
+            <h2 class="font-serif text-3xl font-black text-slate-100 mb-4">¿Tenés algo para consignar?</h2>
+            <p class="text-slate-400 mb-8 max-w-lg mx-auto">Escribinos por WhatsApp y en minutos te contamos cómo seguir. Sin compromiso.</p>
+            <a href={whatsAppUrl}
+               target="_blank"
+               rel="noopener noreferrer"
+               data-track-type="consignment_inquiry"
+               class="track-social inline-flex h-16 px-10 bg-[#25D366] text-white text-sm font-bold tracking-widest uppercase hover:bg-[#25D366]/90 transition-all border border-[#25D366] rounded-sm items-center justify-center gap-3 shadow-lg shadow-[#25D366]/20">
+                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.890-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                Consultar por WhatsApp
+            </a>
+        </section>
+    </div>
+</BaseLayout>
+
+<script>
+    // Track consignment inquiry clicks
+    function initConsignmentTracking() {
+        const trackBtns = document.querySelectorAll('[data-track-type="consignment_inquiry"]');
+        trackBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                fetch('/api/track-interaction', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        interaction_type: 'consignment_inquiry',
+                        metadata: { timestamp: new Date().toISOString() }
+                    })
+                }).catch(err => console.warn('Tracking failed:', err));
+            });
+        });
+    }
+    initConsignmentTracking();
+    document.addEventListener('astro:page-load', initConsignmentTracking);
+</script>

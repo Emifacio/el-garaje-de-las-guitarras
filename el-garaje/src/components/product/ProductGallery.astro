@@ -5,9 +5,10 @@ import { getPublicImageUrl } from '../../lib/image-utils';
 interface Props {
   images: ProductImage[] | null;
   title: string;
+  isSold?: boolean;
 }
 
-const { images, title } = Astro.props;
+const { images, title, isSold = false } = Astro.props;
 
 // Sort images and map to public URLs
 const sortedImages = images 
@@ -26,8 +27,11 @@ let mainImage = sortedImages.length > 0
             id="gallery-main-image"
             src={mainImage}
             alt={title}
-            class="object-cover h-full w-full opacity-90 transition-opacity duration-300" 
+            class={`object-cover h-full w-full transition-opacity duration-300 ${isSold ? 'opacity-50 grayscale-[30%]' : 'opacity-90'}`}
         />
+        {isSold && (
+            <div class="sold-ribbon sold-ribbon--large">VENDIDO</div>
+        )}
     </div>
 
     <!-- Thumbnails -->
