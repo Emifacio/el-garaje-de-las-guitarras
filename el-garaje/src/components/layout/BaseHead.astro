@@ -1,4 +1,6 @@
 ---
+import { ViewTransitions } from 'astro:transitions';
+
 interface Props {
   title: string;
   description?: string;
@@ -13,6 +15,9 @@ const { title, description = "El Garaje de las Guitarras es una tienda boutique 
 <title>{title}</title>
 
 <meta name="description" content={description} />
+
+<!-- View Transitions for persistent navigation -->
+<ViewTransitions />
 
 <!-- Fonts & Icons -->
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />

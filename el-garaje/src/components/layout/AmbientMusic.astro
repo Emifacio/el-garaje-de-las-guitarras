@@ -1,0 +1,87 @@
+---
+---
+<!-- Ambient Music - persists across page navigations -->
+<div id="ambient-music-container" transition:persist="ambient-music">
+    <button id="ambient-music-btn"
+        class="fixed bottom-24 left-4 z-40 w-12 h-12 rounded-full bg-background-dark/80 border border-primary/30 backdrop-blur-sm flex items-center justify-center text-primary/60 hover:text-primary hover:border-primary/60 transition-all duration-300 group shadow-lg"
+        title="Música ambiental"
+        aria-label="Toggle música ambiental">
+        <span id="music-icon-off" class="material-symbols-outlined text-xl">music_off</span>
+        <span id="music-icon-on" class="material-symbols-outlined text-xl hidden">music_note</span>
+        <span id="music-ring" class="absolute inset-0 rounded-full border-2 border-primary/40 animate-ping pointer-events-none hidden"></span>
+    </button>
+
+    <audio id="ambient-audio" loop preload="none">
+        <source src="/ambient-guitar.mp3" type="audio/mpeg" />
+    </audio>
+</div>
+
+<style>
+    #ambient-music-btn.playing {
+        border-color: var(--color-primary);
+        color: var(--color-primary);
+    }
+
+    #ambient-music-btn.playing #music-icon-off { display: none; }
+    #ambient-music-btn.playing #music-icon-on { display: inline; }
+    #ambient-music-btn.playing #music-ring { display: block; }
+
+    @keyframes pulse-glow {
+        0%, 100% { box-shadow: 0 0 8px rgba(196, 164, 105, 0.1); }
+        50% { box-shadow: 0 0 20px rgba(196, 164, 105, 0.3); }
+    }
+
+    #ambient-music-btn.playing {
+        animation: pulse-glow 3s ease-in-out infinite;
+    }
+</style>
+
+<script>
+    let _ambientInitialized = false;
+
+    function initAmbientMusic() {
+        const btn = document.getElementById('ambient-music-btn');
+        const audio = document.getElementById('ambient-audio') as HTMLAudioElement;
+
+        if (!btn || !audio) return;
+
+        // Prevent double initialization (since element persists)
+        if (_ambientInitialized) {
+            // Just sync the visual state with audio state
+            if (!audio.paused) {
+                btn.classList.add('playing');
+            }
+            return;
+        }
+        _ambientInitialized = true;
+
+        audio.volume = 0.15;
+
+        btn.addEventListener('click', async () => {
+            if (!audio.paused) {
+                // Fade out
+                const fadeOut = setInterval(() => {
+                    if (audio.volume > 0.02) {
+                        audio.volume = Math.max(0, audio.volume - 0.02);
+                    } else {
+                        clearInterval(fadeOut);
+                        audio.pause();
+                        audio.volume = 0.15;
+                        btn.classList.remove('playing');
+                    }
+                }, 50);
+            } else {
+                try {
+                    audio.volume = 0.15;
+                    await audio.play();
+                    btn.classList.add('playing');
+                } catch (err) {
+                    console.warn('Audio playback failed:', err);
+                }
+            }
+        });
+    }
+
+    initAmbientMusic();
+    document.addEventListener('astro:page-load', initAmbientMusic);
+</script>
