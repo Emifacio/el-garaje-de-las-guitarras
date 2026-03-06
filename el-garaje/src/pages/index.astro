@@ -19,7 +19,7 @@ const featuredProducts = await getProducts({ isFeatured: true, limit: 3 });
                 <div class="relative z-10 flex flex-col items-center gap-6 max-w-3xl mx-auto text-center px-6">
                     <span class="text-primary text-xs font-bold tracking-[0.4em] uppercase">El Garaje de las Guitarras</span>
                     <h2 class="font-serif text-slate-50 text-4xl md:text-5xl lg:text-6xl font-black leading-tight tracking-wide drop-shadow-xl">
-                        Guitarras de gama media y alta
+                        Tienda de Guitarras y Amplis de Media y Alta Gama
                     </h2>
                     <p class="text-slate-300 text-lg md:text-xl font-light tracking-wide max-w-xl">
                         Un ambiente cálido, sin apuros y distendido para encontrar tu próximo instrumento.
@@ -42,9 +42,9 @@ const featuredProducts = await getProducts({ isFeatured: true, limit: 3 });
                 style="background-image: url('/CoverHero.jpeg');">
                 <div class="absolute inset-0 bg-gradient-to-b from-background-dark/70 via-accent-burgundy/30 to-background-dark/95"></div>
                 <div class="relative z-10 flex flex-col items-center gap-6 max-w-3xl mx-auto text-center px-6">
-                    <span class="text-primary text-xs font-bold tracking-[0.4em] uppercase">La Sala de Pruebas</span>
+                    <span class="text-primary text-xs font-bold tracking-[0.4em] uppercase">Nuestro Garaje</span>
                     <h2 class="font-serif text-slate-50 text-4xl md:text-5xl lg:text-6xl font-black leading-tight tracking-wide drop-shadow-xl">
-                        Probá sin apuros
+                        Quiero ir a probar
                     </h2>
                     <p class="text-slate-300 text-lg md:text-xl font-light tracking-wide max-w-xl">
                         Nuestra sala privada, equipada con amplificadores y todo lo que necesitás. Sin presiones.
@@ -172,7 +172,16 @@ const featuredProducts = await getProducts({ isFeatured: true, limit: 3 });
 </BaseLayout>
 
 <script>
+    // Use a global reference for cleanup
+    let _carouselTimer: ReturnType<typeof setInterval> | null = null;
+
     function initCarousel() {
+        // Clear any existing timer first
+        if (_carouselTimer) {
+            clearInterval(_carouselTimer);
+            _carouselTimer = null;
+        }
+
         const track = document.getElementById('carousel-track') as HTMLElement;
         const dots = document.querySelectorAll('.carousel-dot');
         const prevBtn = document.getElementById('carousel-prev');
@@ -183,16 +192,12 @@ const featuredProducts = await getProducts({ isFeatured: true, limit: 3 });
 
         const totalSlides = dots.length;
         let currentSlide = 0;
-        let autoPlayTimer: ReturnType<typeof setInterval>;
-        let progressTimer: ReturnType<typeof setInterval>;
-        const SLIDE_DURATION = 6000; // 6 seconds per slide
-        const PROGRESS_INTERVAL = 30; // update progress every 30ms
+        const SLIDE_DURATION = 6000;
 
         function goToSlide(index: number) {
             currentSlide = ((index % totalSlides) + totalSlides) % totalSlides;
             track.style.transform = `translateX(-${currentSlide * 100}%)`;
             
-            // Update dots
             dots.forEach((dot, i) => {
                 if (i === currentSlide) {
                     dot.classList.remove('bg-slate-500', 'scale-75');
@@ -203,7 +208,6 @@ const featuredProducts = await getProducts({ isFeatured: true, limit: 3 });
                 }
             });
 
-            // Reset progress
             resetProgress();
         }
 
@@ -219,8 +223,7 @@ const featuredProducts = await getProducts({ isFeatured: true, limit: 3 });
             if (progressBar) {
                 progressBar.style.transition = 'none';
                 progressBar.style.width = '0%';
-                // Force reflow
-                progressBar.offsetHeight;
+                void progressBar.offsetHeight; // force reflow
                 progressBar.style.transition = `width ${SLIDE_DURATION}ms linear`;
                 progressBar.style.width = '100%';
             }
@@ -229,58 +232,62 @@ const featuredProducts = await getProducts({ isFeatured: true, limit: 3 });
         function startAutoPlay() {
             stopAutoPlay();
             resetProgress();
-            autoPlayTimer = setInterval(nextSlide, SLIDE_DURATION);
+            _carouselTimer = setInterval(nextSlide, SLIDE_DURATION);
         }
 
         function stopAutoPlay() {
-            clearInterval(autoPlayTimer);
-            clearInterval(progressTimer);
+            if (_carouselTimer) {
+                clearInterval(_carouselTimer);
+                _carouselTimer = null;
+            }
         }
 
-        // Event listeners
-        prevBtn?.addEventListener('click', () => {
-            prevSlide();
-            startAutoPlay(); // Reset timer on manual navigation
-        });
+        // Remove old listeners by cloning nodes
+        const newPrev = prevBtn?.cloneNode(true) as HTMLElement;
+        const newNext = nextBtn?.cloneNode(true) as HTMLElement;
+        if (prevBtn && newPrev) prevBtn.replaceWith(newPrev);
+        if (nextBtn && newNext) nextBtn.replaceWith(newNext);
 
-        nextBtn?.addEventListener('click', () => {
-            nextSlide();
-            startAutoPlay();
-        });
+        newPrev?.addEventListener('click', () => { prevSlide(); startAutoPlay(); });
+        newNext?.addEventListener('click', () => { nextSlide(); startAutoPlay(); });
 
         dots.forEach(dot => {
-            dot.addEventListener('click', () => {
-                const index = parseInt(dot.getAttribute('data-index') || '0');
+            const newDot = dot.cloneNode(true) as HTMLElement;
+            dot.replaceWith(newDot);
+            newDot.addEventListener('click', () => {
+                const index = parseInt(newDot.getAttribute('data-index') || '0');
                 goToSlide(index);
                 startAutoPlay();
             });
         });
 
-        // Touch/swipe support for mobile
+        // Touch/swipe
         let touchStartX = 0;
-        let touchEndX = 0;
-
         track.addEventListener('touchstart', (e) => {
             touchStartX = e.changedTouches[0].screenX;
             stopAutoPlay();
         }, { passive: true });
 
         track.addEventListener('touchend', (e) => {
-            touchEndX = e.changedTouches[0].screenX;
-            const diff = touchStartX - touchEndX;
+            const diff = touchStartX - e.changedTouches[0].screenX;
             if (Math.abs(diff) > 50) {
-                if (diff > 0) nextSlide();
-                else prevSlide();
+                if (diff > 0) nextSlide(); else prevSlide();
             }
             startAutoPlay();
         }, { passive: true });
 
-        // Pause on hover (desktop)
+        // Pause on hover
         const carousel = document.getElementById('hero-carousel');
         carousel?.addEventListener('mouseenter', stopAutoPlay);
         carousel?.addEventListener('mouseleave', startAutoPlay);
 
-        // Start autoplay
+        // Pause when tab is hidden
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) stopAutoPlay();
+            else startAutoPlay();
+        });
+
+        // Start!
         startAutoPlay();
     }
 
