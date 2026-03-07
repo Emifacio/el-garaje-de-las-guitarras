@@ -65,12 +65,19 @@ export async function getProducts(options?: {
         return [];
     }
 
-    // Push sold items ("vendido") to the bottom while preserving original order
+    // Push sold items ("vendido") to the bottom, sorted by sold_date (most recent first)
     const products = (data as Product[]) || [];
     return products.sort((a, b) => {
         const aIsSold = a.status === 'vendido' ? 1 : 0;
         const bIsSold = b.status === 'vendido' ? 1 : 0;
-        return aIsSold - bIsSold;
+        if (aIsSold !== bIsSold) return aIsSold - bIsSold;
+        // Both sold: sort by sold_date descending (most recent first)
+        if (aIsSold && bIsSold) {
+            const aDate = (a as any).sold_date ? new Date((a as any).sold_date).getTime() : 0;
+            const bDate = (b as any).sold_date ? new Date((b as any).sold_date).getTime() : 0;
+            return bDate - aDate;
+        }
+        return 0;
     });
 }
 

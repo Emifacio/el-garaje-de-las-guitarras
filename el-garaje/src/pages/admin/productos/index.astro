@@ -36,9 +36,14 @@ if (Astro.request.method === 'POST') {
 
   if (action === 'toggle_status' && productId) {
     const newStatus = formData.get('newStatus')?.toString() || 'disponible';
+    const updateData: Record<string, any> = {
+      status: newStatus,
+      updated_at: new Date().toISOString(),
+      sold_date: newStatus === 'vendido' ? new Date().toISOString() : null
+    };
     const { error: toggleError } = await supabase
       .from('products')
-      .update({ status: newStatus, updated_at: new Date().toISOString() })
+      .update(updateData)
       .eq('id', productId);
 
     if (toggleError) {
