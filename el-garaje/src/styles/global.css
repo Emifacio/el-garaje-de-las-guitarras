@@ -79,3 +79,46 @@ html {
   padding: 16px 0;
   letter-spacing: 0.4em;
 }
+
+/* ============================================================
+   AGENT BORDER GLOW — GPU-optimized reactive feedback
+   ============================================================ */
+.agent-border-glow {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  opacity: 0;
+  will-change: opacity;
+  transition: opacity 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.agent-border-glow::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow:
+    inset 0 0 60px rgba(217, 184, 112, 0.06),
+    inset 0 0 120px rgba(217, 184, 112, 0.03),
+    0 0 40px rgba(217, 184, 112, 0.04);
+  opacity: 0;
+  will-change: opacity;
+  transition: opacity 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.agent-border-glow.active {
+  opacity: 1;
+  border-color: rgba(217, 184, 112, 0.08);
+}
+
+.agent-border-glow.active::after {
+  opacity: 1;
+  box-shadow:
+    inset 0 0 80px rgba(217, 184, 112, 0.08),
+    inset 0 0 160px rgba(217, 184, 112, 0.04),
+    0 0 60px rgba(217, 184, 112, 0.06),
+    0 0 120px rgba(217, 184, 112, 0.02);
+  transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}

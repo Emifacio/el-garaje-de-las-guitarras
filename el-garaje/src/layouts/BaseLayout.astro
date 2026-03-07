@@ -6,6 +6,7 @@ import MobileMenu from '../components/layout/MobileMenu.astro';
 import Footer from '../components/layout/Footer.astro';
 import FloatingContactButtons from '../components/layout/FloatingContactButtons.astro';
 import AmbientMusic from '../components/layout/AmbientMusic.astro';
+import SearchModal from '../components/layout/SearchModal.astro';
 
 interface Props {
   title: string;
@@ -34,32 +35,84 @@ const { title, description } = Astro.props;
 
     <FloatingContactButtons />
     <AmbientMusic />
+    <SearchModal />
+
+    <!-- Agent Border Glow Overlay -->
+    <div class="agent-border-glow" id="agent-glow" transition:persist="agent-glow"></div>
 
     <script>
-        // Simple search behavior: send users to featured categories on home
-        // We use astro:page-load to handle View Transitions if added later
-        document.addEventListener('astro:page-load', () => {
-            const searchButtons = document.querySelectorAll('[data-role="search-button"]');
-            if (searchButtons.length > 0) {
-                searchButtons.forEach((btn) => {
-                    btn.addEventListener('click', () => {
-                        window.location.href = '/#featured-categories';
-                    });
+        // ============================================================
+        // REACTIVE AGENT UI — Trigger System
+        // ============================================================
+
+        function initAgentUI() {
+            const glow = document.getElementById('agent-glow');
+            if (!glow) return;
+
+            let glowTimeout: ReturnType<typeof setTimeout> | null = null;
+
+            // --- Core function: fire the glow ---
+            function fireGlow(duration = 800) {
+                if (glowTimeout) clearTimeout(glowTimeout);
+                glow.classList.add('active');
+                glowTimeout = setTimeout(() => {
+                    glow.classList.remove('active');
+                    glowTimeout = null;
+                }, duration);
+            }
+
+            // --- Expose globally so other components can trigger it ---
+            (window as any).__fireAgentGlow = fireGlow;
+
+            // --- Trigger: Brand filter clicks ---
+            const brandFilters = document.getElementById('brand-filters');
+            if (brandFilters) {
+                brandFilters.addEventListener('click', (e) => {
+                    if ((e.target as HTMLElement).closest('.brand-btn')) {
+                        fireGlow(600);
+                    }
                 });
             }
-        });
-        
-        // Ensure it runs on first load too
-        if (typeof document !== 'undefined') {
-            const searchButtons = document.querySelectorAll('[data-role="search-button"]');
-            if (searchButtons.length > 0) {
-                searchButtons.forEach((btn) => {
-                    btn.addEventListener('click', () => {
-                        window.location.href = '/#featured-categories';
-                    });
+
+            // --- Trigger: Category navigation (View Transition start) ---
+            document.addEventListener('astro:before-swap', () => fireGlow(800));
+
+            // --- Trigger: Product image gallery clicks ---
+            document.querySelectorAll('[data-gallery-thumb], [data-gallery-image]').forEach(el => {
+                el.addEventListener('click', () => fireGlow(500));
+            });
+
+            // --- Trigger: Product card clicks ---
+            const productGrid = document.getElementById('product-grid');
+            if (productGrid) {
+                productGrid.addEventListener('click', (e) => {
+                    if ((e.target as HTMLElement).closest('[data-brand]')) {
+                        fireGlow(500);
+                    }
                 });
+            }
+
+            // --- Behavioral Trigger: IntersectionObserver on product CTA zone ---
+            const productFooter = document.querySelector('.product-footer');
+            if (productFooter) {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            // Fire glow + WhatsApp pulse simultaneously
+                            fireGlow(1500);
+                            (window as any).__fireWhatsAppPulse?.();
+                            observer.unobserve(entry.target); // Only once per page
+                        }
+                    });
+                }, { threshold: 0.5 });
+                observer.observe(productFooter);
             }
         }
+
+        // Ensure it works with View Transitions
+        document.addEventListener('astro:page-load', initAgentUI);
+
+        // Search is now handled by SearchModal component
     </script>
 </body>
 </html>
