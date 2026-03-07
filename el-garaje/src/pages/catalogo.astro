@@ -1,0 +1,129 @@
+---
+export const prerender = false;
+import BaseLayout from '../layouts/BaseLayout.astro';
+import FilterSidebar from '../components/category/FilterSidebar.astro';
+import ProductCard from '../components/product/ProductCard.astro';
+import { getProducts } from '../lib/queries';
+
+const products = await getProducts();
+const pageTitle = 'Catálogo | El Garaje de las Guitarras';
+
+// Split brands: available vs sold-only
+const availableProducts = products.filter(p => p.status !== 'vendido');
+const soldProducts = products.filter(p => p.status === 'vendido');
+
+const availableBrands = [...new Set(availableProducts.map(p => p.brand || 'Otras'))].sort();
+const soldOnlyBrands = [...new Set(soldProducts.map(p => p.brand || 'Otras'))]
+    .filter(b => !availableBrands.includes(b))
+    .sort();
+---
+
+<BaseLayout title={pageTitle} description="Explorá nuestro catálogo completo de guitarras eléctricas, acústicas, bajos, amplificadores y efectos. Tienda boutique El Garaje de las Guitarras.">
+    <div class="w-full max-w-7xl mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="mb-12 border-b border-primary/20 pb-6">
+            <h1 class="font-serif text-4xl md:text-5xl font-black text-slate-100 tracking-wide mb-4">
+                Catálogo
+            </h1>
+            <p class="text-slate-400 max-w-2xl text-lg">
+                Toda nuestra colección de instrumentos y equipamiento en un solo lugar.
+            </p>
+        </div>
+
+        <!-- Filters & Grid -->
+        <div class="flex flex-col lg:flex-row gap-12">
+            <FilterSidebar brands={availableBrands} soldOnlyBrands={soldOnlyBrands} />
+
+            <div class="flex-1">
+                <div id="product-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {products.length > 0 ? (
+                        products.map(product => (
+                            <ProductCard product={product} />
+                        ))
+                    ) : (
+                        <div class="col-span-full py-12 text-center text-slate-400">
+                            <p>No hay productos disponibles actualmente.</p>
+                        </div>
+                    )}
+                </div>
+
+                <!-- Sold Items Toggle -->
+                <div id="sold-section" class="mt-10 hidden">
+                    <button
+                        id="sold-toggle-btn"
+                        type="button"
+                        class="w-full flex items-center justify-center gap-3 py-4 px-6 border border-primary/20 rounded-sm bg-accent-dark/20 hover:bg-accent-dark/40 transition-all duration-300 group cursor-pointer"
+                    >
+                        <span class="h-px flex-1 bg-primary/20"></span>
+                        <span class="text-sm font-bold text-slate-400 group-hover:text-primary tracking-widest uppercase transition-colors">
+                            Vendidos (<span id="sold-count">0</span>)
+                        </span>
+                        <span id="sold-toggle-icon" class="material-symbols-outlined text-primary/60 group-hover:text-primary transition-all duration-300">
+                            expand_more
+                        </span>
+                        <span class="h-px flex-1 bg-primary/20"></span>
+                    </button>
+
+                    <div id="sold-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6 hidden">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</BaseLayout>
+
+<script>
+    document.addEventListener('astro:page-load', () => {
+        const grid = document.getElementById('product-grid');
+        const soldSection = document.getElementById('sold-section');
+        const soldGrid = document.getElementById('sold-grid');
+        const soldToggleBtn = document.getElementById('sold-toggle-btn');
+        const soldCountEl = document.getElementById('sold-count');
+        const soldToggleIcon = document.getElementById('sold-toggle-icon');
+
+        if (!grid || !soldSection || !soldGrid || !soldToggleBtn || !soldCountEl || !soldToggleIcon) return;
+
+        const soldCards = grid.querySelectorAll<HTMLElement>('[data-status="vendido"]');
+        if (soldCards.length === 0) return;
+
+        soldCards.forEach(card => soldGrid.appendChild(card));
+        soldSection.classList.remove('hidden');
+        soldCountEl.textContent = String(soldCards.length);
+
+        let isExpanded = false;
+        soldToggleBtn.addEventListener('click', () => {
+            isExpanded = !isExpanded;
+            soldGrid.classList.toggle('hidden', !isExpanded);
+            soldToggleIcon.textContent = isExpanded ? 'expand_less' : 'expand_more';
+            soldToggleIcon.style.transform = isExpanded ? 'rotate(180deg)' : '';
+            document.dispatchEvent(new CustomEvent('sold-toggle', { detail: { expanded: isExpanded } }));
+        });
+
+        // Listen for brand filter changes to also filter sold items
+        const brandContainer = document.getElementById('brand-filters');
+        if (brandContainer) {
+            const observer = new MutationObserver(() => {
+                const activeButtons = brandContainer.querySelectorAll<HTMLButtonElement>('.brand-btn--active');
+                const activeBrands = new Set<string>();
+                activeButtons.forEach(btn => {
+                    if (btn.dataset.brandValue !== 'all') activeBrands.add(btn.dataset.brandValue!);
+                });
+
+                const showAll = activeBrands.size === 0 
+                    || brandContainer.querySelector('[data-brand-value="all"]')?.classList.contains('brand-btn--active');
+
+                let visibleSoldCount = 0;
+                soldGrid.querySelectorAll<HTMLElement>('[data-brand]').forEach(card => {
+                    const brand = card.dataset.brand || '';
+                    const visible = showAll || activeBrands.has(brand);
+                    card.style.display = visible ? '' : 'none';
+                    if (visible) visibleSoldCount++;
+                });
+
+                soldCountEl.textContent = String(visibleSoldCount);
+                soldSection.style.display = visibleSoldCount > 0 ? '' : 'none';
+            });
+            observer.observe(brandContainer, { attributes: true, subtree: true, attributeFilter: ['class'] });
+        }
+    });
+</script>
