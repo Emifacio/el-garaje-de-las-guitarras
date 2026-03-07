@@ -100,14 +100,20 @@ const getToggleIcon = (status: string) => {
 ---
 
 <AdminLayout title="Inventario de Productos">
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 gap-4">
+    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-end mb-8 gap-4">
         <div>
             <h1 class="font-serif text-3xl font-black text-slate-100 tracking-wide mb-2">Inventario</h1>
             <p class="text-slate-400">Gestiona las guitarras y accesorios del catálogo.</p>
         </div>
-        <a href="/admin/productos/nuevo" class="h-10 px-5 flex items-center justify-center gap-2 bg-primary text-background-dark text-sm font-bold tracking-widest uppercase hover:bg-primary/90 transition-all rounded-sm shadow-lg shadow-primary/20 border border-primary w-full sm:w-auto">
-            <span class="material-symbols-outlined text-[1.25rem]">add</span> Nuevo Producto
-        </a>
+        <div class="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+            <div class="relative w-full sm:w-64 lg:w-80">
+                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">search</span>
+                <input type="text" id="admin-search" placeholder="Buscar por título, marca o categoría..." class="w-full h-10 pl-10 pr-4 bg-background-light/5 border border-primary/20 rounded-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-primary/50 transition-colors">
+            </div>
+            <a href="/admin/productos/nuevo" class="h-10 px-5 flex items-center justify-center gap-2 bg-primary text-background-dark text-sm font-bold tracking-widest uppercase hover:bg-primary/90 transition-all rounded-sm shadow-lg shadow-primary/20 border border-primary w-full sm:w-auto shrink-0">
+                <span class="material-symbols-outlined text-[1.25rem]">add</span> Nuevo Producto
+            </a>
+        </div>
     </div>
 
     {actionMessage && (
@@ -128,7 +134,7 @@ const getToggleIcon = (status: string) => {
             products.map((product) => {
                 const mainImageUrl = getMainImage(product.product_images);
                 return (
-                    <div class="bg-background-light/5 border border-primary/20 rounded-lg p-4 flex flex-col gap-4">
+                    <div class="product-item bg-background-light/5 border border-primary/20 rounded-lg p-4 flex flex-col gap-4" data-search={`${product.title} ${product.brand || ''} ${product.categories?.name || ''}`.toLowerCase()}>
                         <div class="flex items-center gap-4">
                             <div class="w-16 h-16 rounded bg-background-dark border border-primary/20 overflow-hidden flex-shrink-0">
                                 {mainImageUrl ? (
@@ -208,7 +214,7 @@ const getToggleIcon = (status: string) => {
                         products.map((product) => {
                             const mainImageUrl = getMainImage(product.product_images);
                             return (
-                                <tr class="hover:bg-primary/5 transition-colors group">
+                                <tr class="product-item hover:bg-primary/5 transition-colors group" data-search={`${product.title} ${product.brand || ''} ${product.categories?.name || ''}`.toLowerCase()}>
                                     <td class="p-4 align-middle">
                                         <div class="w-12 h-12 rounded bg-background-dark border border-primary/20 overflow-hidden flex items-center justify-center">
                                             {mainImageUrl ? (
@@ -271,3 +277,24 @@ const getToggleIcon = (status: string) => {
         </div>
     </div>
 </AdminLayout>
+
+<script>
+    document.addEventListener('astro:page-load', () => {
+        const searchInput = document.getElementById('admin-search') as HTMLInputElement;
+        if (!searchInput) return;
+
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = (e.target as HTMLInputElement).value.toLowerCase();
+            const items = document.querySelectorAll('.product-item');
+
+            items.forEach((item) => {
+                const searchData = (item as HTMLElement).dataset.search || '';
+                if (searchData.includes(searchTerm)) {
+                    (item as HTMLElement).style.display = '';
+                } else {
+                    (item as HTMLElement).style.display = 'none';
+                }
+            });
+        });
+    });
+</script>
