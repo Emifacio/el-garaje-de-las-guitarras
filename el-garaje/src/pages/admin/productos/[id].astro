@@ -39,6 +39,30 @@ if (Astro.request.method === 'POST') {
             throw new Error('El título, el slug y la categoría son obligatorios.');
         }
 
+        // Handle sold_date logic (DD/MM/YYYY format expected from form)
+        let formSoldDate = formData.get('sold_date')?.toString().trim();
+        let sold_date = null;
+
+        if (formSoldDate) {
+            // Parse DD/MM/YYYY to YYYY-MM-DD for standard Date constructor
+            const parts = formSoldDate.split('/');
+            if (parts.length === 3) {
+                const day = parts[0];
+                const month = parts[1];
+                const year = parts[2];
+                // Store in ISO format in DB: YYYY-MM-DD
+                sold_date = new Date(`${year}-${month}-${day}T12:00:00.000Z`).toISOString();
+            }
+        }
+        
+        if (status === 'vendido' && !sold_date) {
+            // Auto-set to now if marked as vendido but date is empty
+            sold_date = new Date().toISOString();
+        } else if (status !== 'vendido') {
+            // Clear date if not vendido
+            sold_date = null;
+        }
+
         // 2. Build the Product object for updating
         const updateData = {
             title,
@@ -54,7 +78,8 @@ if (Astro.request.method === 'POST') {
             badge: formData.get('badge')?.toString() || null,
             is_featured: formData.get('is_featured') === 'on',
             sort_order: parseInt(formData.get('sort_order')?.toString() || '0'),
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
+            sold_date
         };
 
         // 3. Update Product Document
@@ -227,6 +252,19 @@ const sortedImages = product.product_images?.sort((a: any, b: any) => a.sort_ord
                         </select>
                     </div>
 
+                    <div id="sold_date_container" class={product.status === 'vendido' ? '' : 'hidden'}>
+                        <label for="sold_date" class="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Fecha de Venta (DD/MM/YYYY)</label>
+                        <input type="text" id="sold_date" name="sold_date" placeholder="Ej: 25/12/2024"
+                            value={product.sold_date ? (() => {
+                                const d = new Date(product.sold_date);
+                                const day = String(d.getUTCDate()).padStart(2, '0');
+                                const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+                                const year = d.getUTCFullYear();
+                                return `${day}/${month}/${year}`;
+                            })() : ''}
+                            class="w-full bg-background-dark/80 border border-primary/30 rounded px-4 py-3 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-slate-200 transition-colors" />
+                    </div>
+
                     <label class="flex items-center gap-3 p-3 border border-primary/20 rounded-md bg-background-dark/30 hover:bg-primary/5 cursor-pointer transition-colors group">
                         <input type="checkbox" name="is_featured" checked={product.is_featured} class="w-4 h-4 rounded border-primary/50 text-primary focus:ring-primary bg-background-dark" />
                         <div class="flex flex-col">
@@ -274,13 +312,30 @@ const sortedImages = product.product_images?.sort((a: any, b: any) => a.sort_ord
 </AdminLayout>
 
 <script>
-    // Make button show loading state on submit
-    const form = document.querySelector('form');
-    const btn = document.getElementById('updateBtn');
-    form?.addEventListener('submit', () => {
-        if(btn) {
-            btn.innerHTML = `<span class="material-symbols-outlined animate-spin">refresh</span> Actualizando...`;
-            btn.classList.add('opacity-70', 'pointer-events-none');
+    // Client-side interactions
+    document.addEventListener('astro:page-load', () => {
+        // Form loading state
+        const form = document.querySelector('form');
+        const btn = document.getElementById('updateBtn');
+        form?.addEventListener('submit', () => {
+            if(btn) {
+                btn.innerHTML = `<span class="material-symbols-outlined animate-spin">refresh</span> Actualizando...`;
+                btn.classList.add('opacity-70', 'pointer-events-none');
+            }
+        });
+
+        // Toggle sold date visibility
+        const statusSelect = document.getElementById('status') as HTMLSelectElement;
+        const soldDateContainer = document.getElementById('sold_date_container');
+        
+        if (statusSelect && soldDateContainer) {
+            statusSelect.addEventListener('change', (e) => {
+                if ((e.target as HTMLSelectElement).value === 'vendido') {
+                    soldDateContainer.classList.remove('hidden');
+                } else {
+                    soldDateContainer.classList.add('hidden');
+                }
+            });
         }
     });
 </script>

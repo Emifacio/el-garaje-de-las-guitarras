@@ -39,6 +39,7 @@ export interface Product {
     seo_description: string | null;
     created_at: string;
     updated_at: string;
+    sold_date: string | null;
 
     // Joined relation representation
     categories?: Category | null;
