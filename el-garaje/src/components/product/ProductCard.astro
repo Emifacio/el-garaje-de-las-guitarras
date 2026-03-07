@@ -26,12 +26,15 @@ const isSold = product.status === 'vendido';
 ---
 
 <a href={`/producto/${product.slug}`}
+    data-brand={product.brand || 'Otras'}
+    data-status={product.status}
     class="group flex flex-col bg-accent-dark/20 border border-primary/10 hover:border-primary/50 transition-all duration-300 rounded-sm overflow-hidden">
     
     <div class="aspect-square bg-black relative overflow-hidden flex items-center justify-center p-8">
         <div class="absolute inset-0 bg-gradient-to-t from-background-dark/80 to-transparent z-10"></div>
         <img src={imageUrl}
             alt={coverImage?.alt_text || product.title}
+            loading="lazy"
             class={`object-cover h-full w-full group-hover:scale-105 transition-transform duration-700 ${isSold ? 'opacity-50 grayscale-[30%]' : 'opacity-80 group-hover:opacity-100'}`} />
             
         <div class="absolute top-4 left-4 z-20">

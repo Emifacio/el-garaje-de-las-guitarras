@@ -65,7 +65,13 @@ export async function getProducts(options?: {
         return [];
     }
 
-    return data as Product[] || [];
+    // Push sold items ("vendido") to the bottom while preserving original order
+    const products = (data as Product[]) || [];
+    return products.sort((a, b) => {
+        const aIsSold = a.status === 'vendido' ? 1 : 0;
+        const bIsSold = b.status === 'vendido' ? 1 : 0;
+        return aIsSold - bIsSold;
+    });
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {

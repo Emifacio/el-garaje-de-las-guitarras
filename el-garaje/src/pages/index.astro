@@ -167,6 +167,21 @@ const featuredProducts = await getProducts({ isFeatured: true, limit: 3 });
                     </span>
                 </div>
             </a>
+            <a class="group relative flex flex-col gap-3 rounded-sm overflow-hidden aspect-[16/9] border border-primary/20 shadow-lg hover:border-primary/50 transition-colors"
+                href="/categoria/efectos"
+                style="background-image: url('https://images.unsplash.com/photo-1558098329-a11cff621064?q=80&w=1200&auto=format&fit=crop'); background-size: cover; background-position: center;">
+                <div
+                    class="absolute inset-0 bg-gradient-to-t from-background-dark/95 via-background-dark/40 to-transparent group-hover:from-background-dark transition-all duration-300">
+                </div>
+                <div class="relative z-10 h-full flex flex-col justify-end p-8">
+                    <p class="font-serif text-primary text-3xl font-black leading-tight tracking-wide drop-shadow-md">
+                        Efectos</p>
+                    <span
+                        class="text-xs text-slate-300 mt-2 opacity-0 group-hover:opacity-100 transition-opacity tracking-widest uppercase font-bold">
+                        Explorar Colección &rarr;
+                    </span>
+                </div>
+            </a>
         </div>
     </section>
 </BaseLayout>

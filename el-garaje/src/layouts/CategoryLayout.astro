@@ -7,9 +7,10 @@ interface Props {
   description: string;
   categoryName: string;
   categoryDescription: string | null;
+  brands: string[];
 }
 
-const { title, description, categoryName, categoryDescription } = Astro.props;
+const { title, description, categoryName, categoryDescription, brands } = Astro.props;
 ---
 
 <BaseLayout title={title} description={description}>
@@ -27,12 +28,103 @@ const { title, description, categoryName, categoryDescription } = Astro.props;
         <!-- Filters & Grid Layout -->
         <div class="flex flex-col lg:flex-row gap-12">
             <!-- Sidebar Filters -->
-            <FilterSidebar />
+            <FilterSidebar brands={brands} />
 
-            <!-- Product Grid -->
-            <div class="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <slot />
+            <!-- Product Grid + Sold Toggle -->
+            <div class="flex-1">
+                <div id="product-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <slot />
+                </div>
+
+                <!-- Sold Items Toggle -->
+                <div id="sold-section" class="mt-10 hidden">
+                    <button
+                        id="sold-toggle-btn"
+                        type="button"
+                        class="w-full flex items-center justify-center gap-3 py-4 px-6 border border-primary/20 rounded-sm bg-accent-dark/20 hover:bg-accent-dark/40 transition-all duration-300 group cursor-pointer"
+                    >
+                        <span class="h-px flex-1 bg-primary/20"></span>
+                        <span class="text-sm font-bold text-slate-400 group-hover:text-primary tracking-widest uppercase transition-colors">
+                            Vendidos (<span id="sold-count">0</span>)
+                        </span>
+                        <span id="sold-toggle-icon" class="material-symbols-outlined text-primary/60 group-hover:text-primary transition-all duration-300">
+                            expand_more
+                        </span>
+                        <span class="h-px flex-1 bg-primary/20"></span>
+                    </button>
+
+                    <div id="sold-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6 hidden">
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </BaseLayout>
+
+<script>
+    document.addEventListener('astro:page-load', () => {
+        const grid = document.getElementById('product-grid');
+        const soldSection = document.getElementById('sold-section');
+        const soldGrid = document.getElementById('sold-grid');
+        const soldToggleBtn = document.getElementById('sold-toggle-btn');
+        const soldCountEl = document.getElementById('sold-count');
+        const soldToggleIcon = document.getElementById('sold-toggle-icon');
+
+        if (!grid || !soldSection || !soldGrid || !soldToggleBtn || !soldCountEl || !soldToggleIcon) return;
+
+        // Find all sold items and move them to the sold section
+        const soldCards = grid.querySelectorAll<HTMLElement>('[data-status="vendido"]');
+
+        if (soldCards.length === 0) return;
+
+        // Move sold cards into the collapsible sold grid
+        soldCards.forEach(card => {
+            soldGrid.appendChild(card);
+        });
+
+        // Show the sold section toggle and update count
+        soldSection.classList.remove('hidden');
+        soldCountEl.textContent = String(soldCards.length);
+
+        // Toggle expand/collapse
+        let isExpanded = false;
+        soldToggleBtn.addEventListener('click', () => {
+            isExpanded = !isExpanded;
+            soldGrid.classList.toggle('hidden', !isExpanded);
+            soldToggleIcon.textContent = isExpanded ? 'expand_less' : 'expand_more';
+            soldToggleIcon.style.transform = isExpanded ? 'rotate(180deg)' : '';
+        });
+
+        // Listen for brand filter changes to also filter sold items
+        const brandContainer = document.getElementById('brand-filters');
+        if (brandContainer) {
+            const observer = new MutationObserver(() => {
+                // Check which brands are active
+                const activeButtons = brandContainer.querySelectorAll<HTMLButtonElement>('.brand-btn--active');
+                const activeBrands = new Set<string>();
+                activeButtons.forEach(btn => {
+                    if (btn.dataset.brandValue !== 'all') {
+                        activeBrands.add(btn.dataset.brandValue!);
+                    }
+                });
+
+                const showAll = activeBrands.size === 0 
+                    || brandContainer.querySelector('[data-brand-value="all"]')?.classList.contains('brand-btn--active');
+
+                let visibleSoldCount = 0;
+                soldGrid.querySelectorAll<HTMLElement>('[data-brand]').forEach(card => {
+                    const brand = card.dataset.brand || '';
+                    const visible = showAll || activeBrands.has(brand);
+                    card.style.display = visible ? '' : 'none';
+                    if (visible) visibleSoldCount++;
+                });
+
+                soldCountEl.textContent = String(visibleSoldCount);
+                // Hide the entire sold section if no sold items match the filter
+                soldSection.style.display = visibleSoldCount > 0 ? '' : 'none';
+            });
+
+            observer.observe(brandContainer, { attributes: true, subtree: true, attributeFilter: ['class'] });
+        }
+    });
+</script>

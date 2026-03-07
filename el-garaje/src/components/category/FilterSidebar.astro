@@ -1,5 +1,11 @@
 ---
+interface Props {
+  brands: string[];
+}
+
+const { brands } = Astro.props;
 ---
+
 <aside class="w-full lg:w-64 shrink-0">
     <div class="sticky top-24 bg-accent-dark/30 p-6 border border-primary/10 rounded-sm">
         <h3 class="font-bold text-primary tracking-widest uppercase mb-6 text-sm">Filtrar Colección</h3>
@@ -7,24 +13,125 @@
         <!-- Brands -->
         <div class="mb-4">
             <h4 class="font-serif text-slate-300 mb-4 text-lg border-b border-primary/10 pb-2">Marcas</h4>
-            <div class="flex flex-col gap-2">
-                <label class="flex items-center gap-3 cursor-pointer group p-2 rounded hover:bg-primary/5 transition-colors">
-                    <span class="text-primary text-lg leading-none">♠</span>
-                    <span class="text-slate-400 group-hover:text-primary transition-colors">Fender</span>
-                </label>
-                <label class="flex items-center gap-3 cursor-pointer group p-2 rounded hover:bg-primary/5 transition-colors">
-                    <span class="text-primary text-lg leading-none">♠</span>
-                    <span class="text-slate-400 group-hover:text-primary transition-colors">Gibson</span>
-                </label>
-                <label class="flex items-center gap-3 cursor-pointer group p-2 rounded hover:bg-primary/5 transition-colors">
-                    <span class="text-primary text-lg leading-none">♠</span>
-                    <span class="text-slate-400 group-hover:text-primary transition-colors">PRS</span>
-                </label>
-                <label class="flex items-center gap-3 cursor-pointer group p-2 rounded hover:bg-primary/5 transition-colors">
-                    <span class="text-primary text-lg leading-none">♠</span>
-                    <span class="text-slate-400 group-hover:text-primary transition-colors">Otras</span>
-                </label>
+            <div class="flex flex-col gap-2" id="brand-filters">
+                <!-- "Todas" (Show All) button -->
+                <button
+                    type="button"
+                    data-brand-value="all"
+                    class="brand-btn brand-btn--active flex items-center gap-3 cursor-pointer group p-2 rounded transition-all duration-300 text-left"
+                >
+                    <span class="brand-icon text-lg leading-none">♠</span>
+                    <span class="brand-label transition-colors">Todas</span>
+                </button>
+
+                {brands.map(brand => (
+                    <button
+                        type="button"
+                        data-brand-value={brand}
+                        class="brand-btn flex items-center gap-3 cursor-pointer group p-2 rounded transition-all duration-300 text-left"
+                    >
+                        <span class="brand-icon text-lg leading-none">♠</span>
+                        <span class="brand-label transition-colors">{brand}</span>
+                    </button>
+                ))}
             </div>
         </div>
     </div>
 </aside>
+
+<style is:global>
+    /* Base state — unselected / dimmed */
+    .brand-btn {
+        background: transparent;
+        border: 1px solid transparent;
+    }
+    .brand-btn .brand-icon {
+        color: #475569;
+    }
+    .brand-btn .brand-label {
+        color: #64748b;
+    }
+    .brand-btn:hover {
+        background: rgba(200, 169, 96, 0.05);
+    }
+    .brand-btn:hover .brand-label {
+        color: #c8a960;
+    }
+
+    /* Active / selected state */
+    .brand-btn--active {
+        background: rgba(200, 169, 96, 0.10);
+        border-color: rgba(200, 169, 96, 0.30);
+    }
+    .brand-btn--active .brand-icon {
+        color: #c8a960;
+    }
+    .brand-btn--active .brand-label {
+        color: #e2e8f0;
+        font-weight: 600;
+    }
+</style>
+
+<script>
+    // Use astro:page-load to work with View Transitions
+    document.addEventListener('astro:page-load', () => {
+        const container = document.getElementById('brand-filters');
+        const grid = document.getElementById('product-grid');
+        if (!container || !grid) return;
+
+        const buttons = container.querySelectorAll<HTMLButtonElement>('.brand-btn');
+        const allBtn = container.querySelector<HTMLButtonElement>('[data-brand-value="all"]');
+        const cards = grid.querySelectorAll<HTMLElement>('[data-brand]');
+
+        function getSelectedBrands(): Set<string> {
+            const selected = new Set<string>();
+            buttons.forEach(btn => {
+                if (btn.dataset.brandValue !== 'all' && btn.classList.contains('brand-btn--active')) {
+                    selected.add(btn.dataset.brandValue!);
+                }
+            });
+            return selected;
+        }
+
+        function filterCards() {
+            const selected = getSelectedBrands();
+            const showAll = selected.size === 0;
+
+            // Update "Todas" button state
+            if (allBtn) {
+                allBtn.classList.toggle('brand-btn--active', showAll);
+            }
+
+            // Show / hide cards
+            cards.forEach(card => {
+                const brand = card.dataset.brand || '';
+                const visible = showAll || selected.has(brand);
+                card.style.display = visible ? '' : 'none';
+            });
+        }
+
+        buttons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const value = btn.dataset.brandValue;
+
+                if (value === 'all') {
+                    // Click "Todas" → deselect all individual brands
+                    buttons.forEach(b => b.classList.remove('brand-btn--active'));
+                    allBtn?.classList.add('brand-btn--active');
+                } else {
+                    // Toggle this individual brand
+                    btn.classList.toggle('brand-btn--active');
+                    // Deselect "Todas" when any individual brand is selected
+                    allBtn?.classList.remove('brand-btn--active');
+
+                    // If nothing is selected after toggle, re-activate "Todas"
+                    if (getSelectedBrands().size === 0) {
+                        allBtn?.classList.add('brand-btn--active');
+                    }
+                }
+
+                filterCards();
+            });
+        });
+    });
+</script>
