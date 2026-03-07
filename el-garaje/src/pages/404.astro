@@ -1,0 +1,101 @@
+---
+export const prerender = false;
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProductCard from '../components/product/ProductCard.astro';
+import { getProducts } from '../lib/queries';
+
+// Fetch some products to recommend
+const featuredProducts = await getProducts({ isFeatured: true, limit: 6 });
+// Fallback: if no featured, get latest available
+const recommendedProducts = featuredProducts.length > 0
+    ? featuredProducts
+    : await getProducts({ limit: 6 });
+
+// Filter out sold items for recommendations
+const availableProducts = recommendedProducts.filter(p => p.status !== 'vendido').slice(0, 6);
+---
+
+<BaseLayout title="Página no encontrada | El Garaje de las Guitarras">
+    <!-- 404 Message -->
+    <section class="flex flex-col items-center justify-center text-center px-6 py-20 md:py-32">
+        <span class="text-primary text-8xl md:text-9xl font-serif font-black tracking-wider opacity-20 select-none">404</span>
+        <h1 class="font-serif text-3xl md:text-4xl font-black text-slate-100 tracking-wide mt-4 mb-4">
+            No encontramos la página que buscás
+        </h1>
+        <p class="text-slate-400 text-lg max-w-md mb-8">
+            Lo sentimos, la página que intentaste visitar no existe o fue movida. Te invitamos a explorar nuestra colección.
+        </p>
+        <a href="/"
+            class="inline-flex items-center gap-2 h-14 px-10 rounded-sm bg-primary text-background-dark text-sm font-bold tracking-widest uppercase hover:bg-primary/90 transition-all border border-primary shadow-lg shadow-primary/20">
+            <span class="material-symbols-outlined text-lg">home</span>
+            Volver al Inicio
+        </a>
+    </section>
+
+    <!-- Recommended Products Carousel -->
+    {availableProducts.length > 0 && (
+    <section class="pb-16 px-4 max-w-7xl mx-auto w-full overflow-hidden">
+        <div class="flex items-center justify-between mb-8 border-b border-primary/20 pb-4">
+            <h2 class="font-serif text-2xl font-bold tracking-wide text-slate-100 border-l-4 border-primary pl-4">
+                Te puede interesar
+            </h2>
+            <div class="flex items-center gap-2">
+                <a href="/categoria/electricas"
+                    class="text-sm font-bold text-primary hover:text-primary/80 uppercase tracking-widest transition-colors hidden sm:block">
+                    Ver Todo
+                </a>
+                <div class="flex gap-2 ml-4">
+                    <button id="carousel-404-prev"
+                        class="w-10 h-10 rounded-full border border-primary/30 flex items-center justify-center text-primary hover:bg-primary hover:text-background-dark transition-all duration-300">
+                        <span class="material-symbols-outlined text-lg">chevron_left</span>
+                    </button>
+                    <button id="carousel-404-next"
+                        class="w-10 h-10 rounded-full border border-primary/30 flex items-center justify-center text-primary hover:bg-primary hover:text-background-dark transition-all duration-300">
+                        <span class="material-symbols-outlined text-lg">chevron_right</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scrollable Track -->
+        <div class="relative">
+            <div id="carousel-404-track"
+                class="flex gap-6 overflow-x-auto scroll-smooth scrollbar-hide pb-4"
+                style="scrollbar-width: none; -ms-overflow-style: none;">
+                {availableProducts.map(product => (
+                    <div class="flex-shrink-0 w-[280px] md:w-[320px]">
+                        <ProductCard product={product} />
+                    </div>
+                ))}
+            </div>
+        </div>
+    </section>
+    )}
+</BaseLayout>
+
+<style is:global>
+    /* Hide scrollbar for the carousel */
+    #carousel-404-track::-webkit-scrollbar {
+        display: none;
+    }
+</style>
+
+<script>
+    document.addEventListener('astro:page-load', () => {
+        const track = document.getElementById('carousel-404-track');
+        const prevBtn = document.getElementById('carousel-404-prev');
+        const nextBtn = document.getElementById('carousel-404-next');
+
+        if (!track || !prevBtn || !nextBtn) return;
+
+        const scrollAmount = 340;
+
+        prevBtn.addEventListener('click', () => {
+            track.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+        });
+
+        nextBtn.addEventListener('click', () => {
+            track.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        });
+    });
+</script>
