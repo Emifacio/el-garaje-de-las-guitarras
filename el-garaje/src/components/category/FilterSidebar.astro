@@ -1,9 +1,10 @@
 ---
 interface Props {
   brands: string[];
+  soldOnlyBrands?: string[];
 }
 
-const { brands } = Astro.props;
+const { brands, soldOnlyBrands = [] } = Astro.props;
 ---
 
 <aside class="w-full lg:w-64 shrink-0">
@@ -29,6 +30,20 @@ const { brands } = Astro.props;
                         type="button"
                         data-brand-value={brand}
                         class="brand-btn flex items-center gap-3 cursor-pointer group p-2 rounded transition-all duration-300 text-left"
+                    >
+                        <span class="brand-icon text-lg leading-none">♠</span>
+                        <span class="brand-label transition-colors">{brand}</span>
+                    </button>
+                ))}
+
+                {/* Sold-only brands: hidden by default, shown when sold toggle opens */}
+                {soldOnlyBrands.map(brand => (
+                    <button
+                        type="button"
+                        data-brand-value={brand}
+                        data-sold-only="true"
+                        class="brand-btn flex items-center gap-3 cursor-pointer group p-2 rounded transition-all duration-300 text-left"
+                        style="display: none;"
                     >
                         <span class="brand-icon text-lg leading-none">♠</span>
                         <span class="brand-label transition-colors">{brand}</span>
@@ -79,13 +94,19 @@ const { brands } = Astro.props;
         const grid = document.getElementById('product-grid');
         if (!container || !grid) return;
 
-        const buttons = container.querySelectorAll<HTMLButtonElement>('.brand-btn');
         const allBtn = container.querySelector<HTMLButtonElement>('[data-brand-value="all"]');
-        const cards = grid.querySelectorAll<HTMLElement>('[data-brand]');
+
+        function getAllButtons() {
+            return container!.querySelectorAll<HTMLButtonElement>('.brand-btn');
+        }
+
+        function getVisibleCards() {
+            return grid!.querySelectorAll<HTMLElement>('[data-brand]');
+        }
 
         function getSelectedBrands(): Set<string> {
             const selected = new Set<string>();
-            buttons.forEach(btn => {
+            getAllButtons().forEach(btn => {
                 if (btn.dataset.brandValue !== 'all' && btn.classList.contains('brand-btn--active')) {
                     selected.add(btn.dataset.brandValue!);
                 }
@@ -102,36 +123,81 @@ const { brands } = Astro.props;
                 allBtn.classList.toggle('brand-btn--active', showAll);
             }
 
-            // Show / hide cards
-            cards.forEach(card => {
+            // Show / hide cards in main grid
+            getVisibleCards().forEach(card => {
                 const brand = card.dataset.brand || '';
                 const visible = showAll || selected.has(brand);
                 card.style.display = visible ? '' : 'none';
             });
+
+            // Also filter sold grid if it exists
+            const soldGrid = document.getElementById('sold-grid');
+            if (soldGrid) {
+                soldGrid.querySelectorAll<HTMLElement>('[data-brand]').forEach(card => {
+                    const brand = card.dataset.brand || '';
+                    const visible = showAll || selected.has(brand);
+                    card.style.display = visible ? '' : 'none';
+                });
+            }
         }
 
-        buttons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const value = btn.dataset.brandValue;
+        // Attach click listeners to all buttons (including sold-only ones)
+        function attachClickListeners() {
+            getAllButtons().forEach(btn => {
+                // Avoid double-attaching
+                if (btn.dataset.listenerAttached) return;
+                btn.dataset.listenerAttached = 'true';
 
-                if (value === 'all') {
-                    // Click "Todas" → deselect all individual brands
-                    buttons.forEach(b => b.classList.remove('brand-btn--active'));
-                    allBtn?.classList.add('brand-btn--active');
-                } else {
-                    // Toggle this individual brand
-                    btn.classList.toggle('brand-btn--active');
-                    // Deselect "Todas" when any individual brand is selected
-                    allBtn?.classList.remove('brand-btn--active');
+                btn.addEventListener('click', () => {
+                    const value = btn.dataset.brandValue;
 
-                    // If nothing is selected after toggle, re-activate "Todas"
-                    if (getSelectedBrands().size === 0) {
+                    if (value === 'all') {
+                        // Click "Todas" → deselect all individual brands
+                        getAllButtons().forEach(b => b.classList.remove('brand-btn--active'));
                         allBtn?.classList.add('brand-btn--active');
-                    }
-                }
+                    } else {
+                        // Toggle this individual brand
+                        btn.classList.toggle('brand-btn--active');
+                        // Deselect "Todas" when any individual brand is selected
+                        allBtn?.classList.remove('brand-btn--active');
 
-                filterCards();
+                        // If nothing is selected after toggle, re-activate "Todas"
+                        if (getSelectedBrands().size === 0) {
+                            allBtn?.classList.add('brand-btn--active');
+                        }
+                    }
+
+                    filterCards();
+                });
             });
-        });
+        }
+
+        attachClickListeners();
+
+        // Listen for sold toggle events to show/hide sold-only brand filters
+        document.addEventListener('sold-toggle', ((e: CustomEvent) => {
+            const expanded = e.detail?.expanded;
+            const soldOnlyBtns = container.querySelectorAll<HTMLButtonElement>('[data-sold-only="true"]');
+
+            soldOnlyBtns.forEach(btn => {
+                if (expanded) {
+                    btn.style.display = '';
+                } else {
+                    // Hide and deselect sold-only brand buttons
+                    btn.style.display = 'none';
+                    btn.classList.remove('brand-btn--active');
+                }
+            });
+
+            // Re-attach click listeners for any newly visible buttons
+            attachClickListeners();
+
+            // If a sold-only brand was selected and toggle closed, reset to "Todas"
+            if (!expanded && getSelectedBrands().size === 0) {
+                allBtn?.classList.add('brand-btn--active');
+            }
+
+            filterCards();
+        }) as EventListener);
     });
 </script>

@@ -37,7 +37,7 @@
 </div>
 
 <script>
-    // Mobile menu toggle functionality needs to re-run on view transitions if we use them later
+    // Mobile menu toggle functionality
     document.addEventListener('astro:page-load', () => {
         initMobileMenu();
     });
@@ -50,14 +50,30 @@
         const mobileMenu = document.getElementById('mobile-menu');
         const closeMenuBtn = document.getElementById('btn-close-menu');
 
-        if (menuBtn && mobileMenu && closeMenuBtn) {
-            menuBtn.addEventListener('click', () => {
-                mobileMenu.classList.remove('translate-x-full');
-            });
+        if (!menuBtn || !mobileMenu || !closeMenuBtn) return;
 
-            closeMenuBtn.addEventListener('click', () => {
+        menuBtn.addEventListener('click', () => {
+            mobileMenu.classList.remove('translate-x-full');
+        });
+
+        closeMenuBtn.addEventListener('click', () => {
+            mobileMenu.classList.add('translate-x-full');
+        });
+
+        // Close menu when any nav link is clicked
+        const navLinks = mobileMenu.querySelectorAll('nav a');
+        navLinks.forEach(link => {
+            link.addEventListener('click', () => {
                 mobileMenu.classList.add('translate-x-full');
             });
-        }
+        });
     }
+
+    // Also close on View Transition swap (safety net)
+    document.addEventListener('astro:before-swap', () => {
+        const mobileMenu = document.getElementById('mobile-menu');
+        if (mobileMenu) {
+            mobileMenu.classList.add('translate-x-full');
+        }
+    });
 </script>

@@ -14,8 +14,14 @@ if (!category) {
 const products = await getProducts({ categoryId: category.id });
 const pageTitle = `${category.name} | El Garaje de las Guitarras`;
 
-// Extract unique brands from products in this category
-const brands = [...new Set(products.map(p => p.brand || 'Otras'))].sort();
+// Split brands: available (shown by default) vs sold-only (shown when toggle opens)
+const availableProducts = products.filter(p => p.status !== 'vendido');
+const soldProducts = products.filter(p => p.status === 'vendido');
+
+const availableBrands = [...new Set(availableProducts.map(p => p.brand || 'Otras'))].sort();
+const soldOnlyBrands = [...new Set(soldProducts.map(p => p.brand || 'Otras'))]
+    .filter(b => !availableBrands.includes(b))
+    .sort();
 ---
 
 <CategoryLayout 
@@ -23,7 +29,8 @@ const brands = [...new Set(products.map(p => p.brand || 'Otras'))].sort();
     description={category.seo_description || category.description || ''}
     categoryName={category.name}
     categoryDescription={category.description}
-    brands={brands}
+    brands={availableBrands}
+    soldOnlyBrands={soldOnlyBrands}
 >
     {products.length > 0 ? (
         products.map(product => (

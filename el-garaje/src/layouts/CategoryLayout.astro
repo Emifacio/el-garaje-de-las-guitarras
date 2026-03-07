@@ -8,9 +8,10 @@ interface Props {
   categoryName: string;
   categoryDescription: string | null;
   brands: string[];
+  soldOnlyBrands?: string[];
 }
 
-const { title, description, categoryName, categoryDescription, brands } = Astro.props;
+const { title, description, categoryName, categoryDescription, brands, soldOnlyBrands = [] } = Astro.props;
 ---
 
 <BaseLayout title={title} description={description}>
@@ -28,7 +29,7 @@ const { title, description, categoryName, categoryDescription, brands } = Astro.
         <!-- Filters & Grid Layout -->
         <div class="flex flex-col lg:flex-row gap-12">
             <!-- Sidebar Filters -->
-            <FilterSidebar brands={brands} />
+            <FilterSidebar brands={brands} soldOnlyBrands={soldOnlyBrands} />
 
             <!-- Product Grid + Sold Toggle -->
             <div class="flex-1">
@@ -93,6 +94,9 @@ const { title, description, categoryName, categoryDescription, brands } = Astro.
             soldGrid.classList.toggle('hidden', !isExpanded);
             soldToggleIcon.textContent = isExpanded ? 'expand_less' : 'expand_more';
             soldToggleIcon.style.transform = isExpanded ? 'rotate(180deg)' : '';
+
+            // Dispatch event so FilterSidebar knows to show/hide sold-only brands
+            document.dispatchEvent(new CustomEvent('sold-toggle', { detail: { expanded: isExpanded } }));
         });
 
         // Listen for brand filter changes to also filter sold items
