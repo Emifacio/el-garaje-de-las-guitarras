@@ -5,7 +5,7 @@
     class="sticky top-0 z-50 flex flex-col gap-2 bg-background-light/98 dark:bg-background-dark/98 p-4 pb-2 border-b border-primary/20 shadow-lg shadow-black/50">
     <div class="flex items-center h-12 justify-between max-w-7xl mx-auto w-full">
         <!-- Mobile Menu Button -->
-        <button id="btn-menu"
+        <button id="btn-menu" aria-label="Toggle mobile menu" aria-expanded="false"
             class="lg:hidden flex size-12 shrink-0 items-center justify-center text-slate-800 dark:text-slate-200 hover:text-primary transition-colors">
             <span class="material-symbols-outlined text-3xl">menu</span>
         </button>
@@ -17,7 +17,7 @@
         </a>
 
         <!-- Desktop Navigation -->
-        <nav class="hidden lg:flex items-center gap-8">
+        <nav class="hidden lg:flex items-center gap-8" aria-label="Main navigation">
             <a href="/categoria/electricas"
                 class="text-sm font-bold tracking-widest uppercase hover:text-primary transition-colors">Eléctricas</a>
             <a href="/categoria/acusticas"
@@ -38,7 +38,7 @@
 
         <!-- Search / Cart Icons -->
         <div class="flex items-center justify-end gap-2">
-            <button type="button" data-role="search-button"
+            <button type="button" data-role="search-button" aria-label="Search"
                 class="flex items-center justify-center h-12 w-12 text-slate-800 dark:text-slate-200 hover:text-primary transition-colors">
                 <span class="material-symbols-outlined text-2xl">search</span>
             </button>

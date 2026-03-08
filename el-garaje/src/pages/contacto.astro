@@ -36,7 +36,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16">
                 </div>
                 <h2 class="font-serif text-2xl font-bold text-slate-100 mb-4 relative z-10">Envianos un mensaje</h2>
-                <p id="form-status" class="text-sm text-primary mb-4 hidden relative z-10"></p>
+                <p id="form-status" aria-live="polite" class="text-sm text-primary mb-4 hidden relative z-10"></p>
                 <form id="contact-form" class="flex flex-col gap-6 relative z-10" action="#" method="post" novalidate>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="flex flex-col gap-2">
@@ -96,10 +96,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
                 const formData = new FormData(contactForm);
                 const nombre = String(formData.get('nombre') || '').trim();
-                const email = String(formData.get('email') || '').trim();
+                const telefono = String(formData.get('telefono') || '').trim();
                 const mensaje = String(formData.get('mensaje') || '').trim();
 
-                if (!nombre || !email || !mensaje) {
+                if (!nombre || !telefono || !mensaje) {
                     statusEl.textContent = 'Por favor completá todos los campos obligatorios.';
                     statusEl.classList.remove('hidden');
                     statusEl.classList.remove('text-primary');

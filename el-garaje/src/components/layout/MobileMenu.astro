@@ -1,15 +1,15 @@
 ---
 ---
-<div id="mobile-menu"
+<div id="mobile-menu" role="dialog" aria-modal="true" aria-hidden="true"
     transition:persist="mobile-menu"
     class="fixed inset-0 z-[60] bg-background-dark/98 transform translate-x-full transition-transform duration-300 ease-in-out lg:hidden flex flex-col">
     <div class="flex justify-between items-center p-4 lg:p-6 border-b border-primary/10">
         <img src="/logo.jpg" alt="El Garaje de las Guitarras" class="h-10 w-auto object-contain" />
-        <button id="btn-close-menu" class="text-slate-400 hover:text-primary">
+        <button id="btn-close-menu" aria-label="Close menu" class="text-slate-400 hover:text-primary">
             <span class="material-symbols-outlined text-3xl">close</span>
         </button>
     </div>
-    <nav class="flex flex-col gap-6 p-8 overflow-y-auto">
+    <nav class="flex flex-col gap-6 p-8 overflow-y-auto" aria-label="Mobile navigation">
         <a href="/"
             class="text-2xl font-serif font-bold tracking-wide hover:text-primary transition-colors">Home</a>
         <a href="/categoria/electricas"
@@ -54,10 +54,14 @@
 
         menuBtn.addEventListener('click', () => {
             mobileMenu.classList.remove('translate-x-full');
+            mobileMenu.setAttribute('aria-hidden', 'false');
+            menuBtn.setAttribute('aria-expanded', 'true');
         });
 
         closeMenuBtn.addEventListener('click', () => {
             mobileMenu.classList.add('translate-x-full');
+            mobileMenu.setAttribute('aria-hidden', 'true');
+            menuBtn.setAttribute('aria-expanded', 'false');
         });
 
         // Close menu when any nav link is clicked
@@ -65,6 +69,8 @@
         navLinks.forEach(link => {
             link.addEventListener('click', () => {
                 mobileMenu.classList.add('translate-x-full');
+                mobileMenu.setAttribute('aria-hidden', 'true');
+                menuBtn.setAttribute('aria-expanded', 'false');
             });
         });
     }
@@ -72,8 +78,13 @@
     // Also close on View Transition swap (safety net)
     document.addEventListener('astro:before-swap', () => {
         const mobileMenu = document.getElementById('mobile-menu');
+        const menuBtn = document.getElementById('btn-menu');
         if (mobileMenu) {
             mobileMenu.classList.add('translate-x-full');
+            mobileMenu.setAttribute('aria-hidden', 'true');
+        }
+        if (menuBtn) {
+            menuBtn.setAttribute('aria-expanded', 'false');
         }
     });
 </script>

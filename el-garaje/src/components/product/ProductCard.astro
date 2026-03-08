@@ -23,9 +23,11 @@ const imageUrl = coverImage
     : 'https://images.unsplash.com/photo-1550291652-6ea9114a47b1?q=80&w=600&auto=format&fit=crop';
 
 const isSold = product.status === 'vendido';
+const ariaLabel = `${product.title}. ${isSold ? 'Vendido.' : `Precio: ${priceDisplay}`}`;
 ---
 
 <a href={`/producto/${product.slug}`}
+    aria-label={ariaLabel}
     data-brand={product.brand || 'Otras'}
     data-status={product.status}
     class="group flex flex-col bg-accent-dark/20 border border-primary/10 hover:border-primary/50 transition-all duration-300 rounded-sm overflow-hidden">

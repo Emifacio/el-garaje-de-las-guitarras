@@ -9,11 +9,12 @@ const featuredProducts = await getProducts({ isFeatured: true, limit: 3 });
 
 <BaseLayout title="El Garaje de las Guitarras - Inicio">
     <!-- Hero Carousel -->
-    <div class="relative w-full overflow-hidden" id="hero-carousel">
+    <div class="relative w-full overflow-hidden" id="hero-carousel" aria-label="Hero Carousel" aria-roledescription="carousel">
         <!-- Slides -->
         <div class="flex transition-transform duration-700 ease-in-out" id="carousel-track">
             <!-- Slide 1 -->
             <div class="w-full flex-shrink-0 relative min-h-[550px] md:min-h-[650px] lg:min-h-[720px] flex items-center justify-center bg-cover bg-center bg-no-repeat"
+                role="group" aria-roledescription="slide" aria-label="1 de 3"
                 style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBe_03E6Jf23rc7P9EMd_egkSpFN1oktVXpcsTf_w4J9Ud-hVEbIH02XbI0G8iBs7nUjX6HQtFdGExmPmWD2_d-j9Sxpslw7PaibxoN3xWEoOlC_5eDMnk0UIqW11Dlgqh1Y4uE2QziWS0-kIAqqM1KZFI2KVvMARdM-OXD7dwTRRJFfhLlQP8ps-Fs9Fg5JdzmV0RxA07cb-w3EkHoqtbexpR_yLZAtciMgFIpUA796KHKB0oNpoEtYrh4HRO5edbm-DS_ajPxxqs');">
                 <div class="absolute inset-0 bg-gradient-to-b from-background-dark/70 via-background-dark/40 to-background-dark/95"></div>
                 <div class="relative z-10 flex flex-col items-center gap-6 max-w-3xl mx-auto text-center px-6">
@@ -39,6 +40,7 @@ const featuredProducts = await getProducts({ isFeatured: true, limit: 3 });
 
             <!-- Slide 2 -->
             <div class="w-full flex-shrink-0 relative min-h-[550px] md:min-h-[650px] lg:min-h-[720px] flex items-center justify-center bg-cover bg-center bg-no-repeat"
+                role="group" aria-roledescription="slide" aria-label="2 de 3"
                 style="background-image: url('/CoverHero.jpeg');">
                 <div class="absolute inset-0 bg-gradient-to-b from-background-dark/70 via-accent-burgundy/30 to-background-dark/95"></div>
                 <div class="relative z-10 flex flex-col items-center gap-6 max-w-3xl mx-auto text-center px-6">
@@ -64,6 +66,7 @@ const featuredProducts = await getProducts({ isFeatured: true, limit: 3 });
 
             <!-- Slide 3 -->
             <div class="w-full flex-shrink-0 relative min-h-[550px] md:min-h-[650px] lg:min-h-[720px] flex items-center justify-center bg-cover bg-center bg-no-repeat"
+                role="group" aria-roledescription="slide" aria-label="3 de 3"
                 style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCmqNj2JacPW8EE_E-qKLVFd2oP4mfJq3VmIYFjYW8L2xM0BYsJYVLtClXCx7BWyoXWXnLALONLW-LJclLLCktwER8S4YDdnC3gV74iInLlDlsJ7CgL-jFQ_NCE7PlIUf0ai3jwlTYgaIJZ2QJ_zyKLzUll7adSQqglKzv_aWOXK6Irdyf__rBdZCQSvdiGQUCA7-xKy3XAH5eF2a9VgMwhqYCiFbzy7gBoPvVXV1mjfM0_J48Y82K-Ic6OP2GyEgZ2T7onqkaFl2Q');">
                 <div class="absolute inset-0 bg-gradient-to-b from-background-dark/70 via-background-dark/50 to-background-dark/95"></div>
                 <div class="relative z-10 flex flex-col items-center gap-6 max-w-3xl mx-auto text-center px-6">
@@ -89,18 +92,18 @@ const featuredProducts = await getProducts({ isFeatured: true, limit: 3 });
         </div>
 
         <!-- Navigation Arrows -->
-        <button id="carousel-prev" class="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-20 w-12 h-12 md:w-14 md:h-14 rounded-full bg-background-dark/50 border border-primary/30 backdrop-blur-sm flex items-center justify-center text-primary hover:bg-primary hover:text-background-dark transition-all duration-300 group">
+        <button id="carousel-prev" aria-label="Diapositiva anterior" class="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-20 w-12 h-12 md:w-14 md:h-14 rounded-full bg-background-dark/50 border border-primary/30 backdrop-blur-sm flex items-center justify-center text-primary hover:bg-primary hover:text-background-dark transition-all duration-300 group">
             <span class="material-symbols-outlined text-2xl group-hover:scale-110 transition-transform">chevron_left</span>
         </button>
-        <button id="carousel-next" class="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-20 w-12 h-12 md:w-14 md:h-14 rounded-full bg-background-dark/50 border border-primary/30 backdrop-blur-sm flex items-center justify-center text-primary hover:bg-primary hover:text-background-dark transition-all duration-300 group">
+        <button id="carousel-next" aria-label="Siguiente diapositiva" class="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-20 w-12 h-12 md:w-14 md:h-14 rounded-full bg-background-dark/50 border border-primary/30 backdrop-blur-sm flex items-center justify-center text-primary hover:bg-primary hover:text-background-dark transition-all duration-300 group">
             <span class="material-symbols-outlined text-2xl group-hover:scale-110 transition-transform">chevron_right</span>
         </button>
 
         <!-- Dot Indicators -->
         <div class="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-3" id="carousel-dots">
-            <button class="carousel-dot w-3 h-3 rounded-full bg-primary transition-all duration-300 scale-100" data-index="0"></button>
-            <button class="carousel-dot w-3 h-3 rounded-full bg-slate-500 hover:bg-primary/60 transition-all duration-300 scale-75" data-index="1"></button>
-            <button class="carousel-dot w-3 h-3 rounded-full bg-slate-500 hover:bg-primary/60 transition-all duration-300 scale-75" data-index="2"></button>
+            <button class="carousel-dot w-3 h-3 rounded-full bg-primary transition-all duration-300 scale-100" data-index="0" aria-label="Ir a diapositiva 1"></button>
+            <button class="carousel-dot w-3 h-3 rounded-full bg-slate-500 hover:bg-primary/60 transition-all duration-300 scale-75" data-index="1" aria-label="Ir a diapositiva 2"></button>
+            <button class="carousel-dot w-3 h-3 rounded-full bg-slate-500 hover:bg-primary/60 transition-all duration-300 scale-75" data-index="2" aria-label="Ir a diapositiva 3"></button>
         </div>
 
         <!-- Progress Bar -->
@@ -111,9 +114,9 @@ const featuredProducts = await getProducts({ isFeatured: true, limit: 3 });
 
     <!-- Featured Products Showcase -->
     {featuredProducts.length > 0 && (
-    <section id="featured-products" class="py-12 px-4 max-w-7xl mx-auto w-full">
+    <section id="featured-products" aria-labelledby="featured-heading" class="py-12 px-4 max-w-7xl mx-auto w-full">
         <div class="flex flex-col sm:flex-row items-center justify-between mb-10 border-b border-primary/20 pb-4">
-            <h2 class="font-serif text-3xl font-black tracking-wide text-slate-900 dark:text-slate-50 border-l-4 border-primary pl-4">
+            <h2 id="featured-heading" class="font-serif text-3xl font-black tracking-wide text-slate-900 dark:text-slate-50 border-l-4 border-primary pl-4">
                 Colección Destacada
             </h2>
             <a href="/categoria/electricas" class="text-sm font-bold text-primary hover:text-primary/80 uppercase tracking-widest flex items-center gap-2 mt-4 sm:mt-0 transition-colors">
@@ -129,9 +132,9 @@ const featuredProducts = await getProducts({ isFeatured: true, limit: 3 });
     )}
 
     <!-- Categories -->
-    <section id="categories" class="py-12 px-4 max-w-7xl mx-auto w-full">
+    <section id="categories" aria-labelledby="categories-heading" class="py-12 px-4 max-w-7xl mx-auto w-full">
         <div class="flex items-center justify-between mb-8 border-b border-primary/20 pb-4">
-            <h2
+            <h2 id="categories-heading"
                 class="font-serif text-2xl font-bold tracking-wide text-slate-900 dark:text-slate-50 border-l-4 border-primary pl-4">
                 Categorías
             </h2>
