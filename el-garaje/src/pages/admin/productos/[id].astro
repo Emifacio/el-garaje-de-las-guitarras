@@ -90,8 +90,43 @@ if (Astro.request.method === 'POST') {
 
         if (updateError) throw updateError;
 
-        // 4. Note: To keep things simple right now, advanced image deletion/relational updating
-        // is skipped in this quick-edit mode. We update the main text columns.
+        // 4. Handle Submitting Images (if any are present)
+        const imageFiles = formData.getAll('images') as File[];
+        const validImages = imageFiles.filter(file => file.size > 0 && file.name);
+
+        if (validImages.length > 0) {
+            // Get max sort_order
+            const { data: currentImages } = await supabase
+                .from('product_images')
+                .select('sort_order')
+                .eq('product_id', id)
+                .order('sort_order', { ascending: false })
+                .limit(1);
+            
+            let sortOrderCounter = currentImages && currentImages.length > 0 ? (currentImages[0].sort_order + 10) : 0;
+            
+            for (const file of validImages) {
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${id}/${crypto.randomUUID()}.${fileExt}`;
+                
+                const { error: uploadError, data } = await supabase.storage
+                    .from('product-images')
+                    .upload(fileName, file);
+
+                if (uploadError) {
+                    throw new Error(`Error al subir imagen ${file.name}: ${uploadError.message}`);
+                }
+
+                if (data?.path) {
+                    await supabase.from('product_images').insert({
+                        product_id: id,
+                        storage_path: data.path,
+                        sort_order: sortOrderCounter
+                    });
+                    sortOrderCounter += 10;
+                }
+            }
+        }
         
         successMsg = `¡Producto "${updateData.title}" actualizado con éxito!`;
         
@@ -154,7 +189,7 @@ const sortedImages = product.product_images?.sort((a: any, b: any) => a.sort_ord
         </div>
     )}
 
-    <form method="POST" class="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-12">
+    <form method="POST" enctype="multipart/form-data" class="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-12">
         <!-- Main Content Column -->
         <div class="lg:col-span-2 flex flex-col gap-6">
             <!-- Basic Info Card -->
@@ -208,21 +243,37 @@ const sortedImages = product.product_images?.sort((a: any, b: any) => a.sort_ord
                 </div>
             </div>
 
-            <!-- Existing Images Display (Read Only helper for now) -->
+            <!-- Existing Images Display -->
             <div class="bg-background-light/5 border border-primary/20 rounded-lg p-6">
-                <h2 class="font-serif text-xl font-bold text-slate-200 mb-6 border-b border-primary/10 pb-2">Imágenes Actuales</h2>
+                <h2 class="font-serif text-xl font-bold text-slate-200 mb-6 border-b border-primary/10 pb-2">Imágenes</h2>
+                
+                <!-- Existing Images -->
                 {sortedImages.length > 0 ? (
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
                         {sortedImages.map((img: any) => (
                             <div class="relative aspect-square rounded border border-primary/30 bg-background-dark overflow-hidden group">
                                 <img src={getPublicImageUrl(img.storage_path)} class="w-full h-full object-cover" alt="Product Image" />
                             </div>
                         ))}
                     </div>
-                    <p class="text-xs text-slate-500 mt-4">Nota: Para reemplazar imágenes temporalmente deberás eliminar el producto y volverlo a subir, o gestionarlo directamente desde el Storage de Supabase Panel.</p>
                 ) : (
-                    <p class="text-sm text-slate-500 italic">No hay imágenes asociadas a este producto.</p>
+                    <p class="text-sm text-slate-500 italic mb-6">No hay imágenes asociadas a este producto.</p>
                 )}
+
+                <!-- Upload New Images -->
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Añadir más fotos</label>
+                    <div class="relative w-full border-2 border-dashed border-primary/30 hover:border-primary/60 bg-background-dark/30 rounded-lg p-8 flex flex-col items-center justify-center text-center transition-colors cursor-pointer group">
+                        <span class="material-symbols-outlined text-4xl text-primary/50 group-hover:text-primary mb-3 transition-colors">add_photo_alternate</span>
+                        <span class="text-slate-300 font-medium font-sm mb-1">Haz clic para añadir archivos</span>
+                        <span class="text-slate-500 text-xs text-center px-4">Las fotos nuevas se agregarán al final. Formatos: JPG, PNG, WEBP.</span>
+                        <input type="file" name="images" id="images" multiple accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                    </div>
+                    <div id="image-preview" class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 empty:hidden">
+                        <!-- JS Will populate image previews here -->
+                    </div>
+                </div>
+                <p class="text-xs text-slate-500 mt-4 border-t border-primary/10 pt-4">Nota: Para eliminar imágenes deberás gestionarlo temporalmente desde el bucket "product-images" en Supabase.</p>
             </div>
         </div>
 
@@ -314,12 +365,36 @@ const sortedImages = product.product_images?.sort((a: any, b: any) => a.sort_ord
 <script>
     // Client-side interactions
     document.addEventListener('astro:page-load', () => {
+        // Image preview logic
+        const imageInput = document.getElementById('images') as HTMLInputElement;
+        const previewContainer = document.getElementById('image-preview');
+
+        imageInput?.addEventListener('change', (e) => {
+            if (!previewContainer) return;
+            previewContainer.innerHTML = ''; // Clear prev previews
+
+            const files = (e.target as HTMLInputElement).files;
+            if (!files || files.length === 0) return;
+
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const url = e.target?.result as string;
+                    const div = document.createElement('div');
+                    div.className = "aspect-square rounded border border-primary/20 bg-background-dark overflow-hidden";
+                    div.innerHTML = `<img src="${url}" class="w-full h-full object-cover opacity-80" alt="Preview" />`;
+                    previewContainer.appendChild(div);
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+
         // Form loading state
         const form = document.querySelector('form');
         const btn = document.getElementById('updateBtn');
         form?.addEventListener('submit', () => {
             if(btn) {
-                btn.innerHTML = `<span class="material-symbols-outlined animate-spin">refresh</span> Actualizando...`;
+                btn.innerHTML = `<span class="material-symbols-outlined animate-spin">refresh</span> Guardando...`;
                 btn.classList.add('opacity-70', 'pointer-events-none');
             }
         });
