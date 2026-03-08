@@ -1,0 +1,165 @@
+---
+import { getCartItems } from '../../lib/cartStore';
+---
+
+<!-- Overlay/Backdrop -->
+<div id="cart-backdrop" class="fixed inset-0 bg-background-dark/80 backdrop-blur-sm z-50 hidden opacity-0 transition-opacity duration-300"></div>
+
+<!-- Drawer Panel -->
+<div id="cart-drawer" class="fixed top-0 right-0 h-full w-full sm:w-[400px] bg-background-light dark:bg-background-dark border-l border-primary/20 shadow-[-10px_0_30px_rgba(0,0,0,0.5)] z-50 transform translate-x-full transition-transform duration-300 flex flex-col">
+    
+    <!-- Header -->
+    <div class="flex items-center justify-between p-6 border-b border-primary/20">
+        <h2 class="font-serif text-2xl font-black tracking-wide flex items-center gap-3">
+            <span class="material-symbols-outlined text-primary text-3xl">shopping_cart</span>
+            Tu Garaje
+        </h2>
+        <button id="cart-close" class="text-slate-400 hover:text-primary transition-colors p-2 flex items-center justify-center rounded-full hover:bg-primary/10">
+            <span class="material-symbols-outlined text-2xl">close</span>
+        </button>
+    </div>
+
+    <!-- Items List Container -->
+    <div class="flex-1 overflow-y-auto p-6 flex flex-col gap-6" id="cart-items-container">
+        <!-- Rendered via JS -->
+    </div>
+
+    <!-- Empty State Template -->
+    <template id="cart-empty-template">
+        <div class="flex flex-col items-center justify-center text-center h-full gap-4 text-slate-400 opacity-60 mt-12">
+            <span class="material-symbols-outlined text-6xl">inventory_2</span>
+            <p class="font-serif text-lg">Tu garaje está vacío.</p>
+        </div>
+    </template>
+
+    <!-- Cart Item Template -->
+    <template id="cart-item-template">
+        <div class="cart-item flex gap-4 bg-accent-dark/20 p-3 rounded-sm border border-primary/10 relative group">
+            <a href="#" class="cart-item-link shrink-0">
+                <div class="w-20 h-20 rounded-sm bg-slate-800 bg-cover bg-center border border-primary/20 cart-item-img"></div>
+            </a>
+            <div class="flex flex-col justify-center gap-1 pr-6 w-full">
+                <a href="#" class="cart-item-link">
+                    <h3 class="font-bold text-sm text-slate-100 hover:text-primary transition-colors cart-item-title line-clamp-2"></h3>
+                </a>
+                <p class="text-primary text-sm font-bold cart-item-price mb-1"></p>
+                <a href="#" target="_blank" rel="noopener noreferrer" class="cart-item-reserve max-w-[max-content] inline-flex items-center gap-1 text-[10px] font-bold tracking-widest uppercase text-slate-300 hover:text-[#25D366] transition-colors border border-slate-700 hover:border-[#25D366] px-2 py-1 rounded-[2px] bg-background-dark/50">
+                    <span class="material-symbols-outlined text-[14px]">bookmark</span> Reservar
+                </a>
+            </div>
+            <button class="cart-item-remove absolute top-2 right-2 text-slate-500 hover:text-accent-burgundy transition-colors p-1" aria-label="Eliminar del carrito" data-id="">
+                <span class="material-symbols-outlined text-lg">delete</span>
+            </button>
+        </div>
+    </template>
+
+    <!-- Footer / Checkout -->
+    <div class="p-6 border-t border-primary/20 bg-background-light dark:bg-background-dark">
+        <div id="cart-footer-totals" class="mb-4">
+            <!-- Totals could go here if we had clean numbers, but string prices vary, so we omit a fixed total to avoid errors -->
+            <p class="text-slate-400 text-xs italic text-center mb-2">Una vez confirmados, nos comunicaremos para coordinar el pago y envío.</p>
+        </div>
+        <a id="cart-checkout-btn" href="#" target="_blank" rel="noopener noreferrer" class="w-full h-14 bg-[#25D366] text-white text-sm font-bold tracking-widest uppercase hover:bg-[#25D366]/90 transition-all border border-[#25D366] rounded-sm flex items-center justify-center gap-3 shadow-lg shadow-[#25D366]/20">
+            Cerrar pedido por WhatsApp
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.890-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        </a>
+    </div>
+</div>
+
+<script>
+    import { getCartItems, removeFromCart, type CartItem } from '../../lib/cartStore';
+    import { generateCartWhatsAppUrl, generateWhatsAppUrl } from '../../lib/whatsapp';
+
+    function initCartUI() {
+        const backdrop = document.getElementById('cart-backdrop');
+        const drawer = document.getElementById('cart-drawer');
+        const closeBtn = document.getElementById('cart-close');
+        const triggers = document.querySelectorAll('.cart-toggle-btn');
+        const container = document.getElementById('cart-items-container');
+        const emptyTemplate = document.getElementById('cart-empty-template') as HTMLTemplateElement;
+        const itemTemplate = document.getElementById('cart-item-template') as HTMLTemplateElement;
+        const checkoutBtn = document.getElementById('cart-checkout-btn') as HTMLAnchorElement;
+
+        if (!backdrop || !drawer || !container) return;
+
+        // Toggle Drawer
+        function openCart() {
+            backdrop.classList.remove('hidden');
+            // small delay to allow display:block to apply before transition
+            setTimeout(() => {
+                backdrop.classList.remove('opacity-0');
+                drawer.classList.remove('translate-x-full');
+            }, 10);
+            renderCart();
+        }
+
+        function closeCart() {
+            backdrop.classList.add('opacity-0');
+            drawer.classList.add('translate-x-full');
+            setTimeout(() => {
+                backdrop.classList.add('hidden');
+            }, 300); // match duration-300
+        }
+
+        // Render Cart Items
+        function renderCart() {
+            const items = getCartItems();
+            container.innerHTML = '';
+
+            if (items.length === 0) {
+                container.appendChild(emptyTemplate.content.cloneNode(true));
+                checkoutBtn.classList.add('opacity-50', 'pointer-events-none');
+            } else {
+                checkoutBtn.classList.remove('opacity-50', 'pointer-events-none');
+                
+                items.forEach((item: CartItem) => {
+                    const el = itemTemplate.content.cloneNode(true) as DocumentFragment;
+                    
+                    const img = el.querySelector('.cart-item-img') as HTMLElement;
+                    img.style.backgroundImage = `url('${item.image_url}')`;
+                    
+                    const title = el.querySelector('.cart-item-title') as HTMLElement;
+                    title.textContent = item.title;
+
+                    const price = el.querySelector('.cart-item-price') as HTMLElement;
+                    price.textContent = item.price_display || `U$D ${item.price?.toLocaleString() || 'N/A'}`;
+
+                    const links = el.querySelectorAll('.cart-item-link');
+                    links.forEach(link => link.setAttribute('href', `/producto/${item.slug}`));
+
+                    const reserveBtn = el.querySelector('.cart-item-reserve') as HTMLAnchorElement;
+                    if (reserveBtn) {
+                        reserveBtn.href = generateWhatsAppUrl('reservar', item.title);
+                    }
+
+                    const removeBtn = el.querySelector('.cart-item-remove') as HTMLElement;
+                    removeBtn.setAttribute('data-id', item.id);
+                    removeBtn.addEventListener('click', () => {
+                        removeFromCart(item.id);
+                        // Re-render implicitly handled because custom event listener triggers it
+                    });
+
+                    container.appendChild(el);
+                });
+            }
+
+            // Update WhatsApp Link
+            checkoutBtn.href = generateCartWhatsAppUrl(items);
+        }
+
+        // Listeners
+        triggers.forEach(t => t.addEventListener('click', openCart));
+        closeBtn?.addEventListener('click', closeCart);
+        backdrop.addEventListener('click', closeCart);
+
+        // Global Event listener for cart updates so UI stays in sync without page refresh
+        window.addEventListener('cart-updated', () => {
+            renderCart();
+            openCart(); // Auto-open when adding something
+        });
+    }
+
+    // Run on Astro page load (transitions)
+    document.addEventListener('astro:page-load', initCartUI);
+    initCartUI(); // Initial run
+</script>

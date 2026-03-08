@@ -26,6 +26,20 @@ export function generateWhatsAppUrl(
     return `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(message)}`;
 }
 
+/**
+ * Generates a WhatsApp URL for an entire shopping cart
+ */
+export function generateCartWhatsAppUrl(items: { title: string }[]): string {
+    if (items.length === 0) return WHATSAPP_DIRECT_URL;
+
+    let message = `Hola, me interesa comprar los siguientes artículos que vi en la web:\n\n`;
+    items.forEach(item => {
+        message += `- ${item.title}\n`;
+    });
+
+    return `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(message)}`;
+}
+
 /** Direct WhatsApp link (no message) for floating button */
 export const WHATSAPP_DIRECT_URL = `https://wa.me/${WHATSAPP_PHONE}`;
 

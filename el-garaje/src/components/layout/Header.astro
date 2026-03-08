@@ -39,8 +39,13 @@
         <!-- Search / Cart Icons -->
         <div class="flex items-center justify-end gap-2">
             <button type="button" data-role="search-button" aria-label="Search"
-                class="flex items-center justify-center h-12 w-12 text-slate-800 dark:text-slate-200 hover:text-primary transition-colors">
+                class="flex items-center justify-center h-12 w-12 text-slate-800 dark:text-slate-200 hover:text-primary transition-colors hover:scale-110">
                 <span class="material-symbols-outlined text-2xl">search</span>
+            </button>
+            <button type="button" id="header-cart-btn" aria-label="Shopping Cart"
+                class="cart-toggle-btn relative flex items-center justify-center h-12 w-12 text-slate-800 dark:text-slate-200 hover:text-primary transition-colors hover:scale-110">
+                <span class="material-symbols-outlined text-2xl">shopping_cart</span>
+                <span id="cart-badge" class="absolute top-2 right-1 bg-accent-burgundy text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center hidden">0</span>
             </button>
             <a href="/contacto"
                 class="hidden md:flex h-10 px-6 items-center justify-center rounded-sm bg-primary/10 text-primary text-xs font-bold tracking-widest uppercase hover:bg-primary hover:text-background-dark transition-all border border-primary/50 ml-4">
@@ -49,3 +54,33 @@
         </div>
     </div>
 </header>
+
+<script>
+    import { getCartItems } from '../../lib/cartStore';
+
+    function initCartBadge() {
+        const badge = document.getElementById('cart-badge');
+        if (!badge) return;
+
+        function updateBadge() {
+            const items = getCartItems();
+            if (items.length > 0) {
+                badge.textContent = items.length.toString();
+                badge.classList.remove('hidden');
+                
+                // Animate pop
+                badge.classList.add('scale-150');
+                setTimeout(() => badge.classList.remove('scale-150'), 200);
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        // Keep updated
+        window.addEventListener('cart-updated', updateBadge);
+        updateBadge();
+    }
+
+    document.addEventListener('astro:page-load', initCartBadge);
+    initCartBadge(); // For non-transition loads
+</script>
