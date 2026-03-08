@@ -19,8 +19,8 @@ if (!product) {
 const priceDisplay = product.price_display || (product.price ? `U$D ${product.price.toLocaleString()}` : 'U$D 9.999.999,99');
 
 // WhatsApp URLs
-const reservarUrl = generateWhatsAppUrl('reservar', product.title, product.id);
-const comprarUrl = generateWhatsAppUrl('comprar', product.title, product.id);
+const reservarUrl = generateWhatsAppUrl('reservar', product.title);
+const comprarUrl = generateWhatsAppUrl('comprar', product.title);
 
 const isSold = product.status === 'vendido';
 

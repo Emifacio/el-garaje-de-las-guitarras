@@ -13,10 +13,10 @@ export function generateWhatsAppUrl(
 ): string {
     let message = '';
 
-    if (action === 'reservar' && productTitle && productId) {
-        message = `Hola, me interesa *reservar* la ${productTitle} (ID: ${productId}) que vi en la web.`;
-    } else if (action === 'comprar' && productTitle && productId) {
-        message = `Hola, me interesa *comprar* la ${productTitle} (ID: ${productId}) que vi en la web.`;
+    if (action === 'reservar' && productTitle) {
+        message = `Hola, me interesa *reservar* la ${productTitle} que vi en la web.`;
+    } else if (action === 'comprar' && productTitle) {
+        message = `Hola, me interesa *comprar* la ${productTitle} que vi en la web.`;
     } else if (action === 'consulta_consignacion') {
         message = `Hola, me interesa consignar un instrumento a través de El Garaje. Vi la info en la web.`;
     } else {
