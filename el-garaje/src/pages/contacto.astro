@@ -37,7 +37,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 </div>
                 <h2 class="font-serif text-2xl font-bold text-slate-100 mb-4 relative z-10">Envianos un mensaje</h2>
                 <p id="form-status" aria-live="polite" class="text-sm text-primary mb-4 hidden relative z-10"></p>
-                <form id="contact-form" class="flex flex-col gap-6 relative z-10" action="#" method="post" novalidate>
+                <form id="contact-form" class="flex flex-col gap-6 relative z-10" action="https://formspree.io/f/mzdjznnq" method="POST">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="flex flex-col gap-2">
                             <label for="nombre" class="text-xs font-bold text-slate-400 uppercase tracking-widest">Nombre</label>
@@ -91,7 +91,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         const statusEl = document.getElementById('form-status');
 
         if (contactForm && statusEl) {
-            contactForm.addEventListener('submit', (event) => {
+            contactForm.addEventListener('submit', async (event) => {
                 event.preventDefault();
 
                 const formData = new FormData(contactForm);
@@ -99,6 +99,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                 const telefono = String(formData.get('telefono') || '').trim();
                 const mensaje = String(formData.get('mensaje') || '').trim();
 
+                // Client-side validation
                 if (!nombre || !telefono || !mensaje) {
                     statusEl.textContent = 'Por favor completá todos los campos obligatorios.';
                     statusEl.classList.remove('hidden');
@@ -107,12 +108,45 @@ import BaseLayout from '../layouts/BaseLayout.astro';
                     return;
                 }
 
-                // Show success message
-                contactForm.reset();
-                statusEl.textContent = 'Gracias, recibimos tu mensaje. Te contactaremos a la brevedad.';
-                statusEl.classList.remove('hidden');
-                statusEl.classList.remove('text-red-400');
-                statusEl.classList.add('text-primary');
+                // Disable submit button during submission
+                const submitBtn = contactForm.querySelector('button[type="submit"]') as HTMLButtonElement;
+                const originalText = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = 'Enviando... <span class="material-symbols-outlined text-lg animate-spin">progress_activity</span>';
+
+                try {
+                    // Submit to Formspree
+                    const response = await fetch(contactForm.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+
+                    if (response.ok) {
+                        // Success
+                        contactForm.reset();
+                        statusEl.textContent = 'Gracias, recibimos tu mensaje. Te contactaremos a la brevedad.';
+                        statusEl.classList.remove('hidden', 'text-red-400');
+                        statusEl.classList.add('text-primary');
+                    } else {
+                        // Error from Formspree
+                        const data = await response.json();
+                        statusEl.textContent = data.error || 'Hubo un error al enviar el mensaje. Por favor intentá nuevamente.';
+                        statusEl.classList.remove('hidden', 'text-primary');
+                        statusEl.classList.add('text-red-400');
+                    }
+                } catch (error) {
+                    // Network error
+                    statusEl.textContent = 'Error de conexión. Por favor verificá tu internet e intentá nuevamente.';
+                    statusEl.classList.remove('hidden', 'text-primary');
+                    statusEl.classList.add('text-red-400');
+                } finally {
+                    // Re-enable submit button
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                }
             });
         }
     }
