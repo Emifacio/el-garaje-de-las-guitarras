@@ -3,7 +3,7 @@
 <header
     transition:persist="main-header"
     class="sticky top-0 z-50 flex flex-col gap-2 bg-background-light/98 dark:bg-background-dark/98 p-4 pb-2 border-b border-primary/20 shadow-lg shadow-black/50">
-    <div class="flex items-center h-12 justify-between max-w-7xl mx-auto w-full">
+    <div class="flex items-center h-12 justify-between max-w-7xl mx-auto w-full relative">
         <!-- Mobile Menu Button -->
         <button id="btn-menu" aria-label="Toggle mobile menu" aria-expanded="false"
             class="lg:hidden flex size-12 shrink-0 items-center justify-center text-slate-800 dark:text-slate-200 hover:text-primary transition-colors">
@@ -12,7 +12,7 @@
 
         <!-- Logo -->
         <a href="/"
-            class="flex items-center drop-shadow-md">
+            class="absolute left-1/2 -translate-x-1/2 lg:static lg:translate-x-0 flex items-center drop-shadow-md scale-101 lg:mr-4 flex-shrink-0">
             <img src="/logo.jpg" alt="El Garaje de las Guitarras" class="h-12 lg:h-16 w-auto object-contain" />
         </a>
 
