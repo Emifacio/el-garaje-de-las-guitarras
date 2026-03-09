@@ -63,20 +63,29 @@ import { APP_VERSION } from '../../config/version';
         if (!_uc.baseVersion) return;
 
         const currentVersion = _uc.baseVersion;
+        const debug = new URLSearchParams(window.location.search).has('debug_version');
 
         async function checkForUpdate() {
             if (_uc.dismissed) return;
             try {
-                const res = await fetch('/version.json', {
+                // Add timestamp to bust cache
+                const res = await fetch(`/version.json?v=${Date.now()}`, {
                     cache: 'no-store',
                     headers: { 'Cache-Control': 'no-cache' },
                 });
                 if (!res.ok) return;
                 const data = await res.json();
+                
+                if (debug) {
+                    console.log('[UpdateChecker] Page:', currentVersion, 'Remote:', data.version);
+                }
+
                 if (data.version && data.version !== currentVersion) {
+                    console.log('[UpdateChecker] New version detected:', data.version);
                     showBanner();
                 }
-            } catch {
+            } catch (err) {
+                if (debug) console.error('[UpdateChecker] Error:', err);
                 // Silently fail — network issues shouldn't bother the user
             }
         }

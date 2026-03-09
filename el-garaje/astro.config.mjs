@@ -7,21 +7,25 @@ import sitemap from '@astrojs/sitemap';
 import vercel from '@astrojs/vercel';
 import criticalCssIntegration from './src/integrations/critical-css';
 import versionFile from './src/integrations/version-file';
-import { APP_VERSION } from './src/config/version';
 import { assetLoaderConfig } from './src/config/asset-loader.config';
+
+const buildVersion = Date.now().toString(36);
 
 // https://astro.build/config
 export default defineConfig({
   site: 'https://www.elgarajedelasguitarras.com',
   vite: {
-    plugins: [tailwindcss()]
+    plugins: [tailwindcss()],
+    define: {
+      'import.meta.env.BUILD_VERSION': JSON.stringify(buildVersion)
+    }
   },
   integrations: [
     sitemap(),
     criticalCssIntegration({
       inlineThreshold: assetLoaderConfig.criticalCSS.inlineThreshold
     }),
-    versionFile(APP_VERSION),
+    versionFile(buildVersion),
   ],
   output: 'static',
   adapter: vercel(),
