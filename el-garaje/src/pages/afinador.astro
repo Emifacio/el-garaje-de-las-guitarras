@@ -1,0 +1,58 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import GuitarTuner from '../components/tools/GuitarTuner.astro';
+
+// SEO Metadatos para el afinador
+const title = "Afinador de Guitarra Online | El Garaje de las Guitarras";
+const description = "Afina tu guitarra eléctrica, acústica o bajo en tiempo real directo desde tu navegador con nuestra herramienta gratuita.";
+---
+
+<BaseLayout title={title} description={description}>
+    <main class="py-12 px-6 sm:px-12 md:py-24">
+        <div class="max-w-7xl mx-auto space-y-16">
+            
+            <!-- Encabezado de la Herramienta -->
+            <section class="max-w-3xl mx-auto text-center space-y-6">
+                <div class="inline-flex items-center gap-2 px-4 py-2 border border-primary/30 rounded-full bg-primary/5 mb-4">
+                    <span class="material-symbols-outlined text-primary text-sm">tune</span>
+                    <span class="text-xs font-bold tracking-widest uppercase text-slate-300">Herramienta Gratuita</span>
+                </div>
+                
+                <h1 class="font-serif text-4xl sm:text-5xl md:text-6xl font-black tracking-wide text-slate-100 drop-shadow-lg" id="tuner-heading">
+                    Afinador de Guitarra
+                </h1>
+                
+                <p class="text-slate-400 text-lg md:text-xl font-light leading-relaxed max-w-2xl mx-auto">
+                    Afinación de alta precisión en tiempo real directamente desde tu micrófono sin necesidad de descargar nada.
+                </p>
+            </section>
+
+            <!-- Afinador Interactivo Componente -->
+            <section aria-labelledby="tuner-heading" class="max-w-4xl mx-auto flex justify-center w-full">
+                <GuitarTuner />
+            </section>
+
+            <!-- Guide Section -->
+            <section class="max-w-3xl mx-auto bg-background-light/5 border border-primary/10 p-8 rounded-sm">
+                <h2 class="font-serif text-2xl font-bold text-slate-200 mb-6">Instrucciones de Afinación Estándar (E A D G B E)</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-slate-400 text-sm leading-relaxed">
+                    <div>
+                        <p class="mb-4">Para lograr la afinación más estable, recuerda siempre afinar <strong>hacia arriba</strong> (tensando la cuerda). Si te pasas, afloja la cuerda por debajo del tono y vuelve a subir rectificando la tensión.</p>
+                        <p>Asegúrate de conceder permisos de micrófono a tu navegador cuando se te solicite por primera vez. Ningún audio se almacena o procesa fuera de tu dispositivo local.</p>
+                    </div>
+                    <div>
+                        <ul class="space-y-3 font-mono">
+                            <li class="flex items-center gap-4"><span class="w-8 h-8 rounded-full bg-background-dark border border-primary/30 flex items-center justify-center font-bold text-primary">1</span> E4 (Mi aguda) - ~329.6 Hz</li>
+                            <li class="flex items-center gap-4"><span class="w-8 h-8 rounded-full bg-background-dark border border-primary/30 flex items-center justify-center font-bold text-primary">2</span> B3 (Si) - ~246.9 Hz</li>
+                            <li class="flex items-center gap-4"><span class="w-8 h-8 rounded-full bg-background-dark border border-primary/30 flex items-center justify-center font-bold text-primary">3</span> G3 (Sol) - ~196.0 Hz</li>
+                            <li class="flex items-center gap-4"><span class="w-8 h-8 rounded-full bg-background-dark border border-primary/30 flex items-center justify-center font-bold text-primary">4</span> D3 (Re) - ~146.8 Hz</li>
+                            <li class="flex items-center gap-4"><span class="w-8 h-8 rounded-full bg-background-dark border border-primary/30 flex items-center justify-center font-bold text-primary">5</span> A2 (La) - ~110.0 Hz</li>
+                            <li class="flex items-center gap-4"><span class="w-8 h-8 rounded-full bg-background-dark border border-primary/30 flex items-center justify-center font-bold text-primary">6</span> E2 (Mi grave) - ~82.4 Hz</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+            
+        </div>
+    </main>
+</BaseLayout>

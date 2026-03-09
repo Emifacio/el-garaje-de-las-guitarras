@@ -1,0 +1,250 @@
+---
+import 'pitchy'; // ensures bundler knows about it if needed, though we'll import in client script
+---
+
+<div class="guitar-tuner bg-background-dark/95 border border-primary/20 rounded-xl p-8 md:p-12 shadow-2xl flex flex-col items-center relative overflow-hidden max-w-2xl mx-auto w-full">
+    <!-- Decorative background glow -->
+    <div class="absolute inset-0 bg-gradient-radial from-primary/5 to-transparent pointer-events-none"></div>
+
+    <!-- State: Initial Promp -->
+    <div id="tuner-start-screen" class="flex flex-col items-center justify-center w-full h-80 z-10 transition-opacity duration-300">
+        <span class="material-symbols-outlined text-6xl text-primary/80 mb-6 drop-shadow-[0_0_15px_rgba(217,184,112,0.3)]">mic</span>
+        <h3 class="font-serif text-2xl text-slate-200 mb-2">Permitir Micrófono</h3>
+        <p class="text-slate-400 text-sm mb-8 text-center max-w-sm">
+            Necesitamos acceso a tu micrófono para escuchar tu instrumento. No se graba ni se envía ningún sonido.
+        </p>
+        <button id="btn-start-tuner" class="bg-primary text-background-dark font-bold uppercase tracking-widest px-8 py-4 rounded-sm hover:scale-105 transition-transform flex items-center gap-3 shadow-lg shadow-primary/20">
+            Encender Afinador
+            <span class="material-symbols-outlined">power_settings_new</span>
+        </button>
+        <p id="tuner-error" class="text-red-400 text-sm mt-4 hidden text-center px-4"></p>
+    </div>
+
+    <!-- State: Active Tuner UI -->
+    <div id="tuner-active-screen" class="hidden flex-col items-center w-full ml-12 z-10 opacity-0 transition-opacity duration-500">
+        
+        <!-- Detected Note Display -->
+        <div class="relative flex items-center justify-center mb-12 mt-4">
+            <div class="absolute inset-0 bg-primary/10 rounded-full blur-2xl scale-150 transition-colors duration-200" id="glow-indicator"></div>
+            <div class="relative z-10 flex flex-col items-center">
+                <span id="note-display" class="font-serif text-[8rem] leading-none font-black text-slate-100 drop-shadow-lg transition-colors duration-200">
+                    -
+                </span>
+                <span id="octave-display" class="font-mono text-xl text-primary font-bold mt-[-10px] bg-background-dark px-2 border border-primary/30 rounded">
+                    #
+                </span>
+            </div>
+        </div>
+
+        <!-- Tuning Gauge -->
+        <div class="w-full max-w-md relative mb-12">
+            <!-- Ticks background -->
+            <div class="flex justify-between w-full px-4 mb-2">
+                <span class="text-xs text-slate-500 font-bold tracking-widest">-50</span>
+                <span class="text-xs text-primary font-bold tracking-widest">0</span>
+                <span class="text-xs text-slate-500 font-bold tracking-widest">+50</span>
+            </div>
+            
+            <div class="h-3 w-full bg-slate-800/80 rounded-full overflow-hidden relative border border-slate-700/50 shadow-inner">
+                <!-- Center perfect line -->
+                <div class="absolute left-1/2 top-0 bottom-0 w-0.5 bg-primary/50 -translate-x-1/2 z-10"></div>
+                
+                <!-- Moving Indicator -->
+                <div id="tuning-needle" class="absolute top-0 bottom-0 w-3 bg-red-500 rounded-full shadow-[0_0_10px_rgba(239,68,68,0.8)] -translate-x-1/2 transition-all duration-75 ease-out" style="left: 50%;"></div>
+            </div>
+
+            <!-- Cents readout -->
+            <div class="mt-4 flex justify-between items-center text-sm font-mono">
+                <span class="text-slate-400" id="hz-display">0.0 Hz</span>
+                <span class="font-bold text-slate-300" id="cents-display">0 ¢</span>
+            </div>
+        </div>
+
+        <button id="btn-stop-tuner" class="text-xs font-bold uppercase tracking-widest text-slate-500 hover:text-red-400 transition-colors flex items-center gap-2">
+            <span class="material-symbols-outlined text-[1rem]">mic_off</span>
+            Apagar
+        </button>
+    </div>
+</div>
+
+<script>
+    import { PitchDetector } from 'pitchy';
+
+    // Standard musical notes
+    const NOTE_STRINGS = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+
+    function getNoteFromFrequency(frequency: number) {
+        // A4 = 440 Hz
+        const noteNum = 12 * (Math.log(frequency / 440) / Math.log(2));
+        const midiNote = Math.round(noteNum) + 69;
+        
+        const octave = Math.floor(midiNote / 12) - 1;
+        const noteName = NOTE_STRINGS[midiNote % 12];
+        
+        // Calculate exact frequency of the closest ideal note
+        const idealFreq = 440 * Math.pow(2, (midiNote - 69) / 12);
+        
+        // Calculate cents offset
+        const cents = Math.floor(1200 * Math.log2(frequency / idealFreq));
+
+        return {
+            noteName,
+            octave,
+            cents,
+            frequency
+        };
+    }
+
+    document.addEventListener('astro:page-load', () => {
+        const startScreen = document.getElementById('tuner-start-screen');
+        const activeScreen = document.getElementById('tuner-active-screen');
+        const btnStart = document.getElementById('btn-start-tuner');
+        const btnStop = document.getElementById('btn-stop-tuner');
+        const errorText = document.getElementById('tuner-error');
+
+        // UI Elements
+        const noteDisplay = document.getElementById('note-display');
+        const octaveDisplay = document.getElementById('octave-display');
+        const hzDisplay = document.getElementById('hz-display');
+        const centsDisplay = document.getElementById('cents-display');
+        const tuningNeedle = document.getElementById('tuning-needle');
+        const glowIndicator = document.getElementById('glow-indicator');
+
+        if (!startScreen || !btnStart) return;
+
+        let audioContext: AudioContext | null = null;
+        let analyser: AnalyserNode | null = null;
+        let microphone: MediaStreamAudioSourceNode | null = null;
+        let stream: MediaStream | null = null;
+        let isTuning = false;
+        let animationFrameId: number;
+
+        async function startTuner() {
+            try {
+                if (errorText) errorText.classList.add('hidden');
+                
+                stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                
+                audioContext = new window.AudioContext();
+                analyser = audioContext.createAnalyser();
+                microphone = audioContext.createMediaStreamSource(stream);
+                
+                microphone.connect(analyser);
+                analyser.fftSize = 2048;
+
+                const detector = PitchDetector.forFloat32Array(analyser.fftSize);
+                const inputBuffer = new Float32Array(detector.inputLength);
+
+                isTuning = true;
+                
+                // Switch UI
+                startScreen!.classList.add('hidden');
+                activeScreen!.classList.remove('hidden');
+                setTimeout(() => activeScreen!.classList.remove('opacity-0'), 50);
+
+                function loop() {
+                    if (!isTuning || !analyser) return;
+
+                    analyser.getFloatTimeDomainData(inputBuffer);
+                    const [pitch, clarity] = detector.findPitch(inputBuffer, audioContext!.sampleRate);
+
+                    // Threshold for volume/clarity to filter out background noise
+                    if (clarity > 0.8 && pitch > 40 && pitch < 2000) {
+                        updateUI(pitch);
+                    } else {
+                        // Fade out old note slowly if no strings ringing
+                        if (noteDisplay) noteDisplay.style.opacity = '0.3';
+                    }
+
+                    animationFrameId = requestAnimationFrame(loop);
+                }
+
+                loop();
+
+            } catch (err: any) {
+                console.error("Mic Error:", err);
+                if (errorText) {
+                    errorText.textContent = "Error accediendo al micrófono. Verifica los permisos de tu navegador.";
+                    errorText.classList.remove('hidden');
+                }
+            }
+        }
+
+        function stopTuner() {
+            isTuning = false;
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            
+            if (microphone) microphone.disconnect();
+            if (analyser) analyser.disconnect();
+            if (audioContext) audioContext.close();
+            if (stream) stream.getTracks().forEach(track => track.stop());
+
+            // Switch UI back
+            activeScreen!.classList.add('opacity-0');
+            setTimeout(() => {
+                activeScreen!.classList.add('hidden');
+                startScreen!.classList.remove('hidden');
+            }, 500);
+        }
+
+        function updateUI(frequency: number) {
+            const data = getNoteFromFrequency(frequency);
+            
+            if (noteDisplay) {
+                noteDisplay.textContent = data.noteName;
+                noteDisplay.style.opacity = '1';
+                
+                // Color grading based on tune accuracy (cents limit)
+                const isPerfect = Math.abs(data.cents) <= 5;
+                
+                if (isPerfect) {
+                    noteDisplay.classList.add('text-primary');
+                    noteDisplay.classList.remove('text-slate-100');
+                    if (glowIndicator) glowIndicator.classList.replace('bg-primary/10', 'bg-primary/40');
+                    if (tuningNeedle) {
+                        tuningNeedle.classList.add('bg-primary', 'shadow-[0_0_15px_rgba(217,184,112,0.8)]');
+                        tuningNeedle.classList.remove('bg-red-500', 'shadow-[0_0_10px_rgba(239,68,68,0.8)]', 'bg-yellow-500', 'shadow-[0_0_10px_rgba(234,179,8,0.8)]');
+                    }
+                } else if (Math.abs(data.cents) <= 15) {
+                    noteDisplay.classList.remove('text-primary');
+                    noteDisplay.classList.add('text-slate-100');
+                    if (glowIndicator) glowIndicator.classList.replace('bg-primary/40', 'bg-primary/10');
+                    if (tuningNeedle) {
+                        tuningNeedle.classList.add('bg-yellow-500', 'shadow-[0_0_10px_rgba(234,179,8,0.8)]');
+                        tuningNeedle.classList.remove('bg-primary', 'bg-red-500', 'shadow-[0_0_15px_rgba(217,184,112,0.8)]', 'shadow-[0_0_10px_rgba(239,68,68,0.8)]');
+                    }
+                } else {
+                    noteDisplay.classList.remove('text-primary');
+                    noteDisplay.classList.add('text-slate-100');
+                    if (glowIndicator) glowIndicator.classList.replace('bg-primary/40', 'bg-primary/10');
+                    if (tuningNeedle) {
+                        tuningNeedle.classList.add('bg-red-500', 'shadow-[0_0_10px_rgba(239,68,68,0.8)]');
+                        tuningNeedle.classList.remove('bg-primary', 'bg-yellow-500', 'shadow-[0_0_15px_rgba(217,184,112,0.8)]', 'shadow-[0_0_10px_rgba(234,179,8,0.8)]');
+                    }
+                }
+            }
+            
+            if (octaveDisplay) octaveDisplay.textContent = `OCT ${data.octave}`;
+            if (hzDisplay) hzDisplay.textContent = `${data.frequency.toFixed(1)} Hz`;
+            
+            // Format cents
+            const sign = data.cents > 0 ? '+' : '';
+            if (centsDisplay) centsDisplay.textContent = `${sign}${data.cents} ¢`;
+
+            // Move the needle visually (-50 to +50 range mapped to 0% to 100% left)
+            if (tuningNeedle) {
+                // Clamp to -50..50
+                let clampedCents = Math.max(-50, Math.min(50, data.cents));
+                // Map to 0..100%
+                let percentage = ((clampedCents + 50) / 100) * 100;
+                tuningNeedle.style.left = `${percentage}%`;
+            }
+        }
+
+        btnStart.addEventListener('click', startTuner);
+        btnStop?.addEventListener('click', stopTuner);
+        
+        // Stop on navigation away if using view transitions
+        document.addEventListener('astro:before-swap', stopTuner, { once: true });
+    });
+</script>
