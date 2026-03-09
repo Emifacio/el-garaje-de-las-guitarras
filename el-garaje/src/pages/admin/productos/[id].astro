@@ -105,7 +105,10 @@ if (Astro.request.method === 'POST') {
             
             let sortOrderCounter = currentImages && currentImages.length > 0 ? (currentImages[0].sort_order + 10) : 0;
             
-            const uploadPromises = validImages.map(async (file, index) => {
+            let uploadedImages = [];
+            
+            for (let i = 0; i < validImages.length; i++) {
+                const file = validImages[i];
                 const fileExt = file.name.split('.').pop();
                 const fileName = `${id}/${crypto.randomUUID()}.${fileExt}`;
                 
@@ -118,22 +121,20 @@ if (Astro.request.method === 'POST') {
                 }
 
                 if (data?.path) {
-                    return {
+                    uploadedImages.push({
                         product_id: id,
                         storage_path: data.path,
-                        sort_order: sortOrderCounter + (index * 10)
-                    };
+                        sort_order: sortOrderCounter
+                    });
+                    sortOrderCounter += 10;
                 }
-                return null;
-            });
-            
-            const uploadedImages = (await Promise.all(uploadPromises)).filter(Boolean);
+            }
             
             if (uploadedImages.length > 0) {
                 const { error: imagesError } = await supabase.from('product_images').insert(uploadedImages);
                 if (imagesError) {
                     console.error("Database Error (product_images):", imagesError);
-                    throw new Error(`Los archivos se subieron pero no pudieron vincularse: ${imagesError.message}`);
+                    throw new Error(`Los archivos se subieron pero no pudieron vincularse al producto: ${imagesError.message}`);
                 }
             }
         }
