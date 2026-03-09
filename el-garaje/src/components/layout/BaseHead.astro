@@ -12,7 +12,7 @@ interface Props {
 const { 
   title, 
   description = "Tienda de Guitarras y Amplis de Media y Alta Gama. Un ambiente cálido, sin apuros y distendido para encontrar tu próximo instrumento.",
-  image = "/preview-image.jpg",
+  image = "/preview-image.jpeg",
   type = "website"
 } = Astro.props;
 
@@ -63,14 +63,14 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || 'https://www.elga
 <meta property="og:url" content={Astro.url} />
 <meta property="og:title" content={title} />
 <meta property="og:description" content={description} />
-<meta property="og:image" content={new URL(image, Astro.url)} />
+<meta property="og:image" content={new URL(image, Astro.site || 'https://www.elgarajedelasguitarras.com')} />
 
 <!-- Twitter -->
 <meta property="twitter:card" content="summary_large_image" />
 <meta property="twitter:url" content={Astro.url} />
 <meta property="twitter:title" content={title} />
 <meta property="twitter:description" content={description} />
-<meta property="twitter:image" content={new URL(image, Astro.url)} />
+<meta property="twitter:image" content={new URL(image, Astro.site || 'https://www.elgarajedelasguitarras.com')} />
 
 <!-- View Transitions for persistent navigation -->
 <ViewTransitions />
