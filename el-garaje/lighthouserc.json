@@ -1,0 +1,26 @@
+{
+  "ci": {
+    "collect": {
+      "startServerCommand": "npm run build && npm run preview -- --port 4173 --host",
+      "startServerReadyPattern": "Local",
+      "startServerReadyTimeout": 60000,
+      "url": [
+        "http://127.0.0.1:4173/",
+        "http://127.0.0.1:4173/catalogo/",
+        "http://127.0.0.1:4173/contacto/"
+      ],
+      "numberOfRuns": 1
+    },
+    "assert": {
+      "assertions": {
+        "categories:performance": ["error", { "minScore": 0.9 }],
+        "categories:accessibility": ["warn", { "minScore": 0.9 }],
+        "categories:best-practices": ["warn", { "minScore": 0.9 }],
+        "categories:seo": ["warn", { "minScore": 0.9 }]
+      }
+    },
+    "upload": {
+      "target": "temporary-public-storage"
+    }
+  }
+}

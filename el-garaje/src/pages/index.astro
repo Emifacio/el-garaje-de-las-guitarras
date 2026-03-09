@@ -222,6 +222,7 @@ const featuredProducts = await getProducts({ isFeatured: true, limit: 3 });
 <script>
     // Use a global reference for cleanup
     let _carouselTimer: ReturnType<typeof setInterval> | null = null;
+    let _carouselAbortController: AbortController | null = null;
 
     function initCarousel() {
         // Clear any existing timer first
@@ -230,8 +231,15 @@ const featuredProducts = await getProducts({ isFeatured: true, limit: 3 });
             _carouselTimer = null;
         }
 
+        // Abort any existing listeners first
+        if (_carouselAbortController) {
+            _carouselAbortController.abort();
+        }
+        _carouselAbortController = new AbortController();
+        const { signal } = _carouselAbortController;
+
         const track = document.getElementById('carousel-track') as HTMLElement;
-        const dots = document.querySelectorAll('.carousel-dot');
+        const dots = Array.from(document.querySelectorAll<HTMLElement>('.carousel-dot'));
         const prevBtn = document.getElementById('carousel-prev');
         const nextBtn = document.getElementById('carousel-next');
         const progressBar = document.getElementById('carousel-progress') as HTMLElement;
@@ -290,23 +298,15 @@ const featuredProducts = await getProducts({ isFeatured: true, limit: 3 });
             }
         }
 
-        // Remove old listeners by cloning nodes
-        const newPrev = prevBtn?.cloneNode(true) as HTMLElement;
-        const newNext = nextBtn?.cloneNode(true) as HTMLElement;
-        if (prevBtn && newPrev) prevBtn.replaceWith(newPrev);
-        if (nextBtn && newNext) nextBtn.replaceWith(newNext);
-
-        newPrev?.addEventListener('click', () => { prevSlide(); startAutoPlay(); });
-        newNext?.addEventListener('click', () => { nextSlide(); startAutoPlay(); });
+        prevBtn?.addEventListener('click', () => { prevSlide(); startAutoPlay(); }, { signal });
+        nextBtn?.addEventListener('click', () => { nextSlide(); startAutoPlay(); }, { signal });
 
         dots.forEach(dot => {
-            const newDot = dot.cloneNode(true) as HTMLElement;
-            dot.replaceWith(newDot);
-            newDot.addEventListener('click', () => {
-                const index = parseInt(newDot.getAttribute('data-index') || '0');
+            dot.addEventListener('click', () => {
+                const index = parseInt(dot.getAttribute('data-index') || '0');
                 goToSlide(index);
                 startAutoPlay();
-            });
+            }, { signal });
         });
 
         // Touch/swipe
@@ -314,7 +314,7 @@ const featuredProducts = await getProducts({ isFeatured: true, limit: 3 });
         track.addEventListener('touchstart', (e) => {
             touchStartX = e.changedTouches[0].screenX;
             stopAutoPlay();
-        }, { passive: true });
+        }, { passive: true, signal });
 
         track.addEventListener('touchend', (e) => {
             const diff = touchStartX - e.changedTouches[0].screenX;
@@ -322,18 +322,18 @@ const featuredProducts = await getProducts({ isFeatured: true, limit: 3 });
                 if (diff > 0) nextSlide(); else prevSlide();
             }
             startAutoPlay();
-        }, { passive: true });
+        }, { passive: true, signal });
 
         // Pause on hover
         const carousel = document.getElementById('hero-carousel');
-        carousel?.addEventListener('mouseenter', stopAutoPlay);
-        carousel?.addEventListener('mouseleave', startAutoPlay);
+        carousel?.addEventListener('mouseenter', stopAutoPlay, { signal });
+        carousel?.addEventListener('mouseleave', startAutoPlay, { signal });
 
         // Pause when tab is hidden
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) stopAutoPlay();
             else startAutoPlay();
-        });
+        }, { signal });
 
         // Start!
         startAutoPlay();

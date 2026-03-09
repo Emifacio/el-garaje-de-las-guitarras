@@ -9,7 +9,14 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "test": "vitest --run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --run --coverage",
+    "lhci:collect": "lhci collect --config=./lighthouserc.json",
+    "lhci:assert": "lhci assert --config=./lighthouserc.json",
+    "lhci": "lhci autorun --config=./lighthouserc.json"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.0",
@@ -19,5 +26,14 @@
     "@tailwindcss/vite": "^4.2.1",
     "astro": "^5.17.1",
     "tailwindcss": "^4.2.1"
+  },
+  "devDependencies": {
+    "@lhci/cli": "^0.15.1",
+    "@vitest/ui": "^4.0.18",
+    "critters": "^0.0.23",
+    "fast-check": "^4.6.0",
+    "sharp": "^0.34.5",
+    "vitest": "^4.0.18",
+    "web-vitals": "^5.1.0"
   }
 }

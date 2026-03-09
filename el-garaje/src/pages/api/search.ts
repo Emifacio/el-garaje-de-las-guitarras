@@ -1,6 +1,9 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../lib/supabase';
 
+const SEARCH_CACHE_TTL_MS = 5 * 60 * 1000;
+const searchCache = new Map<string, { expiresAt: number; data: unknown }>();
+
 export const prerender = false;
 
 export const GET: APIRoute = async ({ url }) => {
@@ -9,7 +12,22 @@ export const GET: APIRoute = async ({ url }) => {
     if (!query || query.length < 2) {
         return new Response(JSON.stringify([]), {
             status: 200,
-            headers: { 'Content-Type': 'application/json' }
+            headers: {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'public, max-age=60, stale-while-revalidate=300'
+            }
+        });
+    }
+
+    const cacheKey = query.toLowerCase();
+    const cached = searchCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+        return new Response(JSON.stringify(cached.data), {
+            status: 200,
+            headers: {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'public, max-age=60, stale-while-revalidate=300'
+            }
         });
     }
 
@@ -28,7 +46,10 @@ export const GET: APIRoute = async ({ url }) => {
         console.error('Search error:', error);
         return new Response(JSON.stringify([]), {
             status: 500,
-            headers: { 'Content-Type': 'application/json' }
+            headers: {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'public, max-age=60, stale-while-revalidate=300'
+            }
         });
     }
 
@@ -59,8 +80,13 @@ export const GET: APIRoute = async ({ url }) => {
         };
     });
 
+    searchCache.set(cacheKey, { expiresAt: Date.now() + SEARCH_CACHE_TTL_MS, data: results });
+
     return new Response(JSON.stringify(results), {
         status: 200,
-        headers: { 'Content-Type': 'application/json' }
+        headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'public, max-age=60, stale-while-revalidate=300'
+        }
     });
 };

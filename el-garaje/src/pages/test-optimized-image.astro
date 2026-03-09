@@ -1,0 +1,100 @@
+---
+/**
+ * Test page for OptimizedImage component
+ * This page demonstrates the usage of the OptimizedImage component
+ * and can be used to verify the generated HTML structure
+ */
+
+import Layout from '../layouts/Layout.astro';
+import OptimizedImage from '../components/OptimizedImage.astro';
+
+// Import a test image from public folder
+const heroImageSrc = '/CoverHero.jpg';
+const productImageSrc = '/acustica.jpg';
+---
+
+<Layout title="OptimizedImage Component Test">
+  <main class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-8">OptimizedImage Component Test</h1>
+    
+    <section class="mb-12">
+      <h2 class="text-2xl font-semibold mb-4">Hero Image (Priority Loading)</h2>
+      <p class="mb-4 text-gray-600">
+        This image uses isHero=true, which sets loading="eager" and fetchpriority="high"
+      </p>
+      <div class="max-w-4xl">
+        <OptimizedImage
+          src={heroImageSrc}
+          alt="Hero image with priority loading"
+          width={1920}
+          height={1080}
+          isHero={true}
+          class="w-full h-auto rounded-lg shadow-lg"
+        />
+      </div>
+    </section>
+
+    <section class="mb-12">
+      <h2 class="text-2xl font-semibold mb-4">Regular Image (Lazy Loading)</h2>
+      <p class="mb-4 text-gray-600">
+        This image uses default lazy loading for below-the-fold content
+      </p>
+      <div class="max-w-2xl">
+        <OptimizedImage
+          src={productImageSrc}
+          alt="Product image with lazy loading"
+          width={800}
+          height={600}
+          class="w-full h-auto rounded-lg shadow-lg"
+        />
+      </div>
+    </section>
+
+    <section class="mb-12">
+      <h2 class="text-2xl font-semibold mb-4">Custom Sizes Attribute</h2>
+      <p class="mb-4 text-gray-600">
+        This image uses a custom sizes attribute for specific responsive behavior
+      </p>
+      <div class="max-w-xl">
+        <OptimizedImage
+          src={productImageSrc}
+          alt="Image with custom sizes"
+          width={640}
+          height={480}
+          sizes="(max-width: 768px) 100vw, 50vw"
+          class="w-full h-auto rounded-lg shadow-lg"
+        />
+      </div>
+    </section>
+
+    <section class="mb-12">
+      <h2 class="text-2xl font-semibold mb-4">Expected HTML Structure</h2>
+      <div class="bg-gray-100 p-4 rounded-lg">
+        <pre class="text-sm overflow-x-auto"><code>&lt;picture&gt;
+  &lt;!-- AVIF source with srcset for 320w, 640w, 1024w, 1920w --&gt;
+  &lt;source type="image/avif" srcset="..." sizes="..." /&gt;
+  
+  &lt;!-- WebP source with srcset for 320w, 640w, 1024w, 1920w --&gt;
+  &lt;source type="image/webp" srcset="..." sizes="..." /&gt;
+  
+  &lt;!-- Fallback img with JPEG format --&gt;
+  &lt;img src="..." alt="..." width="..." height="..." loading="..." /&gt;
+&lt;/picture&gt;</code></pre>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="text-2xl font-semibold mb-4">Component Features</h2>
+      <ul class="list-disc list-inside space-y-2 text-gray-700">
+        <li>✅ Automatic format conversion (AVIF, WebP, JPEG fallback)</li>
+        <li>✅ Responsive image variants at 320px, 640px, 1024px, 1920px</li>
+        <li>✅ Lazy loading for regular images (loading="lazy")</li>
+        <li>✅ Priority loading for hero images (loading="eager", fetchpriority="high")</li>
+        <li>✅ Automatic width/height attributes to prevent CLS</li>
+        <li>✅ Picture elements with source elements for format fallbacks</li>
+        <li>✅ Configurable quality settings (AVIF: 75%, WebP: 80%, JPEG: 85%)</li>
+        <li>✅ Custom sizes attribute support for responsive behavior</li>
+      </ul>
+    </section>
+  </main>
+</Layout>

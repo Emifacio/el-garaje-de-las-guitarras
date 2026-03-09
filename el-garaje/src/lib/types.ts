@@ -25,23 +25,23 @@ export interface Product {
     title: string;
     slug: string;
     short_description: string | null;
-    long_description: string | null;
+    long_description?: string | null;
     price: number | null;
     price_display: string | null;
     status: ProductStatus;
     badge: string | null;
     brand: string | null;
     year: number | null;
-    specifications: Record<string, string>[] | null;
+    specifications?: Record<string, string>[] | null;
     is_featured: boolean;
     sort_order: number;
-    seo_title: string | null;
-    seo_description: string | null;
+    seo_title?: string | null;
+    seo_description?: string | null;
     created_at: string;
     updated_at: string;
     sold_date: string | null;
 
     // Joined relation representation
-    categories?: Category | null;
+    categories?: Category | Category[] | null;
     product_images?: ProductImage[];
 }

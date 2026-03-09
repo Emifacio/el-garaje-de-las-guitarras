@@ -1,6 +1,9 @@
 import { supabase } from './supabase';
 import type { Category, Product } from './types';
 
+const PRODUCTS_CACHE_TTL_MS = 5 * 60 * 1000;
+const productsCache = new Map<string, { expiresAt: number; data: Product[] }>();
+
 // Categories
 export async function getCategories(): Promise<Category[]> {
     const { data, error } = await supabase
@@ -18,7 +21,7 @@ export async function getCategories(): Promise<Category[]> {
 export async function getCategoryBySlug(slug: string): Promise<Category | null> {
     const { data, error } = await supabase
         .from('categories')
-        .select('*')
+        .select('id,name,slug,nav_key,description,seo_description,sort_order')
         .eq('slug', slug)
         .single();
 
@@ -34,17 +37,37 @@ export async function getProducts(options?: {
     categoryId?: string;
     isFeatured?: boolean;
     limit?: number;
+    page?: number;
+    pageSize?: number;
 }): Promise<Product[]> {
+
+    const pageSize = options?.pageSize ?? Math.min(options?.limit ?? 24, 24);
+    const page = Math.max(1, options?.page ?? 1);
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    const cacheKey = JSON.stringify({
+        categoryId: options?.categoryId ?? null,
+        isFeatured: options?.isFeatured ?? null,
+        page,
+        pageSize
+    });
+
+    const cached = productsCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+        return cached.data;
+    }
 
     let query = supabase
         .from('products')
         .select(`
-      *,
-      categories (*),
-      product_images (*)
+      id,category_id,title,slug,short_description,price,price_display,status,badge,brand,year,is_featured,sort_order,created_at,updated_at,sold_date,
+      categories (id,name,slug,nav_key,sort_order,description,seo_description),
+      product_images (id,storage_path,alt_text,sort_order,created_at)
     `)
         .order('sort_order', { ascending: true })
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(from, to);
 
     if (options?.categoryId) {
         query = query.eq('category_id', options.categoryId);
@@ -52,10 +75,6 @@ export async function getProducts(options?: {
 
     if (options?.isFeatured !== undefined) {
         query = query.eq('is_featured', options.isFeatured);
-    }
-
-    if (options?.limit) {
-        query = query.limit(options.limit);
     }
 
     const { data, error } = await query;
@@ -67,7 +86,7 @@ export async function getProducts(options?: {
 
     // Push sold items ("vendido") to the bottom, sorted by sold_date (most recent first)
     const products = (data as Product[]) || [];
-    return products.sort((a, b) => {
+    const sorted = products.sort((a, b) => {
         const aIsSold = a.status === 'vendido' ? 1 : 0;
         const bIsSold = b.status === 'vendido' ? 1 : 0;
         if (aIsSold !== bIsSold) return aIsSold - bIsSold;
@@ -79,15 +98,18 @@ export async function getProducts(options?: {
         }
         return 0;
     });
+
+    productsCache.set(cacheKey, { expiresAt: Date.now() + PRODUCTS_CACHE_TTL_MS, data: sorted });
+    return sorted;
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
     const { data, error } = await supabase
         .from('products')
         .select(`
-      *,
-      categories (*),
-      product_images (*)
+      id,category_id,title,slug,short_description,long_description,price,price_display,status,badge,brand,year,specifications,is_featured,sort_order,seo_title,seo_description,created_at,updated_at,sold_date,
+      categories (id,name,slug,nav_key,sort_order,description,seo_description),
+      product_images (id,storage_path,alt_text,sort_order,created_at)
     `)
         .eq('slug', slug)
         .single();
