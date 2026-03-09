@@ -1,0 +1,125 @@
+---
+import { APP_VERSION } from '../../config/version';
+---
+
+<!-- Update Notification Banner -->
+<div id="update-banner"
+    class="fixed bottom-20 left-1/2 -translate-x-1/2 z-[100] max-w-md w-[calc(100%-2rem)] 
+           bg-background-dark/95 border border-primary/40 backdrop-blur-md rounded-lg shadow-2xl shadow-primary/10
+           px-5 py-4 flex items-center gap-4
+           translate-y-[200%] opacity-0 transition-all duration-500 ease-out pointer-events-none"
+    role="alert" aria-live="polite">
+    <span class="material-symbols-outlined text-primary text-2xl shrink-0">update</span>
+    <div class="flex-1 min-w-0">
+        <p class="text-slate-100 text-sm font-bold tracking-wide">Nueva versión disponible</p>
+        <p class="text-slate-400 text-xs mt-0.5">Actualizá para ver los últimos cambios.</p>
+    </div>
+    <button id="update-refresh-btn"
+        class="shrink-0 h-9 px-4 rounded-sm bg-primary text-background-dark text-xs font-bold tracking-widest uppercase
+               hover:bg-primary/90 transition-all border border-primary">
+        Actualizar
+    </button>
+    <button id="update-dismiss-btn" aria-label="Cerrar notificación"
+        class="shrink-0 w-8 h-8 flex items-center justify-center text-slate-500 hover:text-slate-300 transition-colors">
+        <span class="material-symbols-outlined text-lg">close</span>
+    </button>
+</div>
+
+<meta name="app-version" content={APP_VERSION} />
+
+<script>
+    // Global state that persists across astro:page-load re-inits
+    const _uc = (window as any).__updateChecker ??= {
+        pollTimer: null as ReturnType<typeof setInterval> | null,
+        abortCtrl: null as AbortController | null,
+        dismissed: false,
+        baseVersion: null as string | null, // version captured on first load
+    };
+
+    function initUpdateChecker() {
+        // Skip in dev mode — HMR re-evaluates version.ts causing false mismatches
+        if (import.meta.env.DEV) return;
+
+        // If already dismissed, don't re-init
+        if (_uc.dismissed) return;
+
+        // Clean up previous timers and listeners
+        if (_uc.pollTimer) {
+            clearInterval(_uc.pollTimer);
+            _uc.pollTimer = null;
+        }
+        if (_uc.abortCtrl) {
+            _uc.abortCtrl.abort();
+        }
+        _uc.abortCtrl = new AbortController();
+        const { signal } = _uc.abortCtrl;
+
+        const POLL_INTERVAL = 60_000;
+
+        // Lock the version to the one from the first page load
+        if (!_uc.baseVersion) {
+            _uc.baseVersion = document.querySelector('meta[name="app-version"]')?.getAttribute('content');
+        }
+        if (!_uc.baseVersion) return;
+
+        const currentVersion = _uc.baseVersion;
+
+        async function checkForUpdate() {
+            if (_uc.dismissed) return;
+            try {
+                const res = await fetch('/version.json', {
+                    cache: 'no-store',
+                    headers: { 'Cache-Control': 'no-cache' },
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data.version && data.version !== currentVersion) {
+                    showBanner();
+                }
+            } catch {
+                // Silently fail — network issues shouldn't bother the user
+            }
+        }
+
+        function showBanner() {
+            const banner = document.getElementById('update-banner');
+            if (!banner) return;
+            banner.classList.remove('translate-y-[200%]', 'opacity-0', 'pointer-events-none');
+            banner.classList.add('translate-y-0', 'opacity-100', 'pointer-events-auto');
+            if (_uc.pollTimer) {
+                clearInterval(_uc.pollTimer);
+                _uc.pollTimer = null;
+            }
+        }
+
+        function hideBanner() {
+            const banner = document.getElementById('update-banner');
+            if (!banner) return;
+            banner.classList.add('translate-y-[200%]', 'opacity-0', 'pointer-events-none');
+            banner.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
+            _uc.dismissed = true;
+        }
+
+        document.getElementById('update-refresh-btn')?.addEventListener('click', () => {
+            window.location.reload();
+        }, { signal });
+
+        document.getElementById('update-dismiss-btn')?.addEventListener('click', () => {
+            hideBanner();
+        }, { signal });
+
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && !_uc.dismissed) {
+                checkForUpdate();
+            }
+        }, { signal });
+
+        // Start polling
+        _uc.pollTimer = setInterval(checkForUpdate, POLL_INTERVAL);
+
+        // Initial check after a short delay
+        setTimeout(checkForUpdate, 5_000);
+    }
+
+    document.addEventListener('astro:page-load', initUpdateChecker);
+</script>

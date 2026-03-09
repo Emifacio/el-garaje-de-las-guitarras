@@ -6,6 +6,8 @@ import sitemap from '@astrojs/sitemap';
 
 import vercel from '@astrojs/vercel';
 import criticalCssIntegration from './src/integrations/critical-css';
+import versionFile from './src/integrations/version-file';
+import { APP_VERSION } from './src/config/version';
 import { assetLoaderConfig } from './src/config/asset-loader.config';
 
 // https://astro.build/config
@@ -18,7 +20,8 @@ export default defineConfig({
     sitemap(),
     criticalCssIntegration({
       inlineThreshold: assetLoaderConfig.criticalCSS.inlineThreshold
-    })
+    }),
+    versionFile(APP_VERSION),
   ],
   output: 'static',
   adapter: vercel(),

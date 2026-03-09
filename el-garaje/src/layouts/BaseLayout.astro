@@ -8,6 +8,7 @@ import FloatingContactButtons from '../components/layout/FloatingContactButtons.
 import AmbientMusic from '../components/layout/AmbientMusic.astro';
 import SearchModal from '../components/layout/SearchModal.astro';
 import CartDrawer from '../components/cart/CartDrawer.astro';
+import UpdateNotification from '../components/layout/UpdateNotification.astro';
 
 interface Props {
   title: string;
@@ -38,6 +39,7 @@ const { title, description } = Astro.props;
     <AmbientMusic />
     <SearchModal />
     <CartDrawer />
+    <UpdateNotification />
 
     <!-- Agent Border Glow Overlay -->
     <div class="agent-border-glow" id="agent-glow" transition:persist="agent-glow"></div>
