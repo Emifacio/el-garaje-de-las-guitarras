@@ -116,7 +116,10 @@ import { getCartItems } from '../../lib/cartStore';
                     const el = itemTemplate.content.cloneNode(true) as DocumentFragment;
                     
                     const img = el.querySelector('.cart-item-img') as HTMLElement;
-                    img.style.backgroundImage = `url('${item.image_url}')`;
+                    const finalImg = (item.image_url && typeof item.image_url === 'string' && !item.image_url.includes('[object')) 
+                        ? item.image_url 
+                        : '/logo.jpg';
+                    img.style.backgroundImage = `url('${finalImg}')`;
                     
                     const title = el.querySelector('.cart-item-title') as HTMLElement;
                     title.textContent = item.title;

@@ -95,7 +95,11 @@ if (Astro.request.method === 'POST') {
             const uploadedImages = (await Promise.all(uploadPromises)).filter(Boolean);
             
             if (uploadedImages.length > 0) {
-                await supabase.from('product_images').insert(uploadedImages);
+                const { error: imagesError } = await supabase.from('product_images').insert(uploadedImages);
+                if (imagesError) {
+                    console.error("Database Error (product_images):", imagesError);
+                    throw new Error(`Los archivos se subieron pero no pudieron vincularse al producto: ${imagesError.message}`);
+                }
             }
         }
 
@@ -291,36 +295,98 @@ if (Astro.request.method === 'POST') {
 </AdminLayout>
 
 <script>
-    // Simple script to inject raw Image Previews into the HTML when the user selects files
-    const imageInput = document.getElementById('images') as HTMLInputElement;
-    const previewContainer = document.getElementById('image-preview');
+    // Component logic for View Transitions
+    function initNuevoProducto() {
+        // Simple script to inject raw Image Previews into the HTML when the user selects files
+        const imageInput = document.getElementById('images') as HTMLInputElement;
+        const previewContainer = document.getElementById('image-preview');
 
-    imageInput?.addEventListener('change', (e) => {
-        if (!previewContainer) return;
-        previewContainer.innerHTML = ''; // Clear prev previews
+        imageInput?.addEventListener('change', (e) => {
+            if (!previewContainer) return;
+            previewContainer.innerHTML = ''; // Clear prev previews
 
-        const files = (e.target as HTMLInputElement).files;
-        if (!files || files.length === 0) return;
+            const files = (e.target as HTMLInputElement).files;
+            if (!files || files.length === 0) return;
 
-        Array.from(files).forEach(file => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const url = e.target?.result as string;
-                const div = document.createElement('div');
-                div.className = "aspect-square rounded border border-primary/20 bg-background-dark overflow-hidden";
-                div.innerHTML = `<img src="${url}" class="w-full h-full object-cover opacity-80" alt="Preview" />`;
-                previewContainer.appendChild(div);
-            };
-            reader.readAsDataURL(file);
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const url = e.target?.result as string;
+                    const div = document.createElement('div');
+                    div.className = "aspect-square rounded border border-primary/20 bg-background-dark overflow-hidden";
+                    div.innerHTML = `<img src="${url}" class="w-full h-full object-cover opacity-80" alt="Preview" />`;
+                    previewContainer.appendChild(div);
+                };
+                reader.readAsDataURL(file);
+            });
         });
-    });
 
-    // Compressor utility
+        const form = document.querySelector('form');
+        const btn = document.getElementById('saveBtn');
+
+        form?.addEventListener('submit', async (e) => {
+            const imageInput = document.getElementById('images') as HTMLInputElement;
+            
+            // If already compressed, let native submission happen
+            if (imageInput?.dataset.compressed === 'true' || !imageInput?.files || imageInput.files.length === 0) {
+                if(btn) {
+                    btn.innerHTML = `<span class="material-symbols-outlined animate-spin">refresh</span> Subiendo Datos...`;
+                    btn.classList.add('opacity-70', 'pointer-events-none');
+                }
+                return; 
+            }
+
+            // Halt to compress
+            e.preventDefault();
+            
+            if(btn) {
+                btn.innerHTML = `<span class="material-symbols-outlined animate-spin">refresh</span> Optimizando fotos...`;
+                btn.classList.add('opacity-70', 'pointer-events-none');
+            }
+
+            try {
+                const dt = new DataTransfer();
+                const files = imageInput.files;
+
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    if (file.type.startsWith('image/')) {
+                        try {
+                            const blob = await compressImage(file);
+                            const cleanName = file.name.replace(/\.[^/.]+$/, "") + ".webp";
+                            const newFile = new File([blob], cleanName, { type: 'image/webp' });
+                            dt.items.add(newFile);
+                        } catch (err) {
+                            console.error("Compression error for file:", file.name, err);
+                            dt.items.add(file); // fallback
+                        }
+                    } else {
+                        dt.items.add(file);
+                    }
+                }
+
+                imageInput.files = dt.files;
+                imageInput.dataset.compressed = 'true';
+                
+                // Re-trigger submit native
+                form.submit();
+            } catch(error) {
+                console.error("Compression error wrapper:", error);
+                // fallback if anything fails hard
+                imageInput.dataset.compressed = 'true';
+                form.submit();
+            }
+        });
+    }
+
+    // Compressor utility (static, can be outside or inside)
     function compressImage(file: File): Promise<Blob> {
         return new Promise((resolve, reject) => {
             const img = new Image();
-            img.src = URL.createObjectURL(file);
+            const objectUrl = URL.createObjectURL(file);
+            img.src = objectUrl;
             img.onload = () => {
+                URL.revokeObjectURL(objectUrl);
                 const canvas = document.createElement('canvas');
                 const MAX_WIDTH = 1200;
                 const MAX_HEIGHT = 1200;
@@ -349,63 +415,13 @@ if (Astro.request.method === 'POST') {
                     else reject('Compression failed');
                 }, 'image/webp', 0.85);
             };
-            img.onerror = reject;
+            img.onerror = (err) => {
+                URL.revokeObjectURL(objectUrl);
+                reject(err);
+            };
         });
     }
 
-    const form = document.querySelector('form');
-    const btn = document.getElementById('saveBtn');
-
-    form?.addEventListener('submit', async (e) => {
-        const imageInput = document.getElementById('images') as HTMLInputElement;
-        
-        // If already compressed, let native submission happen
-        if (imageInput?.dataset.compressed === 'true' || !imageInput?.files || imageInput.files.length === 0) {
-            if(btn) {
-                btn.innerHTML = `<span class="material-symbols-outlined animate-spin">refresh</span> Subiendo Datos...`;
-                btn.classList.add('opacity-70', 'pointer-events-none');
-            }
-            return; 
-        }
-
-        // Halt to compress
-        e.preventDefault();
-        
-        if(btn) {
-            btn.innerHTML = `<span class="material-symbols-outlined animate-spin">refresh</span> Optimizando fotos...`;
-            btn.classList.add('opacity-70', 'pointer-events-none');
-        }
-
-        try {
-            const dt = new DataTransfer();
-            const files = imageInput.files;
-
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                if (file.type.startsWith('image/')) {
-                    try {
-                        const blob = await compressImage(file);
-                        const cleanName = file.name.replace(/\.[^/.]+$/, "") + ".webp";
-                        const newFile = new File([blob], cleanName, { type: 'image/webp' });
-                        dt.items.add(newFile);
-                    } catch (err) {
-                        dt.items.add(file); // fallback
-                    }
-                } else {
-                    dt.items.add(file);
-                }
-            }
-
-            imageInput.files = dt.files;
-            imageInput.dataset.compressed = 'true';
-            
-            // Re-trigger submit native
-            form.submit();
-        } catch(error) {
-            console.error("Compression error wrapper:", error);
-            // fallback if anything fails hard
-            imageInput.dataset.compressed = 'true';
-            form.submit();
-        }
-    });
+    // Initialize on load and on View Transition navigation
+    document.addEventListener('astro:page-load', initNuevoProducto);
 </script>

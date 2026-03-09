@@ -130,7 +130,11 @@ if (Astro.request.method === 'POST') {
             const uploadedImages = (await Promise.all(uploadPromises)).filter(Boolean);
             
             if (uploadedImages.length > 0) {
-                await supabase.from('product_images').insert(uploadedImages);
+                const { error: imagesError } = await supabase.from('product_images').insert(uploadedImages);
+                if (imagesError) {
+                    console.error("Database Error (product_images):", imagesError);
+                    throw new Error(`Los archivos se subieron pero no pudieron vincularse: ${imagesError.message}`);
+                }
             }
         }
         
@@ -374,8 +378,10 @@ const sortedImages = product.product_images?.sort((a: any, b: any) => a.sort_ord
     function compressImage(file: File): Promise<Blob> {
         return new Promise((resolve, reject) => {
             const img = new Image();
-            img.src = URL.createObjectURL(file);
+            const objectUrl = URL.createObjectURL(file);
+            img.src = objectUrl;
             img.onload = () => {
+                URL.revokeObjectURL(objectUrl);
                 const canvas = document.createElement('canvas');
                 const MAX_WIDTH = 1200;
                 const MAX_HEIGHT = 1200;
@@ -404,11 +410,14 @@ const sortedImages = product.product_images?.sort((a: any, b: any) => a.sort_ord
                     else reject('Compression failed');
                 }, 'image/webp', 0.85);
             };
-            img.onerror = reject;
+            img.onerror = (err) => {
+                URL.revokeObjectURL(objectUrl);
+                reject(err);
+            };
         });
     }
 
-    document.addEventListener('astro:page-load', () => {
+    function initEditProducto() {
         // Image preview logic
         const imageInput = document.getElementById('images') as HTMLInputElement;
         const previewContainer = document.getElementById('image-preview');
@@ -435,14 +444,15 @@ const sortedImages = product.product_images?.sort((a: any, b: any) => a.sort_ord
 
         // Form loading state
         const form = document.querySelector('form');
-        const btn = document.getElementById('updateBtn');
+        const btn = document.getElementById('updateBtn') as HTMLButtonElement;
+        
         form?.addEventListener('submit', async (e) => {
             const imageInput = document.getElementById('images') as HTMLInputElement;
             
             // If already compressed, let native submission happen
             if (!imageInput || imageInput.dataset.compressed === 'true' || !imageInput.files || imageInput.files.length === 0) {
                 if(btn) {
-                    btn.innerHTML = `<span class="material-symbols-outlined animate-spin">refresh</span> Guardando...`;
+                    btn.innerHTML = `<span class="material-symbols-outlined animate-spin text-sm">refresh</span> Guardando...`;
                     btn.classList.add('opacity-70', 'pointer-events-none');
                 }
                 return; 
@@ -452,7 +462,7 @@ const sortedImages = product.product_images?.sort((a: any, b: any) => a.sort_ord
             e.preventDefault();
             
             if(btn) {
-                btn.innerHTML = `<span class="material-symbols-outlined animate-spin">refresh</span> Optimizando fotos...`;
+                btn.innerHTML = `<span class="material-symbols-outlined animate-spin text-sm">refresh</span> Optimizando fotos...`;
                 btn.classList.add('opacity-70', 'pointer-events-none');
             }
 
@@ -469,6 +479,7 @@ const sortedImages = product.product_images?.sort((a: any, b: any) => a.sort_ord
                             const newFile = new File([blob], cleanName, { type: 'image/webp' });
                             dt.items.add(newFile);
                         } catch (err) {
+                            console.error("Optimization failed for:", file.name, err);
                             dt.items.add(file); // fallback
                         }
                     } else {
@@ -501,5 +512,8 @@ const sortedImages = product.product_images?.sort((a: any, b: any) => a.sort_ord
                 }
             });
         }
-    });
+    }
+
+    // Initialize on load and on View Transition navigation
+    document.addEventListener('astro:page-load', initEditProducto);
 </script>

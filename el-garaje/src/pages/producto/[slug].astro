@@ -7,6 +7,7 @@ import ProductSpecs from '../../components/product/ProductSpecs.astro';
 import StatusBadge from '../../components/product/StatusBadge.astro';
 import { getProductBySlug } from '../../lib/queries';
 import { generateWhatsAppUrl } from '../../lib/whatsapp';
+import { getPublicImageUrl } from '../../lib/image-utils';
 
 const { slug } = Astro.params;
 const product = await getProductBySlug(slug as string);
@@ -14,6 +15,11 @@ const product = await getProductBySlug(slug as string);
 if (!product) {
   return new Response("Not Found", { status: 404 });
 }
+
+// Get the first image URL for the cart
+const productImageUrl = product.product_images && product.product_images.length > 0 
+    ? getPublicImageUrl(product.product_images[0].storage_path)
+    : '/logo.jpg';
 
 // Format Price — always show value
 const priceDisplay = product.price_display || (product.price ? `U$D ${product.price.toLocaleString()}` : 'U$D 9.999.999,99');
@@ -84,7 +90,7 @@ const pageTitle = `${product.title} | El Garaje de las Guitarras`;
                            data-product-title={product.title}
                            data-product-price={product.price || 0}
                            data-product-price-display={priceDisplay}
-                           data-product-image={product.product_images && product.product_images.length > 0 ? product.product_images[0] : '/logo.jpg'}
+                           data-product-image={productImageUrl}
                            data-product-slug={slug}
                            class="group relative flex-1 h-16 bg-background-light dark:bg-background-dark text-primary text-sm font-bold tracking-widest uppercase hover:bg-primary/10 transition-all border border-primary rounded-sm flex items-center justify-center gap-3 overflow-hidden">
                             <span class="relative z-10 flex items-center gap-3">Al Carrito <span class="material-symbols-outlined transition-transform group-hover:scale-110">add_shopping_cart</span></span>

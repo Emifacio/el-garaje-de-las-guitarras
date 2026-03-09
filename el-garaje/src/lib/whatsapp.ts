@@ -47,4 +47,4 @@ export const WHATSAPP_DIRECT_URL = `https://wa.me/${WHATSAPP_PHONE}`;
 export const WHATSAPP_CATALOG_URL = 'https://wa.me/c/5491130322477';
 
 /** Instagram profile */
-export const INSTAGRAM_URL = 'https://www.instagram.com/elgarajedelasguitarras';
+export const INSTAGRAM_URL = 'https://ig.me/m/elgarajedelasguitarras';
