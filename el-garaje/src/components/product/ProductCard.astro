@@ -20,7 +20,7 @@ const coverImage = product.product_images && product.product_images.length > 0
 const imageUrl = coverImage 
     ? getPublicImageUrl(coverImage.storage_path)
     // Fallback placeholder
-    : 'https://images.unsplash.com/photo-1550291652-6ea9114a47b1?q=80&w=600&auto=format&fit=crop';
+    : '/logo.avif';
 
 const isSold = product.status === 'vendido';
 const ariaLabel = `${product.title}. ${isSold ? 'Vendido.' : `Precio: ${priceDisplay}`}`;

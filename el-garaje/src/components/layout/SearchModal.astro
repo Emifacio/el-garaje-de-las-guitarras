@@ -398,7 +398,7 @@
                 return `
                     <a href="/producto/${product.slug}" class="search-result" data-search-result>
                         <img
-                            src="${product.imageUrl || 'https://images.unsplash.com/photo-1550291652-6ea9114a47b1?q=80&w=100&auto=format&fit=crop'}"
+                            src="${product.imageUrl || '/logo.avif'}"
                             alt="${escapeHTML(product.title)}"
                             class="search-result__image"
                             loading="lazy"
