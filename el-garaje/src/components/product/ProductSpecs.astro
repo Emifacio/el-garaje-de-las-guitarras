@@ -55,11 +55,11 @@ const finalSpecs = [
     {finalSpecs.length > 0 ? (
         finalSpecs.map(spec => (
             <div class="grid grid-cols-3 py-4 border-b border-white/5">
-                <div class="col-span-1 text-slate-500 font-bold text-xs uppercase tracking-widest">{spec.label}</div>
+                <div class="col-span-1 text-slate-400 font-bold text-xs uppercase tracking-widest">{spec.label}</div>
                 <div class="col-span-2 text-slate-300">{spec.value}</div>
             </div>
         ))
     ) : (
-        <p class="text-slate-500 italic py-4">No hay especificaciones detalladas para este instrumento.</p>
+        <p class="text-slate-400 italic py-4">No hay especificaciones detalladas para este instrumento.</p>
     )}
 </div>

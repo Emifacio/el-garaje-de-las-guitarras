@@ -53,7 +53,7 @@ const ariaLabel = `${product.title}. ${isSold ? 'Vendido.' : `Precio: ${priceDis
         <h2 class="font-serif text-xl font-bold text-slate-200 group-hover:text-primary transition-colors line-clamp-2">
             {product.title}
         </h2>
-        <p class="text-slate-500 text-sm mt-2 mb-4">{product.short_description || ''}</p>
+        <p class="text-slate-400 text-sm mt-2 mb-4">{product.short_description || ''}</p>
         
         <div class={`mt-auto border-t border-primary/10 pt-4 flex justify-between items-center ${isSold ? 'opacity-50' : ''}`}>
             {!isSold ? (

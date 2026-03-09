@@ -12,7 +12,7 @@ interface Props {
 const { items } = Astro.props;
 ---
 
-<nav class="flex items-center gap-2 text-xs font-bold tracking-widest uppercase text-slate-500 mb-8" aria-label="Breadcrumb">
+<nav class="flex items-center gap-2 text-xs font-bold tracking-widest uppercase text-slate-400 mb-8" aria-label="Breadcrumb">
   {items.map((item, index) => (
     <div class="flex items-center gap-2">
       {item.url && !item.isCurrent ? (
