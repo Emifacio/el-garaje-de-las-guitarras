@@ -70,7 +70,7 @@ const showSidebar = currentPath !== '/admin/login';
                     </a>
                 </nav>
                 <div class="p-4 border-t border-primary/20">
-                    <form action="/api/auth/logout" method="post">
+                    <form action="/api/auth/logout" method="post" data-astro-reload>
                         <button type="submit" class="w-full flex items-center justify-center gap-2 px-4 py-3 lg:py-2 bg-red-950/30 text-red-500 hover:bg-red-900/40 transition-colors rounded text-sm font-bold border border-red-900/50">
                             Cerrar Sesión <span class="material-symbols-outlined text-lg">logout</span>
                         </button>
