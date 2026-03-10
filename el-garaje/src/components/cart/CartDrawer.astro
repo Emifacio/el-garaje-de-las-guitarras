@@ -148,6 +148,30 @@ import { getCartItems } from '../../lib/cartStore';
 
             // Update WhatsApp Link
             checkoutBtn.href = generateCartWhatsAppUrl(items);
+            
+            // Add Tracking Event Listener (cleaning up any old listeners first)
+            const newCheckoutBtn = checkoutBtn.cloneNode(true) as HTMLAnchorElement;
+            checkoutBtn.replaceWith(newCheckoutBtn);
+            
+            newCheckoutBtn.addEventListener('click', () => {
+                const currentItems = getCartItems();
+                if (currentItems.length > 0) {
+                    fetch('/api/track-interaction', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            product_id: currentItems[0].id, // Primary association
+                            interaction_type: 'whatsapp_comprar',
+                            metadata: { 
+                                is_cart_checkout: true,
+                                item_count: currentItems.length,
+                                items: currentItems.map(i => ({ id: i.id, title: i.title })),
+                                timestamp: new Date().toISOString() 
+                            }
+                        })
+                    }).catch(err => console.warn('Tracking failed:', err));
+                }
+            });
         }
 
         // Listeners
