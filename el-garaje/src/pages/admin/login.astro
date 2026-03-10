@@ -55,7 +55,7 @@ if (session && Astro.request.method !== 'POST') {
                 </div>
             )}
 
-            <form method="post" class="w-full flex flex-col gap-6">
+            <form method="post" class="w-full flex flex-col gap-6" data-astro-reload>
                 <div class="flex flex-col gap-2">
                     <label for="email" class="text-xs font-bold uppercase tracking-widest text-slate-400">Email</label>
                     <input type="email" name="email" id="email" required
