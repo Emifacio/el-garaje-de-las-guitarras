@@ -40,6 +40,7 @@ export interface Product {
     created_at: string;
     updated_at: string;
     sold_date: string | null;
+    youtube_url?: string | null;
 
     // Joined relation representation
     categories?: Category | Category[] | null;

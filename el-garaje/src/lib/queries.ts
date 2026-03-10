@@ -61,7 +61,7 @@ export async function getProducts(options?: {
     let query = supabase
         .from('products')
         .select(`
-      id,category_id,title,slug,short_description,price,price_display,status,badge,brand,year,is_featured,sort_order,created_at,updated_at,sold_date,
+      id,category_id,title,slug,short_description,price,price_display,status,badge,brand,year,is_featured,sort_order,youtube_url,created_at,updated_at,sold_date,
       categories (id,name,slug,nav_key,sort_order,description,seo_description),
       product_images (id,storage_path,alt_text,sort_order,created_at)
     `)
@@ -107,7 +107,7 @@ export async function getProductBySlug(slug: string): Promise<Product | null> {
     const { data, error } = await supabase
         .from('products')
         .select(`
-      id,category_id,title,slug,short_description,long_description,price,price_display,status,badge,brand,year,specifications,is_featured,sort_order,seo_title,seo_description,created_at,updated_at,sold_date,
+      id,category_id,title,slug,short_description,long_description,price,price_display,status,badge,brand,year,specifications,is_featured,sort_order,youtube_url,seo_title,seo_description,created_at,updated_at,sold_date,
       categories (id,name,slug,nav_key,sort_order,description,seo_description),
       product_images (id,storage_path,alt_text,sort_order,created_at)
     `)

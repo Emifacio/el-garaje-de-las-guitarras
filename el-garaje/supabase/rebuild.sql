@@ -41,6 +41,7 @@ CREATE TABLE public.products (
     sort_order INTEGER DEFAULT 0,
     seo_title TEXT,
     seo_description TEXT,
+    youtube_url TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );

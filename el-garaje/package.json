@@ -25,6 +25,7 @@
     "@supabase/supabase-js": "^2.98.0",
     "@tailwindcss/vite": "^4.2.1",
     "astro": "^5.17.1",
+    "pg": "^8.20.0",
     "pitchy": "^4.1.0",
     "tailwindcss": "^4.2.1"
   },
