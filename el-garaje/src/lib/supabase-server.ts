@@ -25,19 +25,24 @@ export const createSupabaseServerClient = (cookies: AstroCookies, request: Reque
                             if (options.sameSite.toLowerCase() === 'none') sameSiteVal = 'none';
                         }
 
+                        const isSecure = request.url.startsWith('https://') || 
+                                        request.headers.get('x-forwarded-proto') === 'https';
+
                         const astroOptions = {
                             path: '/',
-                            secure: import.meta.env.PROD, // Override to explicitly false on local HTTP to avoid drops
+                            secure: isSecure,
                             httpOnly: true,
                             sameSite: sameSiteVal,
                             maxAge: options?.maxAge
                         };
 
-                        // Only add domain if it is provided AND we're in production, 
-                        // as browsers often reject explicitly setting domain="localhost"
+                        // Let the browser handle the domain automatically by not specifying it.
+                        // This avoids issues where the provided domain doesn't perfectly match the host.
+                        /*
                         if (import.meta.env.PROD && options?.domain) {
                             (astroOptions as any).domain = options.domain;
                         }
+                        */
 
                         if (value === '') {
                             astroOptions.maxAge = 0;
