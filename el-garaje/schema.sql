@@ -47,10 +47,19 @@ CREATE TABLE public.product_images (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- 4. Create profiles table
+CREATE TABLE public.profiles (
+    id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
+    full_name TEXT,
+    avatar_url TEXT,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
 -- 4. Set up Row Level Security (RLS)
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.product_images ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
 -- Allow public read access to all tables
 CREATE POLICY "Allow public read access to categories"
@@ -71,6 +80,16 @@ CREATE POLICY "Allow authenticated full access to products"
 
 CREATE POLICY "Allow authenticated full access to product_images"
     ON public.product_images FOR ALL TO authenticated USING (true) WITH CHECK (true);
+
+-- Profiles policies (Owner only)
+CREATE POLICY "Profiles - select own" ON public.profiles 
+    FOR SELECT TO authenticated USING ((SELECT auth.uid()) = id);
+
+CREATE POLICY "Profiles - insert own" ON public.profiles 
+    FOR INSERT TO authenticated WITH CHECK ((SELECT auth.uid()) = id);
+
+CREATE POLICY "Profiles - update own" ON public.profiles 
+    FOR UPDATE TO authenticated USING ((SELECT auth.uid()) = id) WITH CHECK ((SELECT auth.uid()) = id);
 
 
 -- 5. Create Storage Bucket for images
