@@ -55,11 +55,21 @@ CREATE TABLE public.profiles (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- 5. Create interaction_logs table
+CREATE TABLE public.interaction_logs (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    product_id UUID REFERENCES public.products(id) ON DELETE SET NULL,
+    interaction_type TEXT NOT NULL,
+    metadata JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
 -- 4. Set up Row Level Security (RLS)
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.product_images ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.interaction_logs ENABLE ROW LEVEL SECURITY;
 
 -- Allow public read access to all tables
 CREATE POLICY "Allow public read access to categories"
@@ -90,6 +100,13 @@ CREATE POLICY "Profiles - insert own" ON public.profiles
 
 CREATE POLICY "Profiles - update own" ON public.profiles 
     FOR UPDATE TO authenticated USING ((SELECT auth.uid()) = id) WITH CHECK ((SELECT auth.uid()) = id);
+
+-- Interaction logs policies
+CREATE POLICY "Allow public insert to interaction_logs" 
+    ON public.interaction_logs FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Allow authenticated full access to interaction_logs" 
+    ON public.interaction_logs FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 
 -- 5. Create Storage Bucket for images
