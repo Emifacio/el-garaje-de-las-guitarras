@@ -1,23 +1,53 @@
--- Enable Row Level Security for the interaction_logs table
-ALTER TABLE public.interaction_logs ENABLE ROW LEVEL SECURITY;
+-- Interaction logs RLS fix aligned with the hardened admin setup.
 
--- Allow anyone to INSERT interaction logs (telemetry)
-CREATE POLICY "Allow public insert to interaction_logs" 
-ON public.interaction_logs 
-FOR INSERT 
-WITH CHECK (true);
+create or replace function public.is_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+    select coalesce(
+        (
+            select p.is_admin
+            from public.profiles p
+            where p.id = (select auth.uid())
+        ),
+        false
+    );
+$$;
 
--- Allow only authenticated users (Admins) to SELECT interaction logs
-CREATE POLICY "Allow authenticated full access to interaction_logs" 
-ON public.interaction_logs 
-FOR ALL 
-TO authenticated 
-USING (true) 
-WITH CHECK (true);
+alter table public.interaction_logs enable row level security;
 
--- Create index on the created_at column for analytics performance
-CREATE INDEX IF NOT EXISTS idx_interaction_logs_created_at ON public.interaction_logs (created_at);
--- Create index on product_id for product-specific analytics
-CREATE INDEX IF NOT EXISTS idx_interaction_logs_product_id ON public.interaction_logs (product_id);
--- Create index on interaction_type
-CREATE INDEX IF NOT EXISTS idx_interaction_logs_type ON public.interaction_logs (interaction_type);
+drop policy if exists "Allow public insert to interaction_logs" on public.interaction_logs;
+drop policy if exists "Allow authenticated full access to interaction_logs" on public.interaction_logs;
+drop policy if exists "Public can write interaction logs" on public.interaction_logs;
+drop policy if exists "Admins can read interaction logs" on public.interaction_logs;
+drop policy if exists "Admins can delete interaction logs" on public.interaction_logs;
+
+create policy "Public can write interaction logs"
+on public.interaction_logs
+for insert
+to public
+with check (
+    nullif(trim(interaction_type), '') is not null
+    and jsonb_typeof(metadata) = 'object'
+);
+
+create policy "Admins can read interaction logs"
+on public.interaction_logs
+for select
+to authenticated
+using ((select public.is_admin()));
+
+create policy "Admins can delete interaction logs"
+on public.interaction_logs
+for delete
+to authenticated
+using ((select public.is_admin()));
+
+create index if not exists idx_interaction_logs_created_at on public.interaction_logs (created_at desc);
+create index if not exists idx_interaction_logs_product_id on public.interaction_logs (product_id);
+create index if not exists idx_interaction_logs_type on public.interaction_logs (interaction_type);
+
+grant execute on function public.is_admin() to authenticated;

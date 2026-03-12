@@ -114,6 +114,11 @@ Run the SQL schema in your Supabase SQL Editor:
 # Copy contents of schema.sql and run in Supabase dashboard
 ```
 
+If the project already exists and you want to fix the current warnings without rebuilding data, run:
+```bash
+# Copy contents of supabase/harden-admin-access.sql and run in Supabase dashboard
+```
+
 5. Start the development server:
 ```bash
 npm run dev
@@ -142,9 +147,10 @@ Visit `http://localhost:4321` to see the site.
 ### Key Features
 
 - Row Level Security (RLS) enabled
-- Public read access for all products
-- Authenticated admin access for management
-- Storage bucket for product images
+- Public read access for storefront content
+- Admin-only write access backed by `profiles.is_admin`
+- Automatic profile creation trigger for new auth users
+- Storage bucket policies limited to admin uploads/edits
 - JSONB specifications field for flexible product attributes
 
 ## Admin Panel
@@ -158,6 +164,14 @@ Access the admin panel at `/admin/login`
 - Category assignment
 - Status management (available/sold/reserved)
 - Featured product toggle
+
+### Required Supabase Auth Setting
+
+To clear the `Leaked Password Protection Disabled` warning from the Supabase advisor, enable leaked password protection in:
+
+`Authentication -> Sign In / Providers -> Password security`
+
+That setting lives in the Supabase dashboard and cannot be changed from this repository alone.
 
 ## Deployment
 

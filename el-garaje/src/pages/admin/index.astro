@@ -1,27 +1,20 @@
 ---
 export const prerender = false;
 import AdminLayout from '../../layouts/AdminLayout.astro';
+import { getAdminAccess } from '../../lib/admin';
 import { createSupabaseServerClient } from '../../lib/supabase-server';
 
 const supabase = createSupabaseServerClient(Astro.cookies, Astro.request);
+const adminAccess = await getAdminAccess(supabase);
 
-// Verify session at the page level to avoid ResponseSentError
-console.log(`[Admin Dashboard] Checking session...`);
-console.log(`[Admin Dashboard] All Cookies received:`, Object.keys(Astro.cookies).join(', '));
+if (!adminAccess.ok) {
+  if (adminAccess.reason === 'forbidden' || adminAccess.reason === 'missing_profile') {
+    await supabase.auth.signOut();
+    return Astro.redirect('/admin/login?error=not_admin');
+  }
 
-const { data: { session }, error } = await supabase.auth.getSession();
-
-if (error) {
-  console.error(`[Admin Dashboard] Session error:`, error.message);
-}
-if (!session) {
-  console.log(`[Admin Dashboard] Session is null, redirecting back to login...`);
   return Astro.redirect('/admin/login');
 }
-console.log(`[Admin Dashboard] Session valid for user:`, session.user.email);
-
-// We get the user to greet them
-const { data: { user } } = await supabase.auth.getUser();
 
 // Quick statistics queries
 const { count: productCount } = await supabase.from('products').select('*', { count: 'exact', head: true });
@@ -31,7 +24,7 @@ const { count: categoryCount } = await supabase.from('categories').select('*', {
 <AdminLayout title="Dashboard">
     <div class="mb-10">
         <h1 class="font-serif text-3xl font-black text-slate-100 tracking-wide mb-2">Panel de Control</h1>
-        <p class="text-slate-400">¡Hola, {user?.email}! Bienvenido a la administración de El Garaje.</p>
+        <p class="text-slate-400">¡Hola, {adminAccess.user.email}! Bienvenido a la administración de El Garaje.</p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">

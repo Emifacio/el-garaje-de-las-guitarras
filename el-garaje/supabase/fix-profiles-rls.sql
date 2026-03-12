@@ -1,26 +1,31 @@
--- Enable Row Level Security for the profiles table
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+-- Profiles RLS fix aligned with the hardened admin setup.
 
--- Drop existing policies if they exist to start fresh
-DROP POLICY IF EXISTS "Profiles - select own" ON public.profiles;
-DROP POLICY IF EXISTS "Profiles - insert own" ON public.profiles;
-DROP POLICY IF EXISTS "Profiles - update own" ON public.profiles;
+alter table public.profiles enable row level security;
 
--- Allow authenticated users to SELECT their own profile
-CREATE POLICY "Profiles - select own" ON public.profiles 
-FOR SELECT TO authenticated 
-USING (auth.uid() = id);
+drop policy if exists "Profiles - select own" on public.profiles;
+drop policy if exists "Profiles - insert own" on public.profiles;
+drop policy if exists "Profiles - update own" on public.profiles;
+drop policy if exists "Profiles can read own row" on public.profiles;
+drop policy if exists "Profiles can create own row" on public.profiles;
+drop policy if exists "Profiles can update own row" on public.profiles;
 
--- Allow authenticated users to INSERT their own profile
-CREATE POLICY "Profiles - insert own" ON public.profiles 
-FOR INSERT TO authenticated 
-WITH CHECK (auth.uid() = id);
+create policy "Profiles can read own row"
+on public.profiles
+for select
+to authenticated
+using ((select auth.uid()) = id);
 
--- Allow authenticated users to UPDATE their own profile
-CREATE POLICY "Profiles - update own" ON public.profiles 
-FOR UPDATE TO authenticated 
-USING (auth.uid() = id) 
-WITH CHECK (auth.uid() = id);
+create policy "Profiles can create own row"
+on public.profiles
+for insert
+to authenticated
+with check ((select auth.uid()) = id);
 
--- Create index on the ID column for policy performance
-CREATE INDEX IF NOT EXISTS idx_profiles_id ON public.profiles (id);
+create policy "Profiles can update own row"
+on public.profiles
+for update
+to authenticated
+using ((select auth.uid()) = id)
+with check ((select auth.uid()) = id);
+
+create index if not exists idx_profiles_id on public.profiles (id);

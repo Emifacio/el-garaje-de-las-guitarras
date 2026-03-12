@@ -1,73 +1,9 @@
--- Complete rebuild schema for El Garaje de las Guitarras
--- Warning: this script drops the existing catalog tables and replaces the storage policies.
-
-drop policy if exists "Public Access" on storage.objects;
-drop policy if exists "Authenticated Full Access" on storage.objects;
-drop policy if exists "Product images are publicly readable" on storage.objects;
-drop policy if exists "Admins can upload product images" on storage.objects;
-drop policy if exists "Admins can update product images objects" on storage.objects;
-drop policy if exists "Admins can delete product images objects" on storage.objects;
-
-drop trigger if exists on_auth_user_created on auth.users;
-drop table if exists public.interaction_logs cascade;
-drop table if exists public.product_images cascade;
-drop table if exists public.products cascade;
-drop table if exists public.categories cascade;
-drop table if exists public.profiles cascade;
-drop type if exists public.product_status cascade;
-
-drop function if exists public.is_admin();
-drop function if exists public.handle_new_user();
-drop function if exists public.set_current_timestamp_updated_at();
+-- Hardening patch for an existing El Garaje Supabase project.
+-- Run this once in the Supabase SQL Editor.
 
 create extension if not exists pgcrypto;
 
-create type public.product_status as enum ('disponible', 'vendido', 'reservado');
-
-create table public.categories (
-    id uuid primary key default gen_random_uuid(),
-    name text not null,
-    slug text not null unique,
-    nav_key text not null,
-    description text,
-    seo_description text,
-    sort_order integer not null default 0
-);
-
-create table public.products (
-    id uuid primary key default gen_random_uuid(),
-    category_id uuid not null references public.categories(id) on delete restrict,
-    title text not null,
-    slug text not null unique,
-    short_description text,
-    long_description text,
-    price numeric(10, 2),
-    price_display text,
-    status public.product_status not null default 'disponible',
-    sold_date timestamptz,
-    badge text,
-    brand text,
-    year integer,
-    specifications jsonb not null default '[]'::jsonb,
-    is_featured boolean not null default false,
-    sort_order integer not null default 0,
-    seo_title text,
-    seo_description text,
-    youtube_url text,
-    created_at timestamptz not null default timezone('utc', now()),
-    updated_at timestamptz not null default timezone('utc', now())
-);
-
-create table public.product_images (
-    id uuid primary key default gen_random_uuid(),
-    product_id uuid not null references public.products(id) on delete cascade,
-    storage_path text not null,
-    alt_text text,
-    sort_order integer not null default 0,
-    created_at timestamptz not null default timezone('utc', now())
-);
-
-create table public.profiles (
+create table if not exists public.profiles (
     id uuid primary key references auth.users on delete cascade,
     username text,
     full_name text,
@@ -77,13 +13,18 @@ create table public.profiles (
     updated_at timestamptz not null default timezone('utc', now())
 );
 
-create table public.interaction_logs (
-    id uuid primary key default gen_random_uuid(),
-    product_id uuid references public.products(id) on delete set null,
-    interaction_type text not null,
-    metadata jsonb not null default '{}'::jsonb,
-    created_at timestamptz not null default timezone('utc', now())
-);
+alter table public.profiles add column if not exists username text;
+alter table public.profiles add column if not exists full_name text;
+alter table public.profiles add column if not exists avatar_url text;
+alter table public.profiles add column if not exists is_admin boolean not null default false;
+alter table public.profiles add column if not exists created_at timestamptz not null default timezone('utc', now());
+alter table public.profiles add column if not exists updated_at timestamptz not null default timezone('utc', now());
+
+alter table public.categories enable row level security;
+alter table public.products enable row level security;
+alter table public.product_images enable row level security;
+alter table public.profiles enable row level security;
+alter table public.interaction_logs enable row level security;
 
 create or replace function public.set_current_timestamp_updated_at()
 returns trigger
@@ -159,26 +100,43 @@ begin
 end;
 $$;
 
+drop trigger if exists handle_updated_at_products on public.products;
 create trigger handle_updated_at_products
 before update on public.products
 for each row
 execute function public.set_current_timestamp_updated_at();
 
+drop trigger if exists handle_updated_at_profiles on public.profiles;
 create trigger handle_updated_at_profiles
 before update on public.profiles
 for each row
 execute function public.set_current_timestamp_updated_at();
 
+drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
 after insert on auth.users
 for each row
 execute function public.handle_new_user();
 
-alter table public.categories enable row level security;
-alter table public.products enable row level security;
-alter table public.product_images enable row level security;
-alter table public.profiles enable row level security;
-alter table public.interaction_logs enable row level security;
+insert into public.profiles (id, username, full_name, avatar_url)
+select
+    u.id,
+    coalesce(u.raw_user_meta_data ->> 'username', split_part(u.email, '@', 1)),
+    u.raw_user_meta_data ->> 'full_name',
+    u.raw_user_meta_data ->> 'avatar_url'
+from auth.users u
+on conflict (id) do update
+set
+    username = coalesce(excluded.username, public.profiles.username),
+    full_name = coalesce(excluded.full_name, public.profiles.full_name),
+    avatar_url = coalesce(excluded.avatar_url, public.profiles.avatar_url);
+
+drop policy if exists "Allow public read access to categories" on public.categories;
+drop policy if exists "Allow authenticated full access to categories" on public.categories;
+drop policy if exists "Categories are publicly readable" on public.categories;
+drop policy if exists "Admins can insert categories" on public.categories;
+drop policy if exists "Admins can update categories" on public.categories;
+drop policy if exists "Admins can delete categories" on public.categories;
 
 create policy "Categories are publicly readable"
 on public.categories
@@ -205,6 +163,13 @@ for delete
 to authenticated
 using ((select public.is_admin()));
 
+drop policy if exists "Allow public read access to products" on public.products;
+drop policy if exists "Allow authenticated full access to products" on public.products;
+drop policy if exists "Products are publicly readable" on public.products;
+drop policy if exists "Admins can insert products" on public.products;
+drop policy if exists "Admins can update products" on public.products;
+drop policy if exists "Admins can delete products" on public.products;
+
 create policy "Products are publicly readable"
 on public.products
 for select
@@ -229,6 +194,13 @@ on public.products
 for delete
 to authenticated
 using ((select public.is_admin()));
+
+drop policy if exists "Allow public read access to product_images" on public.product_images;
+drop policy if exists "Allow authenticated full access to product_images" on public.product_images;
+drop policy if exists "Product images are publicly readable" on public.product_images;
+drop policy if exists "Admins can insert product images" on public.product_images;
+drop policy if exists "Admins can update product images" on public.product_images;
+drop policy if exists "Admins can delete product images" on public.product_images;
 
 create policy "Product images are publicly readable"
 on public.product_images
@@ -255,6 +227,13 @@ for delete
 to authenticated
 using ((select public.is_admin()));
 
+drop policy if exists "Profiles - select own" on public.profiles;
+drop policy if exists "Profiles - insert own" on public.profiles;
+drop policy if exists "Profiles - update own" on public.profiles;
+drop policy if exists "Profiles can read own row" on public.profiles;
+drop policy if exists "Profiles can create own row" on public.profiles;
+drop policy if exists "Profiles can update own row" on public.profiles;
+
 create policy "Profiles can read own row"
 on public.profiles
 for select
@@ -273,6 +252,12 @@ for update
 to authenticated
 using ((select auth.uid()) = id)
 with check ((select auth.uid()) = id);
+
+drop policy if exists "Allow public insert to interaction_logs" on public.interaction_logs;
+drop policy if exists "Allow authenticated full access to interaction_logs" on public.interaction_logs;
+drop policy if exists "Public can write interaction logs" on public.interaction_logs;
+drop policy if exists "Admins can read interaction logs" on public.interaction_logs;
+drop policy if exists "Admins can delete interaction logs" on public.interaction_logs;
 
 create policy "Public can write interaction logs"
 on public.interaction_logs
@@ -299,6 +284,13 @@ insert into storage.buckets (id, name, public)
 values ('product-images', 'product-images', true)
 on conflict (id) do update
 set public = excluded.public;
+
+drop policy if exists "Public Access" on storage.objects;
+drop policy if exists "Authenticated Full Access" on storage.objects;
+drop policy if exists "Product images are publicly readable" on storage.objects;
+drop policy if exists "Admins can upload product images" on storage.objects;
+drop policy if exists "Admins can update product images objects" on storage.objects;
+drop policy if exists "Admins can delete product images objects" on storage.objects;
 
 create policy "Product images are publicly readable"
 on storage.objects
@@ -337,27 +329,11 @@ using (
     and (select public.is_admin())
 );
 
-create index idx_profiles_is_admin on public.profiles (is_admin) where is_admin = true;
-create index idx_interaction_logs_created_at on public.interaction_logs (created_at desc);
-create index idx_interaction_logs_product_id on public.interaction_logs (product_id);
-create index idx_interaction_logs_type on public.interaction_logs (interaction_type);
-create index idx_products_category_id on public.products (category_id);
-create index idx_product_images_product_id on public.product_images (product_id, sort_order);
+create index if not exists idx_profiles_is_admin on public.profiles (is_admin) where is_admin = true;
+create index if not exists idx_interaction_logs_created_at on public.interaction_logs (created_at desc);
+create index if not exists idx_interaction_logs_product_id on public.interaction_logs (product_id);
+create index if not exists idx_interaction_logs_type on public.interaction_logs (interaction_type);
+create index if not exists idx_products_category_id on public.products (category_id);
+create index if not exists idx_product_images_product_id on public.product_images (product_id, sort_order);
 
 grant execute on function public.is_admin() to authenticated;
-
-insert into public.categories (id, name, slug, nav_key, description, sort_order) values
-('b5025701-d0b4-4e4b-a2eb-4bf9d2d0c242', 'Guitarras Eléctricas', 'electricas', 'electricas', 'Colección de guitarras eléctricas vintage y de luthier.', 1),
-('c4e0f117-6404-43f1-bca7-854746f33d7b', 'Guitarras Acústicas', 'acusticas', 'acusticas', 'Guitarras acústicas y clásicas con maderas asentadas.', 2),
-('70ba16cb-ef23-455b-b9f1-a1ab3dfa0ef8', 'Bajos', 'bajos', 'bajos', 'Bajos vintage de colección.', 3),
-('a8385e05-728b-49eb-9ea2-22591662ed72', 'Amplificadores', 'amplificadores', 'amplificadores', 'Amplificadores valvulares clásicos y cabezales.', 4),
-('e9b5fbb3-936a-4b95-a42e-13c2f1f8b6d3', 'Efectos', 'efectos', 'efectos', 'Pedales de efectos: distorsión, modulación, delay, reverb, wah y más.', 5)
-on conflict (slug) do nothing;
-
-insert into public.products (id, category_id, title, slug, price_display, badge, is_featured, short_description) values
-('6a42a0b2-dd84-486a-aeaf-9e54d852089c', 'b5025701-d0b4-4e4b-a2eb-4bf9d2d0c242', 'Fender Stratocaster 1962', 'fender-stratocaster-1962', 'Consultar', 'Vintage', true, 'Icono indiscutido con finish Sunburst original. Pastillas black bottom.'),
-('e9dffdb2-3376-43b9-a2a1-b8f158869de4', 'b5025701-d0b4-4e4b-a2eb-4bf9d2d0c242', 'Gibson Les Paul Custom 1978', 'gibson-les-paul-custom-1978', 'USD 6,500', 'Premium', false, 'Black Beauty de la era Norlin. T-Tops originales y diapasón de ébano.'),
-('f05dadd0-cfec-4286-9aeb-a006ef67e2fa', 'b5025701-d0b4-4e4b-a2eb-4bf9d2d0c242', 'Fender Telecaster Thinline 1972', 'fender-telecaster-thinline-1972', 'USD 4,200', null, false, 'Cuerpo de fresno ligero. Wide Range humbuckers diseñados por Seth Lover.'),
-('b19d5b03-9b43-4dc9-9d5d-16a575a7b686', 'a8385e05-728b-49eb-9ea2-22591662ed72', 'Vox AC30 Top Boost 1964', 'vox-ac30-top-boost-1964', 'Consultar', 'Rare', true, 'El sonido de la invasión británica. Parlantes Celestion Blue Alnico originales.'),
-('e74a8174-8393-41bb-a5f1-cf49fb81005b', 'a8385e05-728b-49eb-9ea2-22591662ed72', 'Fender Deluxe Reverb 1965', 'fender-deluxe-reverb-1965', 'USD 3,800', 'Blackface', false, 'El combo por excelencia para estudio y clubes. Circuito AB763 intacto.')
-on conflict (slug) do nothing;

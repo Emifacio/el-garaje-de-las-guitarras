@@ -1,152 +1,344 @@
--- Initial Schema for El Garaje de Las Guitarras
--- Run this in the Supabase SQL Editor
+-- Initial schema for El Garaje de las Guitarras
+-- Run this in the Supabase SQL Editor for a fresh project.
 
--- 1. Create categories table
-CREATE TABLE public.categories (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    name TEXT NOT NULL,
-    slug TEXT NOT NULL UNIQUE,
-    nav_key TEXT NOT NULL,
-    description TEXT,
-    seo_description TEXT,
-    sort_order INTEGER DEFAULT 0
+create extension if not exists pgcrypto;
+
+create type public.product_status as enum ('disponible', 'vendido', 'reservado');
+
+create table public.categories (
+    id uuid primary key default gen_random_uuid(),
+    name text not null,
+    slug text not null unique,
+    nav_key text not null,
+    description text,
+    seo_description text,
+    sort_order integer not null default 0
 );
 
--- 2. Create products table
-CREATE TYPE public.product_status AS ENUM ('disponible', 'vendido', 'reservado');
-
-CREATE TABLE public.products (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    category_id UUID REFERENCES public.categories(id) ON DELETE RESTRICT,
-    title TEXT NOT NULL,
-    slug TEXT NOT NULL UNIQUE,
-    short_description TEXT,
-    long_description TEXT,
-    price DECIMAL(10,2),
-    price_display TEXT,
-    status public.product_status DEFAULT 'disponible',
-    badge TEXT,
-    brand TEXT,
-    year INTEGER,
-    specifications JSONB DEFAULT '[]'::jsonb,
-    is_featured BOOLEAN DEFAULT false,
-    sort_order INTEGER DEFAULT 0,
-    seo_title TEXT,
-    seo_description TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+create table public.products (
+    id uuid primary key default gen_random_uuid(),
+    category_id uuid not null references public.categories(id) on delete restrict,
+    title text not null,
+    slug text not null unique,
+    short_description text,
+    long_description text,
+    price numeric(10, 2),
+    price_display text,
+    status public.product_status not null default 'disponible',
+    sold_date timestamptz,
+    badge text,
+    brand text,
+    year integer,
+    specifications jsonb not null default '[]'::jsonb,
+    is_featured boolean not null default false,
+    sort_order integer not null default 0,
+    seo_title text,
+    seo_description text,
+    youtube_url text,
+    created_at timestamptz not null default timezone('utc', now()),
+    updated_at timestamptz not null default timezone('utc', now())
 );
 
--- 3. Create product_images table
-CREATE TABLE public.product_images (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    product_id UUID REFERENCES public.products(id) ON DELETE CASCADE,
-    storage_path TEXT NOT NULL,
-    alt_text TEXT,
-    sort_order INTEGER DEFAULT 0,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+create table public.product_images (
+    id uuid primary key default gen_random_uuid(),
+    product_id uuid not null references public.products(id) on delete cascade,
+    storage_path text not null,
+    alt_text text,
+    sort_order integer not null default 0,
+    created_at timestamptz not null default timezone('utc', now())
 );
 
--- 4. Create profiles table
-CREATE TABLE public.profiles (
-    id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
-    username TEXT,
-    full_name TEXT,
-    avatar_url TEXT,
-    is_admin BOOLEAN DEFAULT false,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+create table public.profiles (
+    id uuid primary key references auth.users on delete cascade,
+    username text,
+    full_name text,
+    avatar_url text,
+    is_admin boolean not null default false,
+    created_at timestamptz not null default timezone('utc', now()),
+    updated_at timestamptz not null default timezone('utc', now())
 );
 
--- 5. Create interaction_logs table
-CREATE TABLE public.interaction_logs (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    product_id UUID REFERENCES public.products(id) ON DELETE SET NULL,
-    interaction_type TEXT NOT NULL,
-    metadata JSONB DEFAULT '{}'::jsonb,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+create table public.interaction_logs (
+    id uuid primary key default gen_random_uuid(),
+    product_id uuid references public.products(id) on delete set null,
+    interaction_type text not null,
+    metadata jsonb not null default '{}'::jsonb,
+    created_at timestamptz not null default timezone('utc', now())
 );
 
--- 4. Set up Row Level Security (RLS)
-ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.product_images ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.interaction_logs ENABLE ROW LEVEL SECURITY;
+create or replace function public.set_current_timestamp_updated_at()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+    new.updated_at = timezone('utc', now());
+    return new;
+end;
+$$;
 
--- Allow public read access to all tables
-CREATE POLICY "Allow public read access to categories"
-    ON public.categories FOR SELECT USING (true);
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+    insert into public.profiles (id, username, full_name, avatar_url)
+    values (
+        new.id,
+        coalesce(new.raw_user_meta_data ->> 'username', split_part(new.email, '@', 1)),
+        new.raw_user_meta_data ->> 'full_name',
+        new.raw_user_meta_data ->> 'avatar_url'
+    )
+    on conflict (id) do update
+    set
+        username = coalesce(excluded.username, public.profiles.username),
+        full_name = coalesce(excluded.full_name, public.profiles.full_name),
+        avatar_url = coalesce(excluded.avatar_url, public.profiles.avatar_url),
+        updated_at = timezone('utc', now());
 
-CREATE POLICY "Allow public read access to products"
-    ON public.products FOR SELECT USING (true);
+    return new;
+end;
+$$;
 
-CREATE POLICY "Allow public read access to product_images"
-    ON public.product_images FOR SELECT USING (true);
+create or replace function public.is_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+    select coalesce(
+        (
+            select p.is_admin
+            from public.profiles p
+            where p.id = (select auth.uid())
+        ),
+        false
+    );
+$$;
 
--- Allow authenticated users (Admins) full access
-CREATE POLICY "Allow authenticated full access to categories"
-    ON public.categories FOR ALL TO authenticated USING (true) WITH CHECK (true);
+create or replace function public.set_admin_by_email(target_email text, make_admin boolean default true)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+    update public.profiles p
+    set
+        is_admin = make_admin,
+        updated_at = timezone('utc', now())
+    from auth.users u
+    where u.id = p.id
+      and lower(u.email) = lower(target_email);
 
-CREATE POLICY "Allow authenticated full access to products"
-    ON public.products FOR ALL TO authenticated USING (true) WITH CHECK (true);
+    if not found then
+        raise exception 'No auth user found for email %', target_email;
+    end if;
+end;
+$$;
 
-CREATE POLICY "Allow authenticated full access to product_images"
-    ON public.product_images FOR ALL TO authenticated USING (true) WITH CHECK (true);
+create trigger handle_updated_at_products
+before update on public.products
+for each row
+execute function public.set_current_timestamp_updated_at();
 
--- Profiles policies (Owner only)
-CREATE POLICY "Profiles - select own" ON public.profiles 
-    FOR SELECT TO authenticated USING ((SELECT auth.uid()) = id);
+create trigger handle_updated_at_profiles
+before update on public.profiles
+for each row
+execute function public.set_current_timestamp_updated_at();
 
-CREATE POLICY "Profiles - insert own" ON public.profiles 
-    FOR INSERT TO authenticated WITH CHECK ((SELECT auth.uid()) = id);
+create trigger on_auth_user_created
+after insert on auth.users
+for each row
+execute function public.handle_new_user();
 
-CREATE POLICY "Profiles - update own" ON public.profiles 
-    FOR UPDATE TO authenticated USING ((SELECT auth.uid()) = id) WITH CHECK ((SELECT auth.uid()) = id);
+alter table public.categories enable row level security;
+alter table public.products enable row level security;
+alter table public.product_images enable row level security;
+alter table public.profiles enable row level security;
+alter table public.interaction_logs enable row level security;
 
--- Interaction logs policies
-CREATE POLICY "Allow public insert to interaction_logs" 
-    ON public.interaction_logs FOR INSERT WITH CHECK (true);
+create policy "Categories are publicly readable"
+on public.categories
+for select
+to public
+using (true);
 
-CREATE POLICY "Allow authenticated full access to interaction_logs" 
-    ON public.interaction_logs FOR ALL TO authenticated USING (true) WITH CHECK (true);
+create policy "Admins can insert categories"
+on public.categories
+for insert
+to authenticated
+with check ((select public.is_admin()));
 
+create policy "Admins can update categories"
+on public.categories
+for update
+to authenticated
+using ((select public.is_admin()))
+with check ((select public.is_admin()));
 
--- 5. Create Storage Bucket for images
-INSERT INTO storage.buckets (id, name, public) 
-VALUES ('product-images', 'product-images', true)
-ON CONFLICT (id) DO NOTHING;
+create policy "Admins can delete categories"
+on public.categories
+for delete
+to authenticated
+using ((select public.is_admin()));
 
-CREATE POLICY "Public Access" 
-ON storage.objects FOR SELECT 
-USING ( bucket_id = 'product-images' );
+create policy "Products are publicly readable"
+on public.products
+for select
+to public
+using (true);
 
-CREATE POLICY "Authenticated Full Access" 
-ON storage.objects FOR ALL 
-TO authenticated 
-USING ( bucket_id = 'product-images' )
-WITH CHECK ( bucket_id = 'product-images' );
+create policy "Admins can insert products"
+on public.products
+for insert
+to authenticated
+with check ((select public.is_admin()));
 
--- 6. Insert Seed Data - Categories
-INSERT INTO public.categories (id, name, slug, nav_key, description, sort_order) VALUES
+create policy "Admins can update products"
+on public.products
+for update
+to authenticated
+using ((select public.is_admin()))
+with check ((select public.is_admin()));
+
+create policy "Admins can delete products"
+on public.products
+for delete
+to authenticated
+using ((select public.is_admin()));
+
+create policy "Product images are publicly readable"
+on public.product_images
+for select
+to public
+using (true);
+
+create policy "Admins can insert product images"
+on public.product_images
+for insert
+to authenticated
+with check ((select public.is_admin()));
+
+create policy "Admins can update product images"
+on public.product_images
+for update
+to authenticated
+using ((select public.is_admin()))
+with check ((select public.is_admin()));
+
+create policy "Admins can delete product images"
+on public.product_images
+for delete
+to authenticated
+using ((select public.is_admin()));
+
+create policy "Profiles can read own row"
+on public.profiles
+for select
+to authenticated
+using ((select auth.uid()) = id);
+
+create policy "Profiles can create own row"
+on public.profiles
+for insert
+to authenticated
+with check ((select auth.uid()) = id);
+
+create policy "Profiles can update own row"
+on public.profiles
+for update
+to authenticated
+using ((select auth.uid()) = id)
+with check ((select auth.uid()) = id);
+
+create policy "Public can write interaction logs"
+on public.interaction_logs
+for insert
+to public
+with check (
+    nullif(trim(interaction_type), '') is not null
+    and jsonb_typeof(metadata) = 'object'
+);
+
+create policy "Admins can read interaction logs"
+on public.interaction_logs
+for select
+to authenticated
+using ((select public.is_admin()));
+
+create policy "Admins can delete interaction logs"
+on public.interaction_logs
+for delete
+to authenticated
+using ((select public.is_admin()));
+
+insert into storage.buckets (id, name, public)
+values ('product-images', 'product-images', true)
+on conflict (id) do update
+set public = excluded.public;
+
+create policy "Product images are publicly readable"
+on storage.objects
+for select
+to public
+using (bucket_id = 'product-images');
+
+create policy "Admins can upload product images"
+on storage.objects
+for insert
+to authenticated
+with check (
+    bucket_id = 'product-images'
+    and (select public.is_admin())
+);
+
+create policy "Admins can update product images objects"
+on storage.objects
+for update
+to authenticated
+using (
+    bucket_id = 'product-images'
+    and (select public.is_admin())
+)
+with check (
+    bucket_id = 'product-images'
+    and (select public.is_admin())
+);
+
+create policy "Admins can delete product images objects"
+on storage.objects
+for delete
+to authenticated
+using (
+    bucket_id = 'product-images'
+    and (select public.is_admin())
+);
+
+create index idx_profiles_is_admin on public.profiles (is_admin) where is_admin = true;
+create index idx_interaction_logs_created_at on public.interaction_logs (created_at desc);
+create index idx_interaction_logs_product_id on public.interaction_logs (product_id);
+create index idx_interaction_logs_type on public.interaction_logs (interaction_type);
+create index idx_products_category_id on public.products (category_id);
+create index idx_product_images_product_id on public.product_images (product_id, sort_order);
+
+grant execute on function public.is_admin() to authenticated;
+
+insert into public.categories (id, name, slug, nav_key, description, sort_order) values
 ('b5025701-d0b4-4e4b-a2eb-4bf9d2d0c242', 'Guitarras Eléctricas', 'electricas', 'electricas', 'Colección de guitarras eléctricas vintage y de luthier.', 1),
 ('c4e0f117-6404-43f1-bca7-854746f33d7b', 'Guitarras Acústicas', 'acusticas', 'acusticas', 'Guitarras acústicas y clásicas con maderas asentadas.', 2),
 ('70ba16cb-ef23-455b-b9f1-a1ab3dfa0ef8', 'Bajos', 'bajos', 'bajos', 'Bajos vintage de colección.', 3),
-('a8385e05-728b-49eb-9ea2-22591662ed72', 'Amplificadores', 'amplificadores', 'amplificadores', 'Amplificadores valvulares clásicos y cabezales.', 4)
-ON CONFLICT (slug) DO NOTHING;
+('a8385e05-728b-49eb-9ea2-22591662ed72', 'Amplificadores', 'amplificadores', 'amplificadores', 'Amplificadores valvulares clásicos y cabezales.', 4),
+('e9b5fbb3-936a-4b95-a42e-13c2f1f8b6d3', 'Efectos', 'efectos', 'efectos', 'Pedales de efectos: distorsión, modulación, delay, reverb, wah y más.', 5)
+on conflict (slug) do nothing;
 
--- 7. Insert Seed Data - Products (Sample Based on original HTML)
--- Electric Guitars
-INSERT INTO public.products (id, category_id, title, slug, price_display, badge, is_featured, short_description) VALUES
+insert into public.products (id, category_id, title, slug, price_display, badge, is_featured, short_description) values
 ('6a42a0b2-dd84-486a-aeaf-9e54d852089c', 'b5025701-d0b4-4e4b-a2eb-4bf9d2d0c242', 'Fender Stratocaster 1962', 'fender-stratocaster-1962', 'Consultar', 'Vintage', true, 'Icono indiscutido con finish Sunburst original. Pastillas black bottom.'),
 ('e9dffdb2-3376-43b9-a2a1-b8f158869de4', 'b5025701-d0b4-4e4b-a2eb-4bf9d2d0c242', 'Gibson Les Paul Custom 1978', 'gibson-les-paul-custom-1978', 'USD 6,500', 'Premium', false, 'Black Beauty de la era Norlin. T-Tops originales y diapasón de ébano.'),
-('f05dadd0-cfec-4286-9aeb-a006ef67e2fa', 'b5025701-d0b4-4e4b-a2eb-4bf9d2d0c242', 'Fender Telecaster Thinline 1972', 'fender-telecaster-thinline-1972', 'USD 4,200', null, false, 'Cuerpo de fresno ligero. Wide Range humbuckers diseñados por Seth Lover.')
-ON CONFLICT (slug) DO NOTHING;
-
--- Amplifiers
-INSERT INTO public.products (id, category_id, title, slug, price_display, badge, is_featured, short_description) VALUES
+('f05dadd0-cfec-4286-9aeb-a006ef67e2fa', 'b5025701-d0b4-4e4b-a2eb-4bf9d2d0c242', 'Fender Telecaster Thinline 1972', 'fender-telecaster-thinline-1972', 'USD 4,200', null, false, 'Cuerpo de fresno ligero. Wide Range humbuckers diseñados por Seth Lover.'),
 ('b19d5b03-9b43-4dc9-9d5d-16a575a7b686', 'a8385e05-728b-49eb-9ea2-22591662ed72', 'Vox AC30 Top Boost 1964', 'vox-ac30-top-boost-1964', 'Consultar', 'Rare', true, 'El sonido de la invasión británica. Parlantes Celestion Blue Alnico originales.'),
 ('e74a8174-8393-41bb-a5f1-cf49fb81005b', 'a8385e05-728b-49eb-9ea2-22591662ed72', 'Fender Deluxe Reverb 1965', 'fender-deluxe-reverb-1965', 'USD 3,800', 'Blackface', false, 'El combo por excelencia para estudio y clubes. Circuito AB763 intacto.')
-ON CONFLICT (slug) DO NOTHING;
-
--- *Note: For images, the admin panel will handle uploading real URLs to the product_images table.*
+on conflict (slug) do nothing;

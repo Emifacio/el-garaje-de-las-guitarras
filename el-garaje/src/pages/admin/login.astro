@@ -1,6 +1,7 @@
 ---
 export const prerender = false;
 import BaseHead from '../../components/layout/BaseHead.astro';
+import { getAdminAccess } from '../../lib/admin';
 import { createSupabaseServerClient } from '../../lib/supabase-server';
 
 const supabase = createSupabaseServerClient(Astro.cookies, Astro.request);
@@ -21,15 +22,32 @@ if (Astro.request.method === 'POST') {
     if (authError) {
       error = 'invalid_credentials';
     } else {
-      return Astro.redirect('/admin');
+      const adminAccess = await getAdminAccess(supabase);
+
+      if (!adminAccess.ok) {
+        await supabase.auth.signOut();
+        error = adminAccess.reason === 'profile_lookup_failed' ? 'profile_error' : 'not_admin';
+      } else {
+        return Astro.redirect('/admin');
+      }
     }
   }
 }
 
-// Redirect to dashboard if session exists (and it's not a botched POST)
-const { data: { session } } = await supabase.auth.getSession();
-if (session && Astro.request.method !== 'POST') {
-  return Astro.redirect('/admin');
+// Redirect to dashboard only for confirmed admins.
+if (Astro.request.method !== 'POST') {
+  const adminAccess = await getAdminAccess(supabase);
+
+  if (adminAccess.ok) {
+    return Astro.redirect('/admin');
+  }
+
+  if (adminAccess.reason === 'forbidden' || adminAccess.reason === 'missing_profile') {
+    await supabase.auth.signOut();
+    error = error ?? 'not_admin';
+  } else if (adminAccess.reason === 'profile_lookup_failed') {
+    error = error ?? 'profile_error';
+  }
 }
 ---
 <!DOCTYPE html>
@@ -51,7 +69,10 @@ if (session && Astro.request.method !== 'POST') {
 
             {error && (
                 <div class="w-full bg-red-900/30 border border-red-500/50 text-red-200 p-3 rounded text-sm mb-6 text-center">
-                    {error === 'invalid_credentials' ? 'Credenciales incorrectas.' : 'Ocurrió un error al iniciar sesión.'}
+                    {error === 'invalid_credentials' && 'Credenciales incorrectas.'}
+                    {error === 'not_admin' && 'Tu usuario existe, pero no tiene permisos de administrador.'}
+                    {error === 'profile_error' && 'No pudimos validar tu perfil de administrador. Revisa la configuración de Supabase.'}
+                    {!['invalid_credentials', 'not_admin', 'profile_error'].includes(error) && 'Ocurrió un error al iniciar sesión.'}
                 </div>
             )}
 
