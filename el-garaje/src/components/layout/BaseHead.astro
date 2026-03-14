@@ -34,6 +34,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || 'https://www.elga
 <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
 <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="/logo-cuadrado.png" />
 <link rel="icon" type="image/png" sizes="256x256" href="/favicon-256x256.png" />
 
 <!-- Apple Touch Icons -->
@@ -46,6 +47,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || 'https://www.elga
 <link rel="apple-touch-icon" sizes="144x144" href="/apple-icon-144x144.png" />
 <link rel="apple-touch-icon" sizes="152x152" href="/apple-icon-152x152.png" />
 <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon-180x180.png" />
+<link rel="apple-touch-icon" sizes="192x192" href="/logo-cuadrado.png" />
 
 <!-- Android / PWA -->
 <link rel="manifest" href="/manifest.json" />
@@ -99,7 +101,13 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site || 'https://www.elga
 {
   "@context": "https://schema.org",
   "@type": "Organization",
+  "name": "El Garaje de las Guitarras",
   "url": "https://www.elgarajedelasguitarras.com",
-  "logo": "https://www.elgarajedelasguitarras.com/logo.jpg"
+  "logo": "https://www.elgarajedelasguitarras.com/logo-cuadrado.png",
+  "description": "Tienda de Guitarras y Amplificadores de Media y Alta Gama.",
+  "sameAs": [
+    "https://www.facebook.com/Alnicoguitars",
+    "https://www.instagram.com/elgarajedelasguitarras"
+  ]
 }
 </script>
