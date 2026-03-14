@@ -41,3 +41,7 @@ export async function getAdminAccess(supabase: SupabaseClient): Promise<AdminAcc
 
   return { ok: true, user, profile };
 }
+
+export function applyAdminNoStore(headers: Headers) {
+  headers.set('Cache-Control', 'no-store, private');
+}

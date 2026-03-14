@@ -2,10 +2,11 @@
 export const prerender = false;
 import BaseHead from '../../components/layout/BaseHead.astro';
 import type { User } from '@supabase/supabase-js';
-import { getAdminAccess } from '../../lib/admin';
+import { applyAdminNoStore, getAdminAccess } from '../../lib/admin';
 import { createSupabaseServerClient } from '../../lib/supabase-server';
 
 const supabase = createSupabaseServerClient(Astro.cookies, Astro.request);
+applyAdminNoStore(Astro.response.headers);
 let error = Astro.url.searchParams.get('error');
 let errorDetail: string | null = null;
 

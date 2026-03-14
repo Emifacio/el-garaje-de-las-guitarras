@@ -1,10 +1,11 @@
 ---
 export const prerender = false;
 import AdminLayout from '../../layouts/AdminLayout.astro';
-import { getAdminAccess } from '../../lib/admin';
+import { applyAdminNoStore, getAdminAccess } from '../../lib/admin';
 import { createSupabaseServerClient } from '../../lib/supabase-server';
 
 const supabase = createSupabaseServerClient(Astro.cookies, Astro.request);
+applyAdminNoStore(Astro.response.headers);
 const adminAccess = await getAdminAccess(supabase);
 
 if (!adminAccess.ok) {
