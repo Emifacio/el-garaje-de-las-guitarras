@@ -9,6 +9,22 @@ applyAdminNoStore(Astro.response.headers);
 const adminAccess = await getAdminAccess(supabase);
 
 if (!adminAccess.ok) {
+  console.warn('[Admin Dashboard] access denied', {
+    url: Astro.request.url,
+    reason: adminAccess.reason,
+    error: adminAccess.error ?? null,
+  });
+} else {
+  console.info('[Admin Dashboard] access granted', {
+    url: Astro.request.url,
+    userId: adminAccess.user.id,
+    email: adminAccess.user.email ?? null,
+    profileId: adminAccess.profile.id,
+    username: adminAccess.profile.username,
+  });
+}
+
+if (!adminAccess.ok) {
   if (adminAccess.reason === 'forbidden' || adminAccess.reason === 'missing_profile') {
     await supabase.auth.signOut();
     return createAdminRedirect('/admin/login?error=not_admin');

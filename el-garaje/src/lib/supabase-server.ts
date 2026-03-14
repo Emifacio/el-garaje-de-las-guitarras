@@ -2,6 +2,18 @@ import { createServerClient, parseCookieHeader, type CookieOptions } from '@supa
 import type { AstroCookies } from 'astro';
 
 export const createSupabaseServerClient = (cookies: AstroCookies, request: Request) => {
+    const forwardedProto = request.headers.get('x-forwarded-proto');
+    const cookieHeader = request.headers.get('Cookie') ?? '';
+    const cookieNames = parseCookieHeader(cookieHeader).map(cookie => cookie.name);
+
+    console.info('[Supabase SSR] createServerClient', {
+        url: request.url,
+        method: request.method,
+        forwardedProto,
+        hasCookieHeader: cookieHeader.length > 0,
+        cookieNames
+    });
+
     return createServerClient(
         import.meta.env.PUBLIC_SUPABASE_URL,
         import.meta.env.PUBLIC_SUPABASE_ANON_KEY,
@@ -9,6 +21,11 @@ export const createSupabaseServerClient = (cookies: AstroCookies, request: Reque
             cookies: {
                 getAll() {
                     const parsed = parseCookieHeader(request.headers.get('Cookie') ?? '');
+                    console.info('[Supabase SSR] cookies.getAll', {
+                        url: request.url,
+                        method: request.method,
+                        cookieNames: parsed.map(cookie => cookie.name)
+                    });
                     return parsed.map(cookie => ({
                         name: cookie.name,
                         value: cookie.value ?? ''
@@ -47,6 +64,16 @@ export const createSupabaseServerClient = (cookies: AstroCookies, request: Reque
                         if (value === '') {
                             astroOptions.maxAge = 0;
                         }
+
+                        console.info('[Supabase SSR] cookies.set', {
+                            url: request.url,
+                            method: request.method,
+                            name,
+                            secure: astroOptions.secure,
+                            sameSite: astroOptions.sameSite,
+                            hasValue: value.length > 0,
+                            maxAge: astroOptions.maxAge ?? null
+                        });
 
                         cookies.set(name, value, astroOptions);
                     });

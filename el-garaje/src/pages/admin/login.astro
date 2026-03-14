@@ -10,6 +10,13 @@ applyAdminNoStore(Astro.response.headers);
 let error = Astro.url.searchParams.get('error');
 let errorDetail: string | null = null;
 
+console.info('[Admin Login] request', {
+  method: Astro.request.method,
+  url: Astro.request.url,
+  forwardedProto: Astro.request.headers.get('x-forwarded-proto'),
+  hasCookieHeader: Boolean(Astro.request.headers.get('cookie')),
+});
+
 type AdminProfile = {
   id: string;
   is_admin: boolean;
@@ -35,8 +42,17 @@ if (Astro.request.method === 'POST') {
     const password = formData.get('password')?.toString();
 
     if (!email || !password) {
+      console.warn('[Admin Login] missing_credentials', {
+        url: Astro.request.url,
+        hasEmail: Boolean(email),
+        hasPassword: Boolean(password),
+      });
       error = 'missing_credentials';
     } else {
+      console.info('[Admin Login] attempting sign in', {
+        url: Astro.request.url,
+        email,
+      });
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -50,6 +66,11 @@ if (Astro.request.method === 'POST') {
         // Avoid re-checking auth with the original request cookies in this same POST.
         // The new session cookies are only guaranteed on the response we are building now.
         const signedInUser = authData.user;
+        console.info('[Admin Login] signInWithPassword succeeded', {
+          email,
+          userId: signedInUser?.id ?? null,
+          hasSession: Boolean(authData.session),
+        });
         const { profile, profileError } = signedInUser ? await getAdminProfile(signedInUser) : { profile: null, profileError: null };
 
         if (profileError) {
@@ -66,10 +87,17 @@ if (Astro.request.method === 'POST') {
           console.error('[Admin Login] signed-in user is missing admin access:', {
             userId: signedInUser.id,
             hasProfile: Boolean(profile),
+            profileId: profile?.id ?? null,
+            isAdmin: profile?.is_admin ?? null,
           });
           await supabase.auth.signOut();
           error = 'not_admin';
         } else {
+          console.info('[Admin Login] admin login successful', {
+            userId: signedInUser.id,
+            profileId: profile.id,
+            email: signedInUser.email ?? email,
+          });
           return createAdminRedirect('/admin');
         }
       }
@@ -83,6 +111,14 @@ if (Astro.request.method === 'POST') {
 // Redirect to dashboard only for confirmed admins.
 if (Astro.request.method !== 'POST') {
   const adminAccess = await getAdminAccess(supabase);
+
+  if (!adminAccess.ok) {
+    console.warn('[Admin Login] existing session check failed', {
+      url: Astro.request.url,
+      reason: adminAccess.reason,
+      error: adminAccess.error ?? null,
+    });
+  }
 
   if (adminAccess.ok) {
     return createAdminRedirect('/admin');
