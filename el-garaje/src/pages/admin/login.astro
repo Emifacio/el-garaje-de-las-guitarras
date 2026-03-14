@@ -6,31 +6,43 @@ import { createSupabaseServerClient } from '../../lib/supabase-server';
 
 const supabase = createSupabaseServerClient(Astro.cookies, Astro.request);
 let error = Astro.url.searchParams.get('error');
+let errorDetail: string | null = null;
 
 // Handle the login POST request natively in the page
 if (Astro.request.method === 'POST') {
-  const formData = await Astro.request.formData();
-  const email = formData.get('email')?.toString();
-  const password = formData.get('password')?.toString();
+  try {
+    const formData = await Astro.request.formData();
+    const email = formData.get('email')?.toString().trim();
+    const password = formData.get('password')?.toString();
 
-  if (email && password) {
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (authError) {
-      error = 'invalid_credentials';
+    if (!email || !password) {
+      error = 'missing_credentials';
     } else {
-      const adminAccess = await getAdminAccess(supabase);
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-      if (!adminAccess.ok) {
-        await supabase.auth.signOut();
-        error = adminAccess.reason === 'profile_lookup_failed' ? 'profile_error' : 'not_admin';
+      if (authError) {
+        console.error('[Admin Login] signInWithPassword failed:', authError.message);
+        error = 'invalid_credentials';
+        errorDetail = authError.message;
       } else {
-        return Astro.redirect('/admin');
+        const adminAccess = await getAdminAccess(supabase);
+
+        if (!adminAccess.ok) {
+          console.error('[Admin Login] admin access failed after login:', adminAccess);
+          await supabase.auth.signOut();
+          error = adminAccess.reason === 'profile_lookup_failed' ? 'profile_error' : 'not_admin';
+          errorDetail = adminAccess.error ?? null;
+        } else {
+          return Astro.redirect('/admin');
+        }
       }
     }
+  } catch (unexpectedError) {
+    console.error('[Admin Login] unexpected error:', unexpectedError);
+    error = 'unexpected_error';
   }
 }
 
@@ -70,9 +82,12 @@ if (Astro.request.method !== 'POST') {
             {error && (
                 <div class="w-full bg-red-900/30 border border-red-500/50 text-red-200 p-3 rounded text-sm mb-6 text-center">
                     {error === 'invalid_credentials' && 'Credenciales incorrectas.'}
+                    {error === 'missing_credentials' && 'Completa email y contraseña antes de ingresar.'}
                     {error === 'not_admin' && 'Tu usuario existe, pero no tiene permisos de administrador.'}
                     {error === 'profile_error' && 'No pudimos validar tu perfil de administrador. Revisa la configuración de Supabase.'}
-                    {!['invalid_credentials', 'not_admin', 'profile_error'].includes(error) && 'Ocurrió un error al iniciar sesión.'}
+                    {error === 'unexpected_error' && 'Ocurrió un error inesperado al iniciar sesión.'}
+                    {!['invalid_credentials', 'missing_credentials', 'not_admin', 'profile_error', 'unexpected_error'].includes(error) && 'Ocurrió un error al iniciar sesión.'}
+                    {errorDetail && <div class="mt-2 text-xs text-red-100/80 break-words">{errorDetail}</div>}
                 </div>
             )}
 
