@@ -44,4 +44,19 @@ export async function getAdminAccess(supabase: SupabaseClient): Promise<AdminAcc
 
 export function applyAdminNoStore(headers: Headers) {
   headers.set('Cache-Control', 'no-store, private');
+  headers.set('CDN-Cache-Control', 'no-store');
+  headers.set('Vercel-CDN-Cache-Control', 'no-store');
+}
+
+export function createAdminRedirect(location: string, status = 302) {
+  const headers = new Headers({
+    Location: location,
+  });
+
+  applyAdminNoStore(headers);
+
+  return new Response(null, {
+    status,
+    headers,
+  });
 }

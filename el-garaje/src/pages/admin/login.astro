@@ -2,7 +2,7 @@
 export const prerender = false;
 import BaseHead from '../../components/layout/BaseHead.astro';
 import type { User } from '@supabase/supabase-js';
-import { applyAdminNoStore, getAdminAccess } from '../../lib/admin';
+import { applyAdminNoStore, createAdminRedirect, getAdminAccess } from '../../lib/admin';
 import { createSupabaseServerClient } from '../../lib/supabase-server';
 
 const supabase = createSupabaseServerClient(Astro.cookies, Astro.request);
@@ -70,7 +70,7 @@ if (Astro.request.method === 'POST') {
           await supabase.auth.signOut();
           error = 'not_admin';
         } else {
-          return Astro.redirect('/admin');
+          return createAdminRedirect('/admin');
         }
       }
     }
@@ -85,7 +85,7 @@ if (Astro.request.method !== 'POST') {
   const adminAccess = await getAdminAccess(supabase);
 
   if (adminAccess.ok) {
-    return Astro.redirect('/admin');
+    return createAdminRedirect('/admin');
   }
 
   if (adminAccess.reason === 'forbidden' || adminAccess.reason === 'missing_profile') {

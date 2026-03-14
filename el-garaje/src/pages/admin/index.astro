@@ -1,7 +1,7 @@
 ---
 export const prerender = false;
 import AdminLayout from '../../layouts/AdminLayout.astro';
-import { applyAdminNoStore, getAdminAccess } from '../../lib/admin';
+import { applyAdminNoStore, createAdminRedirect, getAdminAccess } from '../../lib/admin';
 import { createSupabaseServerClient } from '../../lib/supabase-server';
 
 const supabase = createSupabaseServerClient(Astro.cookies, Astro.request);
@@ -11,10 +11,10 @@ const adminAccess = await getAdminAccess(supabase);
 if (!adminAccess.ok) {
   if (adminAccess.reason === 'forbidden' || adminAccess.reason === 'missing_profile') {
     await supabase.auth.signOut();
-    return Astro.redirect('/admin/login?error=not_admin');
+    return createAdminRedirect('/admin/login?error=not_admin');
   }
 
-  return Astro.redirect('/admin/login');
+  return createAdminRedirect('/admin/login');
 }
 
 // Quick statistics queries
