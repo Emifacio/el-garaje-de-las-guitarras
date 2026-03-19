@@ -159,6 +159,7 @@ if (product.youtube_url) {
 
 <script>
     import { addToCart } from '../../lib/cartStore';
+    import { InteractionType } from '../../lib/interaction-types';
 
     // Track interactions and handle Cart
     document.addEventListener('astro:page-load', () => initProductInteractions());
@@ -190,13 +191,13 @@ if (product.youtube_url) {
                         slug
                     });
 
-                    // Track adding to cart
+                    // Track product added to inquiry selection
                     fetch('/api/track-interaction', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             product_id: id,
-                            interaction_type: 'add_to_cart',
+                            interaction_type: InteractionType.INQUIRY_SELECTION_ADDED,
                             metadata: { product_title: title, timestamp: new Date().toISOString() }
                         })
                     }).catch(err => console.warn('Tracking failed:', err));

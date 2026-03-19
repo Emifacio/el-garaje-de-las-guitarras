@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { supabase } from '../../lib/supabase';
+import { VALID_INTERACTION_TYPES, type InteractionTypeValue } from '../../lib/interaction-types';
 
 export const prerender = false;
 
@@ -15,15 +16,7 @@ export const POST: APIRoute = async ({ request }) => {
             );
         }
 
-        const validTypes = [
-            'whatsapp_reservar',
-            'whatsapp_comprar',
-            'social_whatsapp',
-            'social_instagram',
-            'consignment_inquiry'
-        ];
-
-        if (!validTypes.includes(interaction_type)) {
+        if (!isValidInteractionType(interaction_type)) {
             return new Response(
                 JSON.stringify({ error: 'Invalid interaction_type' }),
                 { status: 400, headers: { 'Content-Type': 'application/json' } }
@@ -34,7 +27,7 @@ export const POST: APIRoute = async ({ request }) => {
             .from('interaction_logs')
             .insert({
                 product_id: product_id || null,
-                interaction_type,
+                interaction_type: interaction_type as InteractionTypeValue,
                 metadata: metadata || {}
             });
 
@@ -58,3 +51,7 @@ export const POST: APIRoute = async ({ request }) => {
         );
     }
 };
+
+function isValidInteractionType(value: string): value is InteractionTypeValue {
+    return VALID_INTERACTION_TYPES.includes(value as InteractionTypeValue);
+}
