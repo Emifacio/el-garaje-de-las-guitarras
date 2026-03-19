@@ -29,6 +29,7 @@ export interface CartItem {
 }
 
 const SELECTION_STORAGE_KEY = 'elgaraje_inquiry_selection';
+const LEGACY_CART_STORAGE_KEY = 'elgaraje_cart';
 
 /**
  * Event dispatched when the selection changes.
@@ -37,12 +38,40 @@ const SELECTION_STORAGE_KEY = 'elgaraje_inquiry_selection';
 export const SELECTION_UPDATED_EVENT = 'inquiry-selection-updated';
 
 /**
+ * Migrate legacy cart data to new selection key.
+ * Safe: only migrates if new key is empty and old key has valid data.
+ */
+function migrateLegacyCart(): void {
+    try {
+        const newData = localStorage.getItem(SELECTION_STORAGE_KEY);
+        if (newData && newData !== '[]') return;
+
+        const legacyData = localStorage.getItem(LEGACY_CART_STORAGE_KEY);
+        if (!legacyData) return;
+
+        const parsed = JSON.parse(legacyData);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+            localStorage.setItem(SELECTION_STORAGE_KEY, legacyData);
+            localStorage.removeItem(LEGACY_CART_STORAGE_KEY);
+        }
+    } catch {
+        // Silent fail - don't block user on migration errors
+    }
+}
+
+let migrationRan = false;
+
+/**
  * Retrieve all products in the user's inquiry selection.
  * Returns empty array during SSR.
  */
 export function getCartItems(): CartItem[] {
     if (typeof window === 'undefined') return [];
     try {
+        if (!migrationRan) {
+            migrateLegacyCart();
+            migrationRan = true;
+        }
         const stored = localStorage.getItem(SELECTION_STORAGE_KEY);
         return stored ? JSON.parse(stored) : [];
     } catch (e) {
