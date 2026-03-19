@@ -58,7 +58,7 @@
 </header>
 
 <script>
-    import { getCartItems } from '../../lib/cartStore';
+    import { getCartItems, SELECTION_UPDATED_EVENT } from '../../lib/cartStore';
 
     function initCartBadge() {
         const badge = document.getElementById('cart-badge');
@@ -78,8 +78,8 @@
             }
         }
 
-        // Keep updated
-        window.addEventListener('cart-updated', updateBadge);
+        // Keep updated when selection changes
+        window.addEventListener(SELECTION_UPDATED_EVENT, updateBadge);
         updateBadge();
     }
 

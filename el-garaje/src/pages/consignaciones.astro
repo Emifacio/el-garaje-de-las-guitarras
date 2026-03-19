@@ -1,8 +1,9 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { generateWhatsAppUrl } from '../lib/whatsapp';
+import { WhatsAppAction, InteractionType } from '../lib/interaction-types';
 
-const whatsAppUrl = generateWhatsAppUrl('consulta_consignacion');
+const whatsAppUrl = generateWhatsAppUrl(WhatsAppAction.CONSULTA_CONSIGNACION);
 ---
 
 <BaseLayout title="Consignaciones | El Garaje de las Guitarras" description="Vendé tu guitarra o instrumento a través de El Garaje. Servicio de consignación profesional, con exposición en la web y atención personalizada a compradores.">
@@ -126,16 +127,18 @@ const whatsAppUrl = generateWhatsAppUrl('consulta_consignacion');
 </BaseLayout>
 
 <script>
+    import { InteractionType } from '../lib/interaction-types';
+
     // Track consignment inquiry clicks
     function initConsignmentTracking() {
-        const trackBtns = document.querySelectorAll('[data-track-type="consignment_inquiry"]');
+        const trackBtns = document.querySelectorAll(`[data-track-type="${InteractionType.CONSIGNMENT_INQUIRY}"]`);
         trackBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 fetch('/api/track-interaction', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        interaction_type: 'consignment_inquiry',
+                        interaction_type: InteractionType.CONSIGNMENT_INQUIRY,
                         metadata: { timestamp: new Date().toISOString() }
                     })
                 }).catch(err => console.warn('Tracking failed:', err));

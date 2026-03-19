@@ -1,5 +1,23 @@
 /**
- * Tipo de dato para un producto en el carrito
+ * Inquiry Selection Store
+ * 
+ * DOMAIN MODEL: This store manages a user's purchase-intent selection, NOT a shopping cart.
+ * 
+ * Business Rules:
+ * - Products are mostly unique (no quantity handling needed)
+ * - Adding a product does NOT reserve stock or modify availability
+ * - Adding a product does NOT create an order
+ * - The selection is simply a grouping of interest for WhatsApp inquiry
+ * - Admin remains the only source of truth for product lifecycle status
+ * 
+ * The actual sale is consolidated manually via WhatsApp conversation.
+ * This is an inquiry/intent tracking mechanism, not a transactional system.
+ */
+
+/**
+ * Represents a product added to the user's inquiry selection.
+ * Note: This is NOT a cart item in the e-commerce sense.
+ * It represents expressed purchase intent, not a committed purchase.
  */
 export interface CartItem {
     id: string;
@@ -10,50 +28,92 @@ export interface CartItem {
     slug: string;
 }
 
-const CART_STORAGE_KEY = 'elgaraje_cart';
+const SELECTION_STORAGE_KEY = 'elgaraje_inquiry_selection';
+const LEGACY_CART_STORAGE_KEY = 'elgaraje_cart';
 
 /**
- * Obtener todos los productos del carrito
+ * Event dispatched when the selection changes.
+ * Used for cross-component reactivity (drawer, badge updates).
+ */
+export const SELECTION_UPDATED_EVENT = 'inquiry-selection-updated';
+
+/**
+ * Migrate legacy cart data to new selection key.
+ * Safe: only migrates if new key is empty and old key has valid data.
+ */
+function migrateLegacyCart(): void {
+    try {
+        const newData = localStorage.getItem(SELECTION_STORAGE_KEY);
+        if (newData && newData !== '[]') return;
+
+        const legacyData = localStorage.getItem(LEGACY_CART_STORAGE_KEY);
+        if (!legacyData) return;
+
+        const parsed = JSON.parse(legacyData);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+            localStorage.setItem(SELECTION_STORAGE_KEY, legacyData);
+            localStorage.removeItem(LEGACY_CART_STORAGE_KEY);
+        }
+    } catch {
+        // Silent fail - don't block user on migration errors
+    }
+}
+
+let migrationRan = false;
+
+/**
+ * Retrieve all products in the user's inquiry selection.
+ * Returns empty array during SSR.
  */
 export function getCartItems(): CartItem[] {
-    if (typeof window === 'undefined') return []; // Para SSR
+    if (typeof window === 'undefined') return [];
     try {
-        const stored = localStorage.getItem(CART_STORAGE_KEY);
+        if (!migrationRan) {
+            migrateLegacyCart();
+            migrationRan = true;
+        }
+        const stored = localStorage.getItem(SELECTION_STORAGE_KEY);
         return stored ? JSON.parse(stored) : [];
     } catch (e) {
-        console.error("Error leyendo carrito de localStorage", e);
+        console.error('Error reading inquiry selection from localStorage', e);
         return [];
     }
 }
 
 /**
- * Agregar un producto al carrito
+ * Add a product to the user's inquiry selection.
+ * 
+ * IMPORTANT: This does NOT:
+ * - Reserve or decrement stock
+ * - Create an order
+ * - Modify product availability in the database
+ * 
+ * It simply groups products for a bulk WhatsApp inquiry.
  */
 export function addToCart(item: CartItem): void {
-    const currentCart = getCartItems();
+    const currentSelection = getCartItems();
 
-    // Evitar duplicados (aunque permitimos cantidad 1 por tratarse de instrumentos únicos generalmente)
-    if (!currentCart.find(i => i.id === item.id)) {
-        currentCart.push(item);
-        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(currentCart));
-        window.dispatchEvent(new CustomEvent('cart-updated'));
+    if (!currentSelection.find(i => i.id === item.id)) {
+        currentSelection.push(item);
+        localStorage.setItem(SELECTION_STORAGE_KEY, JSON.stringify(currentSelection));
+        window.dispatchEvent(new CustomEvent(SELECTION_UPDATED_EVENT));
     }
 }
 
 /**
- * Eliminar un producto del carrito
+ * Remove a product from the inquiry selection.
  */
 export function removeFromCart(productId: string): void {
-    const currentCart = getCartItems();
-    const newCart = currentCart.filter(item => item.id !== productId);
-    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(newCart));
-    window.dispatchEvent(new CustomEvent('cart-updated'));
+    const currentSelection = getCartItems();
+    const newSelection = currentSelection.filter(item => item.id !== productId);
+    localStorage.setItem(SELECTION_STORAGE_KEY, JSON.stringify(newSelection));
+    window.dispatchEvent(new CustomEvent(SELECTION_UPDATED_EVENT));
 }
 
 /**
- * Vaciar el carrito por completo
+ * Clear the entire inquiry selection.
  */
 export function clearCart(): void {
-    localStorage.removeItem(CART_STORAGE_KEY);
-    window.dispatchEvent(new CustomEvent('cart-updated'));
+    localStorage.removeItem(SELECTION_STORAGE_KEY);
+    window.dispatchEvent(new CustomEvent(SELECTION_UPDATED_EVENT));
 }
