@@ -97,20 +97,24 @@ const showSidebar = currentPath !== '/admin/login';
             if (!toggle || !sidebar || !overlay) return;
 
             function openMenu() {
-                sidebar!.classList.remove('-translate-x-full');
-                sidebar!.classList.add('translate-x-0');
-                overlay!.classList.remove('hidden');
+                if (sidebar && overlay) {
+                    sidebar.classList.remove('-translate-x-full');
+                    sidebar.classList.add('translate-x-0');
+                    overlay.classList.remove('hidden');
+                }
             }
 
             function closeMenu() {
-                sidebar!.classList.add('-translate-x-full');
-                sidebar!.classList.remove('translate-x-0');
-                overlay!.classList.add('hidden');
+                if (sidebar && overlay) {
+                    sidebar.classList.add('-translate-x-full');
+                    sidebar.classList.remove('translate-x-0');
+                    overlay.classList.add('hidden');
+                }
             }
 
             toggle.addEventListener('click', openMenu);
-            close?.addEventListener('click', closeMenu);
-            overlay.addEventListener('click', closeMenu);
+            if (close) close.addEventListener('click', closeMenu);
+            if (overlay) overlay.addEventListener('click', closeMenu);
 
             // Close on link click (mobile navigation)
             sidebar.querySelectorAll('a').forEach(link => {

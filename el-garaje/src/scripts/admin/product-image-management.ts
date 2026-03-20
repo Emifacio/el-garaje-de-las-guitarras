@@ -16,15 +16,20 @@ export function initImageManagement(options: ManagementOptions) {
     if (!grid || !form || !orderInput) return;
 
     // Initialize Sortable
-    const sortable = new Sortable(grid, {
-        animation: 150,
-        ghostClass: 'opacity-50',
-        dragClass: 'scale-105',
-        handle: '.drag-handle',
-        onEnd: () => {
-            updateOrder();
-        }
-    });
+    let sortable: Sortable | null = null;
+    try {
+        sortable = new Sortable(grid, {
+            animation: 150,
+            ghostClass: 'opacity-50',
+            dragClass: 'scale-105',
+            handle: '.drag-handle',
+            onEnd: () => {
+                updateOrder();
+            }
+        });
+    } catch (error) {
+        console.error('[Sortable Error]', error);
+    }
 
     // Handle Deletions
     grid.addEventListener('click', (e) => {
@@ -63,6 +68,6 @@ export function initImageManagement(options: ManagementOptions) {
     updateOrder();
 
     return () => {
-        sortable.destroy();
+        if (sortable) sortable.destroy();
     };
 }
