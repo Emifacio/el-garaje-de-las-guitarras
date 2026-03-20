@@ -1,9 +1,13 @@
 ---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { applyAdminNoStore, createAdminRedirect, getAdminAccess } from '../../lib/admin';
 import { createSupabaseServerClient } from '../../lib/supabase-server';
 
 export const prerender = false;
 
 import { getDashboardStats } from '../../application/admin/get-dashboard-stats';
+
+
 
 const supabase = createSupabaseServerClient(Astro.cookies, Astro.request);
 applyAdminNoStore(Astro.response.headers);
