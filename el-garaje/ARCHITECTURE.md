@@ -153,7 +153,33 @@ Migration handles renaming automatically.
 ```env
 PUBLIC_SUPABASE_URL=        # Supabase project URL
 PUBLIC_SUPABASE_ANON_KEY=   # Supabase anon key
+SENTRY_DSN=                 # Sentry error tracking (optional)
 ```
+
+## Error Tracking (Sentry)
+
+[Sentry](https://sentry.io) captures errors and performance issues in production.
+
+### Setup
+
+1. Create project at [sentry.io](https://sentry.io)
+2. Add `SENTRY_DSN` to environment variables
+3. Deploy - Sentry auto-initializes via `@sentry/astro`
+
+### What Gets Tracked
+
+- Unhandled exceptions
+- Server-side errors (API routes, SSR pages)
+- Performance traces (sample rate: 10%)
+- Session replays on errors (sample rate: 100%)
+
+### Sample Rates
+
+| Feature | Rate | Notes |
+|---------|------|-------|
+| Traces | 10% | Performance monitoring |
+| Replays | 10% | Session recording |
+| Replays on Error | 100% | Full replay when error occurs |
 
 ## Testing
 

@@ -5,6 +5,7 @@ import tailwindcss from '@tailwindcss/vite';
 import sitemap from '@astrojs/sitemap';
 
 import vercel from '@astrojs/vercel';
+import sentry from '@sentry/astro';
 import criticalCssIntegration from './src/integrations/critical-css';
 import versionFile from './src/integrations/version-file';
 import { assetLoaderConfig } from './src/config/asset-loader.config';
@@ -22,6 +23,11 @@ export default defineConfig({
   },
   integrations: [
     sitemap(),
+    sentry({
+      project: "javascript-astro",
+      org: "netbase-labs",
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+    }),
     criticalCssIntegration({
       inlineThreshold: assetLoaderConfig.criticalCSS.inlineThreshold
     }),
