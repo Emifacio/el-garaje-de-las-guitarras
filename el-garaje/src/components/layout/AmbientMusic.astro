@@ -37,6 +37,7 @@
 </style>
 
 <script>
+    let cleanupAmbient: (() => void) | undefined;
     let _ambientInitialized = false;
 
     function initAmbientMusic() {
@@ -45,19 +46,19 @@
 
         if (!btn || !audio) return;
 
-        // Prevent double initialization (since element persists)
-        if (_ambientInitialized) {
-            // Just sync the visual state with audio state
-            if (!audio.paused) {
-                btn.classList.add('playing');
-            }
-            return;
+        // Sync visual state with audio state
+        if (!audio.paused) {
+            btn.classList.add('playing');
+        } else {
+            btn.classList.remove('playing');
         }
+
+        if (_ambientInitialized) return;
         _ambientInitialized = true;
 
         audio.volume = 0.15;
 
-        btn.addEventListener('click', async () => {
+        const handleToggle = async () => {
             if (!audio.paused) {
                 // Fade out
                 const fadeOut = setInterval(() => {
@@ -79,9 +80,23 @@
                     console.warn('Audio playback failed:', err);
                 }
             }
-        });
+        };
+
+        btn.addEventListener('click', handleToggle);
+
+        return () => {
+            btn.removeEventListener('click', handleToggle);
+            _ambientInitialized = false;
+        };
     }
 
-    initAmbientMusic();
-    document.addEventListener('astro:page-load', initAmbientMusic);
+    const runInit = () => {
+        if (cleanupAmbient) cleanupAmbient();
+        cleanupAmbient = initAmbientMusic();
+    };
+
+    document.addEventListener('astro:page-load', runInit);
+    document.addEventListener('astro:before-swap', () => {
+        if (cleanupAmbient) cleanupAmbient();
+    });
 </script>

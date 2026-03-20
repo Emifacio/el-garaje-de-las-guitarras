@@ -43,6 +43,7 @@ export async function updateProduct(
     input: UpdateProductInput
 ): Promise<UpdateProductResult> {
     const { productId, formData, currentProduct } = input;
+    const errors: string[] = [];
 
     // Validate form data
     const validation = validateProductFormData(formData);
@@ -137,15 +138,20 @@ export async function updateProduct(
     // Handle image deletions
     const deleteImageIds = formData.getAll('delete_images') as string[];
     if (deleteImageIds.length > 0) {
+        console.log(`[UpdateProduct] Deleting ${deleteImageIds.length} images:`, deleteImageIds);
+        
         // Fetch storage paths to delete from storage bucket
-        const { data: imagesToDelete } = await supabase
+        const { data: imagesToDelete, error: fetchPathsError } = await supabase
             .from('product_images')
             .select('storage_path')
             .in('id', deleteImageIds);
 
-        if (imagesToDelete && imagesToDelete.length > 0) {
+        if (fetchPathsError) {
+            console.error('[UpdateProduct] Error fetching paths for deletion:', fetchPathsError);
+        } else if (imagesToDelete && imagesToDelete.length > 0) {
             const paths = imagesToDelete.map(img => img.storage_path);
-            await supabase.storage.from('product_images').remove(paths);
+            const { error: storageError } = await supabase.storage.from('product_images').remove(paths);
+            if (storageError) console.error('[UpdateProduct] Storage deletion error:', storageError);
         }
 
         const { error: deleteError } = await supabase
@@ -154,26 +160,45 @@ export async function updateProduct(
             .in('id', deleteImageIds);
 
         if (deleteError) {
-            console.error('[UpdateProduct] Image deletion failed:', deleteError);
-            // Non-blocking but worthy of a log
+            console.error('[UpdateProduct] Database deletion failed:', deleteError);
+            errors.push(`No se pudieron eliminar algunas imágenes de la base de datos: ${deleteError.message}`);
         }
     }
 
     // Handle image reordering
-    const imageOrder = formData.get('image_order') as string; // Comma-separated IDs
-    if (imageOrder) {
+    // IMPORTANT: image_order must contain ALL remaining image IDs in order
+    const imageOrder = formData.get('image_order') as string;
+    console.log('[UpdateProduct] REORDER DEBUG - Raw image_order from form:', imageOrder);
+    
+    if (imageOrder && imageOrder.trim().length > 0) {
         const orderedIds = imageOrder.split(',').filter(id => id.length > 0);
+        console.log(`[UpdateProduct] Processing reorder for ${orderedIds.length} images:`, orderedIds);
+        
         const SORT_ORDER_INTERVAL = 10;
         
-        // Update each image's sort_order
-        // We do this individually or in a transaction if possible, 
-        // but here we'll use a loop for simplicity as it's usually few images.
-        for (let i = 0; i < orderedIds.length; i++) {
-            await supabase
+        const reorderPromises = orderedIds.map((id, index) => {
+            const newSortOrder = index * SORT_ORDER_INTERVAL;
+            console.log(`[UpdateProduct] Updating image ${id} -> sort_order ${newSortOrder}`);
+            return supabase
                 .from('product_images')
-                .update({ sort_order: i * SORT_ORDER_INTERVAL, updated_at: getCurrentISODate() })
-                .eq('id', orderedIds[i]);
+                .update({ sort_order: newSortOrder })
+                .eq('id', id);
+        });
+
+        const reorderResults = await Promise.all(reorderPromises);
+        const reorderErrors = reorderResults.filter(r => r.error);
+        
+        if (reorderErrors.length > 0) {
+            console.error(`[UpdateProduct] ${reorderErrors.length} reorder operations failed.`);
+            reorderErrors.forEach(r => {
+                console.error('[UpdateProduct] Supabase Reorder Error:', r.error);
+                errors.push(`Error en reordenamiento: ${r.error?.message || 'Error de base de datos'}`);
+            });
+        } else {
+            console.log('[UpdateProduct] Reordering successful for all images.');
         }
+    } else {
+        console.log('[UpdateProduct] No image_order provided or it was empty.');
     }
 
     // Handle new image uploads
@@ -211,9 +236,9 @@ export async function updateProduct(
     }
 
     return {
-        success: true,
+        success: errors.length === 0,
         product: (updatedProduct || currentProduct) as Product,
-        errors: [],
+        errors: errors,
     };
 }
 

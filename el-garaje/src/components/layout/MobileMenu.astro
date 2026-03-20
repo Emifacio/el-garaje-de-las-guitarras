@@ -39,13 +39,7 @@
 </div>
 
 <script>
-    // Mobile menu toggle functionality
-    document.addEventListener('astro:page-load', () => {
-        initMobileMenu();
-    });
-
-    // Run on initial load
-    initMobileMenu();
+    let cleanupMobileMenu: (() => void) | undefined;
 
     function initMobileMenu() {
         const menuBtn = document.getElementById('btn-menu');
@@ -54,31 +48,42 @@
 
         if (!menuBtn || !mobileMenu || !closeMenuBtn) return;
 
-        menuBtn.addEventListener('click', () => {
+        const openMenu = () => {
             mobileMenu.classList.remove('translate-x-full');
             mobileMenu.setAttribute('aria-hidden', 'false');
             menuBtn.setAttribute('aria-expanded', 'true');
-        });
+        };
 
-        closeMenuBtn.addEventListener('click', () => {
+        const closeMenu = () => {
             mobileMenu.classList.add('translate-x-full');
             mobileMenu.setAttribute('aria-hidden', 'true');
             menuBtn.setAttribute('aria-expanded', 'false');
-        });
+        };
+
+        menuBtn.addEventListener('click', openMenu);
+        closeMenuBtn.addEventListener('click', closeMenu);
 
         // Close menu when any nav link is clicked
         const navLinks = mobileMenu.querySelectorAll('nav a');
-        navLinks.forEach(link => {
-            link.addEventListener('click', () => {
-                mobileMenu.classList.add('translate-x-full');
-                mobileMenu.setAttribute('aria-hidden', 'true');
-                menuBtn.setAttribute('aria-expanded', 'false');
-            });
-        });
+        navLinks.forEach(link => link.addEventListener('click', closeMenu));
+
+        return () => {
+            menuBtn.removeEventListener('click', openMenu);
+            closeMenuBtn.removeEventListener('click', closeMenu);
+            navLinks.forEach(link => link.removeEventListener('click', closeMenu));
+        };
     }
 
-    // Also close on View Transition swap (safety net)
+    const runInit = () => {
+        if (cleanupMobileMenu) cleanupMobileMenu();
+        cleanupMobileMenu = initMobileMenu();
+    };
+
+    document.addEventListener('astro:page-load', runInit);
     document.addEventListener('astro:before-swap', () => {
+        if (cleanupMobileMenu) cleanupMobileMenu();
+        
+        // Safety net: ensure menu is closed before swap
         const mobileMenu = document.getElementById('mobile-menu');
         const menuBtn = document.getElementById('btn-menu');
         if (mobileMenu) {

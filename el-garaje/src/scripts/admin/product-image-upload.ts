@@ -195,17 +195,25 @@ export function initImageUpload(options: {
         
         // Submit handler with compression
         handlers.submit = async (e: Event) => {
+            const imageInput = document.querySelector<HTMLInputElement>(inputSelector);
+            const btn = document.querySelector<HTMLButtonElement>(buttonSelector);
+            const form = document.querySelector<HTMLFormElement>(formSelector);
+            
+            if (!imageInput || !btn || !form) return;
+            
             // Skip if already compressed or no files
             if (
                 imageInput.dataset.compressed === 'true' ||
                 !imageInput.files ||
                 imageInput.files.length === 0
             ) {
+                // If it's already compressed (or no files), let the form submit normally
                 btn.innerHTML = loadingText;
                 btn.classList.add('opacity-70', 'pointer-events-none');
                 return;
             }
             
+            // Prevent standard submission while we compress
             e.preventDefault();
             
             btn.innerHTML = compressingText;
@@ -213,48 +221,24 @@ export function initImageUpload(options: {
             onCompressStart?.();
             
             try {
+                // Prepare compressed files
                 const dt = await prepareFilesForUpload(imageInput.files);
                 
-                // Create new FormData - start fresh to avoid issues
-                const formData = new FormData();
+                // CRITICAL: Set the file input's files to the compressed ones
+                // This is supported in all modern browsers (IE11 excluded)
+                imageInput.files = dt.files;
                 
-                // Copy all other form fields
-                const formDataFromForm = new FormData(form);
-                formDataFromForm.forEach((value, key) => {
-                    if (key !== 'images') {
-                        formData.append(key, value);
-                    }
-                });
-                
-                // Add compressed files
-                for (let i = 0; i < dt.files.length; i++) {
-                    formData.append('images', dt.files[i]);
-                }
-                
+                // Flag as compressed to avoid recursion
                 imageInput.dataset.compressed = 'true';
                 onCompressComplete?.();
                 
-                // Submit form via fetch to avoid event recursion
+                // Now submit the form NORMALLY - this is much more reliable
                 btn.innerHTML = loadingText;
-                
-                const response = await fetch(form.action, {
-                    method: 'POST',
-                    body: formData,
-                });
-                
-                if (response.redirected) {
-                    window.location.href = response.url;
-                } else {
-                    // Fallback: replace current page with response
-                    const html = await response.text();
-                    document.open();
-                    document.write(html);
-                    document.close();
-                }
+                form.submit();
             } catch (error) {
                 console.error('Compression/submission error:', error);
+                // Fallback: submit original files
                 imageInput.dataset.compressed = 'true';
-                // Fallback: submit without compression
                 btn.innerHTML = loadingText;
                 form.submit();
             }
@@ -262,11 +246,9 @@ export function initImageUpload(options: {
         form.addEventListener('submit', handlers.submit);
     }
     
-    document.addEventListener('astro:page-load', init);
     init();
     
     return () => {
-        document.removeEventListener('astro:page-load', init);
         // Also cleanup the form/input handlers
         const form = document.querySelector<HTMLFormElement>(formSelector);
         const imageInput = document.querySelector<HTMLInputElement>(inputSelector);

@@ -13,7 +13,7 @@ export function initImageManagement(options: ManagementOptions) {
     const form = document.querySelector(options.formSelector) as HTMLFormElement;
     const orderInput = document.getElementById(options.orderInputId) as HTMLInputElement;
 
-    if (!grid || !form || !orderInput) return;
+    if (!grid || !form || !orderInput) return () => {};
 
     // Initialize Sortable
     let sortable: Sortable | null = null;
@@ -58,16 +58,48 @@ export function initImageManagement(options: ManagementOptions) {
         }
     });
 
+    // Force order update on form submission to ensure we have the latest visual state
+    const handleSubmit = () => {
+        console.log('[Image Management] Finalizing order before submission...');
+        updateOrder();
+    };
+    form.addEventListener('submit', handleSubmit);
+
     function updateOrder() {
-        const items = Array.from(grid.querySelectorAll('[data-id]:not(.hidden)'));
+        // Safe check for current elements after a potential transition
+        const currentGrid = document.querySelector(options.gridSelector);
+        const currentOrderInput = document.getElementById(options.orderInputId) as HTMLInputElement;
+        
+        if (!currentGrid || !currentOrderInput) {
+            console.warn('[Image Management] Cannot update order: grid or input not found');
+            return;
+        }
+
+        const items = Array.from(currentGrid.querySelectorAll('[data-id]:not(.hidden)'));
         const ids = items.map(item => item.getAttribute('data-id')).filter(Boolean);
-        orderInput.value = ids.join(',');
+        currentOrderInput.value = ids.join(',');
+        console.log('[Image Management] New order set in input:', currentOrderInput.value);
     }
 
     // Initial order call
     updateOrder();
 
     return () => {
-        if (sortable) sortable.destroy();
+        const s = sortable as any;
+        sortable = null; // Clear reference immediately to prevent double-calls
+        
+        // Remove listeners
+        form.removeEventListener('submit', handleSubmit);
+        
+        if (s && typeof s.destroy === 'function') {
+            try {
+                // Only destroy if the element is still in the document
+                if (s.el && document.contains(s.el)) {
+                    s.destroy();
+                }
+            } catch (err) {
+                // Ignore errors during destroy in transitions
+            }
+        }
     };
 }

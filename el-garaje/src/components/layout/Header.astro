@@ -60,25 +60,43 @@
 <script>
     import { getCartItems, SELECTION_UPDATED_EVENT } from '../../lib/cartStore';
 
+    let removeListener: (() => void) | undefined;
+
     function initCartBadge() {
-        const badge = document.getElementById('cart-badge')!;
+        const badge = document.getElementById('cart-badge');
+        if (!badge) return;
 
         function updateBadge() {
+            if (!badge) return;
             const items = getCartItems();
             if (items.length > 0) {
                 badge.textContent = items.length.toString();
                 badge.classList.remove('hidden');
                 badge.classList.add('scale-150');
-                setTimeout(() => badge.classList.remove('scale-150'), 200);
+                setTimeout(() => {
+                    if (badge) badge.classList.remove('scale-150');
+                }, 200);
             } else {
                 badge.classList.add('hidden');
             }
         }
 
-        window.addEventListener(SELECTION_UPDATED_EVENT, updateBadge);
+        const handleUpdate = () => updateBadge();
+        window.addEventListener(SELECTION_UPDATED_EVENT, handleUpdate);
         updateBadge();
+
+        return () => {
+            window.removeEventListener(SELECTION_UPDATED_EVENT, handleUpdate);
+        };
     }
 
-    document.addEventListener('astro:page-load', initCartBadge);
-    initCartBadge();
+    const runInit = () => {
+        if (removeListener) removeListener();
+        removeListener = initCartBadge();
+    };
+
+    document.addEventListener('astro:page-load', runInit);
+    document.addEventListener('astro:before-swap', () => {
+        if (removeListener) removeListener();
+    });
 </script>

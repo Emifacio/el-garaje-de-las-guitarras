@@ -50,14 +50,17 @@ if (Astro.request.method === 'POST') {
 const categories = await fetchProductCategories(supabase);
 
 // Fetch the existing product data to populate the form
-const product = await fetchProductForEdit(supabase, id);
+const productData = await fetchProductForEdit(supabase, id);
 
-if (!product) {
+if (!productData) {
     return Astro.redirect('/admin/productos');
 }
 
+// Use a type cast or local variable to avoid lint errors with snake_case
+const product = productData as any;
+
 // Sort existing images if present
-const sortedImages = product.product_images?.sort((a, b) => a.sort_order - b.sort_order) || [];
+const sortedImages = (product.product_images || []).sort((a: any, b: any) => a.sort_order - b.sort_order);
 
 // Format sold_date for display
 const soldDateDisplay = formatSoldDateForDisplay(product.sold_date);
@@ -91,7 +94,7 @@ const soldDateDisplay = formatSoldDateForDisplay(product.sold_date);
         </div>
     )}
 
-    <form method="POST" enctype="multipart/form-data" class="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-12">
+    <form id="product-edit-form" method="POST" enctype="multipart/form-data" class="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-12">
         <!-- Main Content Column -->
         <div class="lg:col-span-2 flex flex-col gap-6">
             <!-- Basic Info Card -->
@@ -287,55 +290,90 @@ const soldDateDisplay = formatSoldDateForDisplay(product.sold_date);
     import { initImageUpload } from '../../../scripts/admin/product-image-upload';
     import { initImageManagement } from '../../../scripts/admin/product-image-management';
 
+    let currentCleanup: (() => void) | undefined;
+
     function initEditProducto() {
+        console.log('[Admin Edit] Initializing scripts...');
+        
         // Toggle sold date visibility based on status
         const statusSelect = document.getElementById('status') as HTMLSelectElement;
         const soldDateContainer = document.getElementById('sold_date_container');
         
         if (statusSelect && soldDateContainer) {
-            statusSelect.addEventListener('change', (e) => {
+            const handleStatusChange = (e: Event) => {
                 if ((e.target as HTMLSelectElement).value === 'vendido') {
                     soldDateContainer.classList.remove('hidden');
                 } else {
                     soldDateContainer.classList.add('hidden');
                 }
+            };
+            statusSelect.addEventListener('change', handleStatusChange);
+        }
+
+        // Initialize Image Management (Reorder/Delete) - ONLY if grid exists
+        let cleanupManagement: (() => void) | undefined;
+        const gridElement = document.getElementById('image-management-grid');
+        if (gridElement) {
+            cleanupManagement = initImageManagement({
+                gridSelector: '#image-management-grid',
+                formSelector: '#product-edit-form',
+                deleteBtnClass: 'delete-image-btn',
+                orderInputId: 'image_order',
+                deleteInputName: 'delete_images'
             });
         }
 
-        // Initialize Image Management (Reorder/Delete)
-        const cleanupManagement = initImageManagement({
-            gridSelector: '#image-management-grid',
-            formSelector: 'form[method="POST"]',
-            deleteBtnClass: 'delete-image-btn',
-            orderInputId: 'image_order',
-            deleteInputName: 'delete_images'
+        // Initialize Image Upload
+        const cleanupUpload = initImageUpload({
+            formSelector: '#product-edit-form',
+            inputSelector: '#images',
+            previewSelector: '#image-preview',
+            buttonSelector: '#updateBtn',
+            loadingText: `<span class="material-symbols-outlined animate-spin text-sm">refresh</span> Guardando...`,
+            compressingText: `<span class="material-symbols-outlined animate-spin text-sm">refresh</span> Optimizando fotos...`,
         });
 
-        return cleanupManagement;
+        return () => {
+            console.log('[Admin Edit] Cleaning up scripts...');
+            if (cleanupManagement) cleanupManagement();
+            if (cleanupUpload) cleanupUpload();
+            currentCleanup = undefined;
+        };
     }
 
-    let currentCleanup: (() => void) | undefined;
-
     const runInit = () => {
-        if (currentCleanup) currentCleanup();
+        if (currentCleanup) {
+            try {
+                currentCleanup();
+            } catch (e) {
+                console.error('[Admin Edit Cleanup Error]', e);
+            }
+            currentCleanup = undefined;
+        }
         currentCleanup = initEditProducto();
     };
 
-    const cleanupUpload = initImageUpload({
-        formSelector: 'form[method="POST"]',
-        inputSelector: '#images',
-        previewSelector: '#image-preview',
-        buttonSelector: '#updateBtn',
-        loadingText: `<span class="material-symbols-outlined animate-spin text-sm">refresh</span> Guardando...`,
-        compressingText: `<span class="material-symbols-outlined animate-spin text-sm">refresh</span> Optimizando fotos...`,
-    });
-
-    document.addEventListener('astro:page-load', runInit);
-    document.addEventListener('astro:before-swap', () => {
-        if (currentCleanup) currentCleanup();
-        cleanupUpload();
-    });
-
-    // Run once on initial load
-    runInit();
+    // Ensure we only register listeners once per module load
+    if (!(window as any).__editProductScriptInitialized) {
+        (window as any).__editProductScriptInitialized = true;
+        
+        // Astro lifecycle listeners
+        document.addEventListener('astro:page-load', runInit);
+        
+        document.addEventListener('astro:before-swap', () => {
+            if (currentCleanup) {
+                try {
+                    currentCleanup();
+                } catch (e) {}
+                currentCleanup = undefined;
+            }
+        });
+    } else {
+        // Module already loaded, but we might be re-navigating to this page type
+        // The astro:page-load listener is already active, but let's fire it once
+        // if we are already in the load state.
+        if (document.readyState === 'complete') {
+            runInit();
+        }
+    }
 </script>

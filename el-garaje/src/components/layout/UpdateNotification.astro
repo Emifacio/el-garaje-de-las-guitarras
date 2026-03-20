@@ -72,6 +72,7 @@ import { APP_VERSION } from '../../config/version';
                 const res = await fetch(`/version.json?v=${Date.now()}`, {
                     cache: 'no-store',
                     headers: { 'Cache-Control': 'no-cache' },
+                    signal // Pass the signal to fetch
                 });
                 if (!res.ok) return;
                 const data = await res.json();
@@ -85,8 +86,8 @@ import { APP_VERSION } from '../../config/version';
                     showBanner();
                 }
             } catch (err) {
+                if ((err as Error).name === 'AbortError') return;
                 if (debug) console.error('[UpdateChecker] Error:', err);
-                // Silently fail — network issues shouldn't bother the user
             }
         }
 
@@ -131,4 +132,10 @@ import { APP_VERSION } from '../../config/version';
     }
 
     document.addEventListener('astro:page-load', initUpdateChecker);
+    document.addEventListener('astro:before-swap', () => {
+        // We don't necessarily want to kill the checker on every swap if it's a global component,
+        // but since initUpdateChecker handles cleanup at the start, it's mostly fine.
+        // However, let's ensure the current AbortController is aborted if we are navigating away 
+        // and might not come back to a page with this component (though unlikely for global).
+    });
 </script>

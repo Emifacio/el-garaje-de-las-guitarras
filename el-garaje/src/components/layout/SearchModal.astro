@@ -262,6 +262,8 @@
 </style>
 
 <script>
+    let cleanupSearch: (() => void) | undefined;
+
     function initSearchModal() {
         const modal = document.getElementById('search-modal');
         const input = document.getElementById('search-input') as HTMLInputElement;
@@ -275,13 +277,13 @@
         let debounceTimer: ReturnType<typeof setTimeout>;
         let activeIndex = -1;
 
-        function openModal() {
+        const openModal = () => {
             modal.classList.add('open');
             document.body.style.overflow = 'hidden';
             setTimeout(() => input.focus(), 100);
-        }
+        };
 
-        function closeModal() {
+        const closeModal = () => {
             modal.classList.remove('open');
             document.body.style.overflow = '';
             input.value = '';
@@ -289,37 +291,20 @@
             results.innerHTML = '';
             if (emptyState) results.appendChild(emptyState);
             activeIndex = -1;
-        }
+        };
 
-        // Wire search buttons
-        searchButtons.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                openModal();
-            });
-        });
-
-        // Close button
-        closeBtn.addEventListener('click', closeModal);
-
-        // Backdrop click
-        modal.querySelector('.search-modal__backdrop')?.addEventListener('click', closeModal);
-
-        // ESC key
-        document.addEventListener('keydown', (e) => {
+        const handleEscape = (e: KeyboardEvent) => {
             if (e.key === 'Escape' && modal.classList.contains('open')) {
                 closeModal();
             }
-            // Ctrl/Cmd + K to open
             if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
                 e.preventDefault();
                 if (modal.classList.contains('open')) closeModal();
                 else openModal();
             }
-        });
+        };
 
-        // Keyboard navigation in results
-        input.addEventListener('keydown', (e) => {
+        const handleNav = (e: KeyboardEvent) => {
             const items = results.querySelectorAll<HTMLAnchorElement>('.search-result');
             if (!items.length) return;
 
@@ -335,29 +320,22 @@
                 e.preventDefault();
                 items[activeIndex].click();
             }
-        });
+        };
 
-        function updateActive(items: NodeListOf<HTMLAnchorElement>) {
-            items.forEach((item, i) => {
-                item.classList.toggle('active', i === activeIndex);
-                if (i === activeIndex) item.scrollIntoView({ block: 'nearest' });
-            });
-        }
-
-        // Search input with debounce
-        input.addEventListener('input', () => {
+        const handleInput = () => {
             clearTimeout(debounceTimer);
             const query = input.value.trim();
             activeIndex = -1;
 
             if (query.length < 2) {
                 results.innerHTML = '';
-                results.appendChild(emptyState!);
-                if (emptyState) emptyState.style.display = '';
+                if (emptyState) {
+                    results.appendChild(emptyState);
+                    emptyState.style.display = '';
+                }
                 return;
             }
 
-            // Show loading
             results.innerHTML = `
                 <div class="search-modal__loading">
                     <div class="search-spinner"></div>
@@ -373,11 +351,18 @@
                     results.innerHTML = `<div class="search-modal__no-results">Error al buscar. Intentá de nuevo.</div>`;
                 }
             }, 300);
-        });
+        };
+
+        function updateActive(items: NodeListOf<HTMLAnchorElement>) {
+            items.forEach((item, i) => {
+                item.classList.toggle('active', i === activeIndex);
+                if (i === activeIndex) item.scrollIntoView({ block: 'nearest' });
+            });
+        }
 
         function renderResults(data: any[], query: string) {
             if (data.length === 0) {
-                results.innerHTML = `
+                results!.innerHTML = `
                     <div class="search-modal__no-results">
                         <p>No se encontraron resultados para "<strong>${escapeHTML(query)}</strong>"</p>
                         <p style="margin-top: 8px; font-size: 12px;">Probá con otro término o navegá por categorías</p>
@@ -386,7 +371,7 @@
                 return;
             }
 
-            results.innerHTML = data.map(product => {
+            results!.innerHTML = data.map(product => {
                 const price = product.priceLabel || '';
                 const isSold = product.status === 'vendido';
                 const category = product.categoryName || '';
@@ -428,8 +413,31 @@
         function escapeRegex(str: string): string {
             return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         }
+
+        searchButtons.forEach(btn => btn.addEventListener('click', openModal));
+        closeBtn.addEventListener('click', closeModal);
+        modal.querySelector('.search-modal__backdrop')?.addEventListener('click', closeModal);
+        document.addEventListener('keydown', handleEscape);
+        input.addEventListener('keydown', handleNav);
+        input.addEventListener('input', handleInput);
+
+        return () => {
+            clearTimeout(debounceTimer);
+            searchButtons.forEach(btn => btn.removeEventListener('click', openModal));
+            closeBtn.removeEventListener('click', closeModal);
+            document.removeEventListener('keydown', handleEscape);
+            input.removeEventListener('keydown', handleNav);
+            input.removeEventListener('input', handleInput);
+        };
     }
 
-    initSearchModal();
-    document.addEventListener('astro:page-load', initSearchModal);
+    const runInit = () => {
+        if (cleanupSearch) cleanupSearch();
+        cleanupSearch = initSearchModal();
+    };
+
+    document.addEventListener('astro:page-load', runInit);
+    document.addEventListener('astro:before-swap', () => {
+        if (cleanupSearch) cleanupSearch();
+    });
 </script>

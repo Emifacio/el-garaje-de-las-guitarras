@@ -79,45 +79,67 @@ import { WHATSAPP_DIRECT_URL, INSTAGRAM_URL } from '../../lib/whatsapp';
 </style>
 
 <script>
-    // Track social button clicks
+    let cleanupSocial: (() => void) | undefined;
+
     function initSocialTracking() {
         const socialBtns = document.querySelectorAll('.track-social');
-        socialBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const interactionType = btn.getAttribute('data-track-type');
-                if (interactionType) {
-                    fetch('/api/track-interaction', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            interaction_type: interactionType,
-                            metadata: { page: window.location.pathname, timestamp: new Date().toISOString() }
-                        })
-                    }).catch(err => console.warn('Social tracking failed:', err));
-                }
-            });
-        });
+        if (socialBtns.length === 0) return;
+
+        const handleTrack = (e: Event) => {
+            const btn = (e.currentTarget as HTMLElement);
+            const interactionType = btn.getAttribute('data-track-type');
+            if (interactionType) {
+                fetch('/api/track-interaction', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        interaction_type: interactionType,
+                        metadata: { page: window.location.pathname, timestamp: new Date().toISOString() }
+                    })
+                }).catch(err => console.warn('Social tracking failed:', err));
+            }
+        };
+
+        socialBtns.forEach(btn => btn.addEventListener('click', handleTrack));
+
+        return () => {
+            socialBtns.forEach(btn => btn.removeEventListener('click', handleTrack));
+        };
     }
 
-    // Expose WhatsApp pulse trigger globally
     function initWhatsAppPulse() {
         const ring = document.getElementById('wa-pulse-ring');
         if (!ring) return;
 
-        (window as any).__fireWhatsAppPulse = () => {
+        const handlePulse = () => {
             ring.classList.remove('pulsing');
-            // Force reflow to restart animation
-            void ring.offsetHeight;
+            void (ring as HTMLElement).offsetHeight;
             ring.classList.add('pulsing');
-            // Clean up after animation
-            setTimeout(() => ring.classList.remove('pulsing'), 1600);
+            setTimeout(() => {
+                if (ring) ring.classList.remove('pulsing');
+            }, 1600);
+        };
+
+        (window as any).__fireWhatsAppPulse = handlePulse;
+
+        return () => {
+            delete (window as any).__fireWhatsAppPulse;
         };
     }
 
-    initSocialTracking();
-    initWhatsAppPulse();
-    document.addEventListener('astro:page-load', () => {
-        initSocialTracking();
-        initWhatsAppPulse();
+    const runInit = () => {
+        if (cleanupSocial) cleanupSocial();
+        const cleanupTrack = initSocialTracking();
+        const cleanupPulse = initWhatsAppPulse();
+        
+        cleanupSocial = () => {
+            if (cleanupTrack) cleanupTrack();
+            if (cleanupPulse) cleanupPulse();
+        };
+    };
+
+    document.addEventListener('astro:page-load', runInit);
+    document.addEventListener('astro:before-swap', () => {
+        if (cleanupSocial) cleanupSocial();
     });
 </script>

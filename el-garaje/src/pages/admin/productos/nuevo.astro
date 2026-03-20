@@ -232,14 +232,54 @@ if (Astro.request.method === 'POST') {
 <script>
     import { initImageUpload } from '../../../scripts/admin/product-image-upload';
 
-    const cleanup = initImageUpload({
-        formSelector: 'form[method="POST"]',
-        inputSelector: '#images',
-        previewSelector: '#image-preview',
-        buttonSelector: '#saveBtn',
-        loadingText: `<span class="material-symbols-outlined animate-spin">refresh</span> Subiendo Datos...`,
-        compressingText: `<span class="material-symbols-outlined animate-spin">refresh</span> Optimizando fotos...`,
-    });
+    let currentCleanup: (() => void) | undefined;
 
-    document.addEventListener('astro:before-swap', cleanup);
+    function initNuevoProducto() {
+        // Guard: Only initialize if we are on the "Nuevo Producto" page
+        if (!document.getElementById('saveBtn') || document.getElementById('image-management-grid')) return;
+
+        console.log('[Admin Nuevo] Initializing upload script...');
+        const cleanup = initImageUpload({
+            formSelector: 'form',
+            inputSelector: '#images',
+            previewSelector: '#image-preview',
+            buttonSelector: '#saveBtn',
+            loadingText: `<span class="material-symbols-outlined animate-spin">refresh</span> Subiendo Datos...`,
+            compressingText: `<span class="material-symbols-outlined animate-spin">refresh</span> Optimizando fotos...`,
+        });
+
+        return () => {
+            console.log('[Admin Nuevo] Cleaning up upload script...');
+            if (cleanup) cleanup();
+            currentCleanup = undefined;
+        };
+    }
+
+    const runInit = () => {
+        if (currentCleanup) {
+            try {
+                currentCleanup();
+            } catch (e) {
+                console.error('[Admin Nuevo Cleanup Error]', e);
+            }
+            currentCleanup = undefined;
+        }
+        currentCleanup = initNuevoProducto();
+    };
+
+    if (!(window as any).__nuevoProductScriptInitialized) {
+        (window as any).__nuevoProductScriptInitialized = true;
+        
+        document.addEventListener('astro:page-load', runInit);
+        document.addEventListener('astro:before-swap', () => {
+            if (currentCleanup) {
+                try {
+                    currentCleanup();
+                } catch (e) {}
+                currentCleanup = undefined;
+            }
+        });
+    } else if (document.readyState === 'complete') {
+        runInit();
+    }
 </script>
