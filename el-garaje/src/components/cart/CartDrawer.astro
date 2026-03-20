@@ -72,14 +72,16 @@ import { getCartItems } from '../../lib/cartStore';
     import { InteractionType } from '../../lib/interaction-types';
 
     function initCartUI() {
-        const backdrop = document.getElementById('cart-backdrop')!;
-        const drawer = document.getElementById('cart-drawer')!;
+        const backdrop = document.getElementById('cart-backdrop');
+        const drawer = document.getElementById('cart-drawer');
         const closeBtn = document.getElementById('cart-close');
         const triggers = document.querySelectorAll('.cart-toggle-btn');
-        const container = document.getElementById('cart-items-container')!;
+        const container = document.getElementById('cart-items-container');
         const emptyTemplate = document.getElementById('cart-empty-template') as HTMLTemplateElement;
         const itemTemplate = document.getElementById('cart-item-template') as HTMLTemplateElement;
         const checkoutBtn = document.getElementById('cart-checkout-btn') as HTMLAnchorElement;
+
+        if (!backdrop || !drawer || !container || !emptyTemplate || !itemTemplate || !checkoutBtn) return;
 
         // Toggle Drawer
         function openCart() {
