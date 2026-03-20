@@ -6,7 +6,7 @@
  */
 
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
-const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'] as const;
+const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'jfif', 'png', 'webp'] as const;
 
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
 const MAX_FILES_PER_REQUEST = 10;
@@ -53,7 +53,7 @@ export function validateFileExtension(file: File): FileValidationResult {
     if (!ALLOWED_EXTENSIONS.includes(extension as typeof ALLOWED_EXTENSIONS[number])) {
         return {
             valid: false,
-            error: `Extensión no permitida: .${extension}. Solo se aceptan JPG, PNG y WEBP.`,
+            error: `Extensión no permitida: .${extension}. Solo se aceptan JPG, JFIF, PNG y WEBP.`,
         };
     }
     return { valid: true };

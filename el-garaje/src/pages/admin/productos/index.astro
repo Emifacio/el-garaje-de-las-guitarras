@@ -76,17 +76,32 @@ const getStatusClasses = (status: string) => {
     }
 };
 
-// Helper for next toggle status
+// Helper for next toggle status (3-state cycling)
 const getNextStatus = (status: string) => {
-    return status === 'vendido' ? 'disponible' : 'vendido';
+    switch (status) {
+        case 'disponible': return 'reservado';
+        case 'reservado': return 'vendido';
+        case 'vendido': return 'disponible';
+        default: return 'disponible';
+    }
 };
 
 const getToggleLabel = (status: string) => {
-    return status === 'vendido' ? 'Marcar Disponible' : 'Marcar Vendido';
+    switch (status) {
+        case 'disponible': return 'Marcar Reservado';
+        case 'reservado': return 'Marcar Vendido';
+        case 'vendido': return 'Marcar Disponible';
+        default: return 'Cambiar Estado';
+    }
 };
 
 const getToggleIcon = (status: string) => {
-    return status === 'vendido' ? 'check_circle' : 'sell';
+    switch (status) {
+        case 'disponible': return 'bookmark_add';
+        case 'reservado': return 'schedule';
+        case 'vendido': return 'check_circle';
+        default: return 'swap_horiz';
+    }
 };
 ---
 
@@ -159,7 +174,13 @@ const getToggleIcon = (status: string) => {
                                 <input type="hidden" name="productId" value={product.id} />
                                 <input type="hidden" name="currentStatus" value={product.status} />
                                 <input type="hidden" name="newStatus" value={getNextStatus(product.status)} />
-                                <button type="submit" class={`w-full h-10 flex items-center justify-center gap-2 text-xs font-bold tracking-widest uppercase rounded-sm border transition-all ${product.status === 'vendido' ? 'bg-emerald-900/20 text-emerald-400 border-emerald-500/30 hover:bg-emerald-900/40' : 'bg-red-900/20 text-red-400 border-red-500/30 hover:bg-red-900/40'}`}>
+                                <button type="submit" class={`w-full h-10 flex items-center justify-center gap-2 text-xs font-bold tracking-widest uppercase rounded-sm border transition-all ${
+                                    product.status === 'vendido' 
+                                        ? 'bg-emerald-900/20 text-emerald-400 border-emerald-500/30 hover:bg-emerald-900/40'
+                                        : product.status === 'reservado'
+                                            ? 'bg-red-900/20 text-red-400 border-red-500/30 hover:bg-red-900/40'
+                                            : 'bg-amber-900/20 text-amber-400 border-amber-500/30 hover:bg-amber-900/40'
+                                }`}>
                                     <span class="material-symbols-outlined text-[1rem]">{getToggleIcon(product.status)}</span>
                                     {getToggleLabel(product.status)}
                                 </button>
@@ -239,7 +260,13 @@ const getToggleIcon = (status: string) => {
                                                 <input type="hidden" name="productId" value={product.id} />
                                                 <input type="hidden" name="currentStatus" value={product.status} />
                                                 <input type="hidden" name="newStatus" value={getNextStatus(product.status)} />
-                                                <button type="submit" class={`p-2 transition-colors bg-background-dark/50 rounded border border-transparent hover:border-primary/30 ${product.status === 'vendido' ? 'text-emerald-400 hover:text-emerald-300' : 'text-amber-400 hover:text-amber-300'}`} title={getToggleLabel(product.status)}>
+                                                <button type="submit" class={`p-2 transition-colors bg-background-dark/50 rounded border border-transparent hover:border-primary/30 ${
+                                                    product.status === 'vendido' 
+                                                        ? 'text-emerald-400 hover:text-emerald-300'
+                                                        : product.status === 'reservado'
+                                                            ? 'text-red-400 hover:text-red-300'
+                                                            : 'text-amber-400 hover:text-amber-300'
+                                                }`} title={getToggleLabel(product.status)}>
                                                     <span class="material-symbols-outlined text-[1.25rem]">{getToggleIcon(product.status)}</span>
                                                 </button>
                                             </form>

@@ -6,7 +6,6 @@ import sitemap from '@astrojs/sitemap';
 
 import vercel from '@astrojs/vercel';
 import criticalCssIntegration from './src/integrations/critical-css';
-import lollapaloozaModal from './src/integrations/lollapalooza-modal';
 import versionFile from './src/integrations/version-file';
 import { assetLoaderConfig } from './src/config/asset-loader.config';
 
@@ -26,7 +25,6 @@ export default defineConfig({
     criticalCssIntegration({
       inlineThreshold: assetLoaderConfig.criticalCSS.inlineThreshold
     }),
-    lollapaloozaModal(),
     versionFile(buildVersion),
   ],
   output: 'static',

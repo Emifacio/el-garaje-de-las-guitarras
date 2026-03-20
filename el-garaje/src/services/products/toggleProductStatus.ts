@@ -1,8 +1,10 @@
 /**
  * Toggle Product Status Service
  * 
- * Handles status toggling between disponible and vendido.
- * Admin lifecycle is simple: disponible <-> vendido.
+ * Handles 3-state status cycling: disponible -> reservado -> vendido -> disponible.
+ * - disponible: Available for sale
+ * - reservado: Reserved (soft commercial signal, no inventory lock)
+ * - vendido: Sold (sets sold_date)
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -16,10 +18,17 @@ export interface ToggleProductStatusResult {
     error?: string;
 }
 
-const VALID_TOGGLE_STATUSES: ProductStatus[] = ['disponible', 'vendido'];
+const ALL_STATUSES: ProductStatus[] = ['disponible', 'reservado', 'vendido'];
+
+function getNextStatus(currentStatus: string): ProductStatus {
+    const currentIndex = ALL_STATUSES.indexOf(currentStatus as ProductStatus);
+    if (currentIndex === -1) return 'disponible';
+    const nextIndex = (currentIndex + 1) % ALL_STATUSES.length;
+    return ALL_STATUSES[nextIndex];
+}
 
 /**
- * Toggle product status between disponible and vendido.
+ * Toggle product status through 3-state cycle: disponible -> reservado -> vendido -> disponible.
  * 
  * @param supabase - Supabase client
  * @param productId - Product ID to toggle
@@ -30,18 +39,18 @@ export async function toggleProductStatus(
     productId: string,
     currentStatus: string
 ): Promise<ToggleProductStatusResult> {
-    // Determine next status
-    const nextStatus: ProductStatus = currentStatus === 'vendido' ? 'disponible' : 'vendido';
+    // Determine next status (cycle through 3 states)
+    const nextStatus = getNextStatus(currentStatus);
 
     // Validate status
-    if (!VALID_TOGGLE_STATUSES.includes(nextStatus)) {
+    if (!isValidProductStatus(nextStatus)) {
         return {
             success: false,
             error: `Estado "${nextStatus}" no válido para toggling.`,
         };
     }
 
-    // Determine sold_date
+    // Determine sold_date (only set when transitioning to vendido)
     const soldDate = determineSoldDate(null, nextStatus);
 
     // Update product

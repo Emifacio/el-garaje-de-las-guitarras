@@ -162,6 +162,12 @@ export function initImageUpload(options: {
         onCompressComplete,
     } = options;
     
+    // Store bound handlers so we can remove them later
+    const handlers: {
+        change: ((e: Event) => void) | null;
+        submit: ((e: Event) => void) | null;
+    } = { change: null, submit: null };
+    
     function init() {
         const form = document.querySelector<HTMLFormElement>(formSelector);
         const imageInput = document.querySelector<HTMLInputElement>(inputSelector);
@@ -170,16 +176,25 @@ export function initImageUpload(options: {
         
         if (!form || !imageInput || !btn) return;
         
+        // Remove any existing handlers to prevent duplicates
+        if (handlers.change) {
+            imageInput.removeEventListener('change', handlers.change);
+        }
+        if (handlers.submit) {
+            form.removeEventListener('submit', handlers.submit);
+        }
+        
         // Preview handler
-        imageInput.addEventListener('change', (e) => {
+        handlers.change = (e: Event) => {
             const files = (e.target as HTMLInputElement).files;
-            if (files) {
+            if (files && files.length > 0) {
                 createImagePreviews(files, previewContainer);
             }
-        });
+        };
+        imageInput.addEventListener('change', handlers.change);
         
         // Submit handler with compression
-        form.addEventListener('submit', async (e) => {
+        handlers.submit = async (e: Event) => {
             // Skip if already compressed or no files
             if (
                 imageInput.dataset.compressed === 'true' ||
@@ -199,19 +214,52 @@ export function initImageUpload(options: {
             
             try {
                 const dt = await prepareFilesForUpload(imageInput.files);
-                imageInput.files = dt.files;
+                
+                // Create new FormData - start fresh to avoid issues
+                const formData = new FormData();
+                
+                // Copy all other form fields
+                const formDataFromForm = new FormData(form);
+                formDataFromForm.forEach((value, key) => {
+                    if (key !== 'images') {
+                        formData.append(key, value);
+                    }
+                });
+                
+                // Add compressed files
+                for (let i = 0; i < dt.files.length; i++) {
+                    formData.append('images', dt.files[i]);
+                }
+                
                 imageInput.dataset.compressed = 'true';
                 onCompressComplete?.();
                 
-                // Submit form
+                // Submit form via fetch to avoid event recursion
+                btn.innerHTML = loadingText;
+                
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                });
+                
+                if (response.redirected) {
+                    window.location.href = response.url;
+                } else {
+                    // Fallback: replace current page with response
+                    const html = await response.text();
+                    document.open();
+                    document.write(html);
+                    document.close();
+                }
+            } catch (error) {
+                console.error('Compression/submission error:', error);
+                imageInput.dataset.compressed = 'true';
+                // Fallback: submit without compression
                 btn.innerHTML = loadingText;
                 form.submit();
-            } catch (error) {
-                console.error('Compression error:', error);
-                imageInput.dataset.compressed = 'true';
-                form.submit();
             }
-        });
+        };
+        form.addEventListener('submit', handlers.submit);
     }
     
     document.addEventListener('astro:page-load', init);
@@ -219,5 +267,14 @@ export function initImageUpload(options: {
     
     return () => {
         document.removeEventListener('astro:page-load', init);
+        // Also cleanup the form/input handlers
+        const form = document.querySelector<HTMLFormElement>(formSelector);
+        const imageInput = document.querySelector<HTMLInputElement>(inputSelector);
+        if (handlers.change && imageInput) {
+            imageInput.removeEventListener('change', handlers.change);
+        }
+        if (handlers.submit && form) {
+            form.removeEventListener('submit', handlers.submit);
+        }
     };
 }
