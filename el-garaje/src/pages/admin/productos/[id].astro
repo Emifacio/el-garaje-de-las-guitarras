@@ -159,16 +159,34 @@ const soldDateDisplay = formatSoldDateForDisplay(product.sold_date);
                 <h2 class="font-serif text-xl font-bold text-slate-200 mb-6 border-b border-primary/10 pb-2">Imágenes</h2>
                 
                 {sortedImages.length > 0 ? (
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                    <div id="image-management-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
                         {sortedImages.map((img) => (
-                            <div class="relative aspect-square rounded border border-primary/30 bg-background-dark overflow-hidden group">
+                            <div class="relative aspect-square rounded border border-primary/30 bg-background-dark overflow-hidden group touch-none" data-id={img.id}>
                                 <img src={getPublicImageUrl(img.storage_path)} class="w-full h-full object-cover" alt="Product Image" />
+                                
+                                <!-- Drag Handle -->
+                                <div class="drag-handle absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-move z-10">
+                                    <span class="material-symbols-outlined text-white text-3xl">drag_indicator</span>
+                                </div>
+
+                                <!-- Delete Button -->
+                                <button type="button" class="delete-image-btn absolute top-2 right-2 z-20 w-8 h-8 rounded-full bg-red-600/80 text-white flex items-center justify-center hover:bg-red-600 transition-all opacity-0 group-hover:opacity-100">
+                                    <span class="material-symbols-outlined text-sm">delete</span>
+                                </button>
+
+                                <!-- Index Badge (for visual order) -->
+                                <div class="absolute bottom-2 left-2 z-20 w-5 h-5 rounded-full bg-black/60 text-[10px] font-bold text-white flex items-center justify-center border border-white/20 pointer-events-none">
+                                    {sortedImages.indexOf(img) + 1}
+                                </div>
                             </div>
                         ))}
                     </div>
                 ) : (
                     <p class="text-sm text-slate-400 italic mb-6">No hay imágenes asociadas a este producto.</p>
                 )}
+
+                <!-- Hidden Input for Image Order -->
+                <input type="hidden" id="image_order" name="image_order" value={sortedImages.map(i => i.id).join(',')} />
 
                 <!-- Upload New Images -->
                 <div>
@@ -267,6 +285,7 @@ const soldDateDisplay = formatSoldDateForDisplay(product.sold_date);
 
 <script>
     import { initImageUpload } from '../../../scripts/admin/product-image-upload';
+    import { initImageManagement } from '../../../scripts/admin/product-image-management';
 
     function initEditProducto() {
         // Toggle sold date visibility based on status
@@ -282,9 +301,27 @@ const soldDateDisplay = formatSoldDateForDisplay(product.sold_date);
                 }
             });
         }
+
+        // Initialize Image Management (Reorder/Delete)
+        const cleanupManagement = initImageManagement({
+            gridSelector: '#image-management-grid',
+            formSelector: 'form[method="POST"]',
+            deleteBtnClass: 'delete-image-btn',
+            orderInputId: 'image_order',
+            deleteInputName: 'delete_images'
+        });
+
+        return cleanupManagement;
     }
 
-    const cleanup = initImageUpload({
+    let currentCleanup: (() => void) | undefined;
+
+    const runInit = () => {
+        if (currentCleanup) currentCleanup();
+        currentCleanup = initEditProducto();
+    };
+
+    const cleanupUpload = initImageUpload({
         formSelector: 'form[method="POST"]',
         inputSelector: '#images',
         previewSelector: '#image-preview',
@@ -293,6 +330,12 @@ const soldDateDisplay = formatSoldDateForDisplay(product.sold_date);
         compressingText: `<span class="material-symbols-outlined animate-spin text-sm">refresh</span> Optimizando fotos...`,
     });
 
-    document.addEventListener('astro:page-load', initEditProducto);
-    document.addEventListener('astro:before-swap', cleanup);
+    document.addEventListener('astro:page-load', runInit);
+    document.addEventListener('astro:before-swap', () => {
+        if (currentCleanup) currentCleanup();
+        cleanupUpload();
+    });
+
+    // Run once on initial load
+    runInit();
 </script>

@@ -1,5 +1,5 @@
 ---
-import type { Product } from '../../lib/types';
+import type { Product } from '../../domain/product/product.types';
 
 interface Props {
   product: Product;
@@ -9,42 +9,27 @@ const { product } = Astro.props;
 
 interface SpecRow {
     label: string;
-    value: string | number | null;
+    value: string;
 }
 
-// Build standard specs
-const stdSpecs: SpecRow[] = [];
-if (product.brand) stdSpecs.push({ label: 'Marca', value: product.brand });
-if (product.year) stdSpecs.push({ label: 'Año', value: product.year });
+const finalSpecs: SpecRow[] = [];
 
-// Build arbitrary custom specs
-const customSpecs: SpecRow[] = (product.specifications || []).map(s => {
-    // Assuming specifications JSONB is array of objects like {"label": "Body", "value": "Mahogany"}
-    const label = Object.keys(s)[0];
-    const value = s[label];
-    return { label: label || 'Dato', value };
-});
-
-const allSpecs = [...stdSpecs, ...customSpecs].filter(s => s.value !== null && s.value !== undefined && s.label !== 'label' && s.label !== 'value');
-
-// Fallback if empty JSON
-let parsedSpecs: {label: string, value: string}[] = [];
+if (product.brand) finalSpecs.push({ label: 'Marca', value: product.brand });
+if (product.year) finalSpecs.push({ label: 'Año', value: product.year.toString() });
 
 if (product.specifications && Array.isArray(product.specifications)) {
     product.specifications.forEach(spec => {
-       if (spec.label && spec.value) {
-           parsedSpecs.push({label: spec.label, value: spec.value});
-       }
+        // Handle both {label, value} and {key: value} formats
+        if (spec.label && spec.value) {
+            finalSpecs.push({ label: spec.label, value: spec.value });
+        } else {
+            const keys = Object.keys(spec);
+            if (keys.length > 0 && keys[0] !== 'label' && keys[0] !== 'value') {
+                finalSpecs.push({ label: keys[0], value: String(spec[keys[0]]) });
+            }
+        }
     });
 }
-
-// Combine all 
-const finalSpecs = [
-    ...(product.brand ? [{label: 'Marca', value: product.brand}] : []),
-    ...(product.year ? [{label: 'Año', value: product.year.toString()}] : []),
-    ...parsedSpecs
-];
-
 ---
 
 <div class="flex flex-col gap-4">

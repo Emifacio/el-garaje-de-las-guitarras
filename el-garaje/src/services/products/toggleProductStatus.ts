@@ -8,7 +8,7 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { ProductStatus } from '../../lib/types';
+import type { ProductStatus } from '../../domain/product/product.types';
 import { isValidProductStatus } from '../../validators/product';
 import { getCurrentISODate, determineSoldDate } from '../../lib/dates';
 

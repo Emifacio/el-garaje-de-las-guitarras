@@ -2,9 +2,9 @@
 export const prerender = false;
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ProductCard from '../components/product/ProductCard.astro';
-import { getProducts } from '../lib/queries';
+import { getHomePageFeatured } from '../application/home/get-home-page';
 
-const featuredProducts = await getProducts({ isFeatured: true, limit: 3 });
+const featuredProducts = await getHomePageFeatured();
 ---
 
 <BaseLayout title="El Garaje de las Guitarras - Inicio">

@@ -5,7 +5,7 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Product } from '../../types';
+import type { Product } from '../../domain/product/product.types';
 
 export interface ProductWithRelations {
     id: string;

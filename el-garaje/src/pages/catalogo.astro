@@ -3,17 +3,14 @@ export const prerender = false;
 import BaseLayout from '../layouts/BaseLayout.astro';
 import FilterSidebar from '../components/category/FilterSidebar.astro';
 import ProductCard from '../components/product/ProductCard.astro';
-import { getProducts } from '../lib/queries';
+import { getCatalogPage } from '../application/catalog/get-catalog';
 
-const products = await getProducts();
+const products = await getCatalogPage();
 const pageTitle = 'Catálogo | El Garaje de las Guitarras';
 
 // Split brands: available vs sold-only
-const availableProducts = products.filter(p => p.status !== 'vendido');
-const soldProducts = products.filter(p => p.status === 'vendido');
-
-const availableBrands = [...new Set(availableProducts.map(p => p.brand || 'Otras'))].sort();
-const soldOnlyBrands = [...new Set(soldProducts.map(p => p.brand || 'Otras'))]
+const availableBrands = [...new Set(products.filter(p => !p.isSold).map(p => p.brand || 'Otras'))].sort();
+const soldOnlyBrands = [...new Set(products.filter(p => p.isSold).map(p => p.brand || 'Otras'))]
     .filter(b => !availableBrands.includes(b))
     .sort();
 ---
@@ -73,57 +70,10 @@ const soldOnlyBrands = [...new Set(soldProducts.map(p => p.brand || 'Otras'))]
 </BaseLayout>
 
 <script>
+    import { CatalogController } from '../ui/catalog/catalog-controller';
+    
     document.addEventListener('astro:page-load', () => {
-        const grid = document.getElementById('product-grid');
-        const soldSection = document.getElementById('sold-section');
-        const soldGrid = document.getElementById('sold-grid');
-        const soldToggleBtn = document.getElementById('sold-toggle-btn');
-        const soldCountEl = document.getElementById('sold-count');
-        const soldToggleIcon = document.getElementById('sold-toggle-icon');
-
-        if (!grid || !soldSection || !soldGrid || !soldToggleBtn || !soldCountEl || !soldToggleIcon) return;
-
-        const soldCards = grid.querySelectorAll<HTMLElement>('[data-status="vendido"]');
-        if (soldCards.length === 0) return;
-
-        soldCards.forEach(card => soldGrid.appendChild(card));
-        soldSection.classList.remove('hidden');
-        soldCountEl.textContent = String(soldCards.length);
-
-        let isExpanded = false;
-        soldToggleBtn.addEventListener('click', () => {
-            isExpanded = !isExpanded;
-            soldGrid.classList.toggle('hidden', !isExpanded);
-            soldToggleIcon.textContent = isExpanded ? 'expand_less' : 'expand_more';
-            soldToggleIcon.style.transform = isExpanded ? 'rotate(180deg)' : '';
-            document.dispatchEvent(new CustomEvent('sold-toggle', { detail: { expanded: isExpanded } }));
-        });
-
-        // Listen for brand filter changes to also filter sold items
-        const brandContainer = document.getElementById('brand-filters');
-        if (brandContainer) {
-            const observer = new MutationObserver(() => {
-                const activeButtons = brandContainer.querySelectorAll<HTMLButtonElement>('.brand-btn--active');
-                const activeBrands = new Set<string>();
-                activeButtons.forEach(btn => {
-                    if (btn.dataset.brandValue !== 'all') activeBrands.add(btn.dataset.brandValue!);
-                });
-
-                const showAll = activeBrands.size === 0 
-                    || brandContainer.querySelector('[data-brand-value="all"]')?.classList.contains('brand-btn--active');
-
-                let visibleSoldCount = 0;
-                soldGrid.querySelectorAll<HTMLElement>('[data-brand]').forEach(card => {
-                    const brand = card.dataset.brand || '';
-                    const visible = showAll || activeBrands.has(brand);
-                    card.style.display = visible ? '' : 'none';
-                    if (visible) visibleSoldCount++;
-                });
-
-                soldCountEl.textContent = String(visibleSoldCount);
-                soldSection.style.display = visibleSoldCount > 0 ? '' : 'none';
-            });
-            observer.observe(brandContainer, { attributes: true, subtree: true, attributeFilter: ['class'] });
-        }
+        const controller = new CatalogController();
+        controller.init();
     });
 </script>

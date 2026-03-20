@@ -1,7 +1,6 @@
 ---
-import type { Product } from '../../lib/types';
+import type { Product } from '../../domain/product/product.types';
 import StatusBadge from './StatusBadge.astro';
-import { getPublicImageUrl } from '../../lib/image-utils';
 
 interface Props {
   product: Product;
@@ -9,18 +8,8 @@ interface Props {
 
 const { product } = Astro.props;
 
-const priceDisplay = product.price_display || (product.price ? `U$D ${product.price.toLocaleString()}` : 'U$D 9.999.999,99');
-
-const coverImage = product.product_images && product.product_images.length > 0
-    ? product.product_images.sort((a, b) => a.sort_order - b.sort_order)[0]
-    : null;
-
-const imageUrl = coverImage 
-    ? getPublicImageUrl(coverImage.storage_path)
-    : '/logo.avif';
-
-const isSold = product.status === 'vendido';
-const ariaLabel = `${product.title}. ${isSold ? 'Vendido.' : `Precio: ${priceDisplay}`}`;
+const imageUrl = (product.images && product.images.length > 0) ? product.images[0] : '/logo.avif';
+const ariaLabel = `${product.title}. ${product.isSold ? 'Vendido.' : `Precio: ${product.priceLabel}`}`;
 ---
 
 <a href={`/producto/${product.slug}`}
@@ -33,16 +22,16 @@ const ariaLabel = `${product.title}. ${isSold ? 'Vendido.' : `Precio: ${priceDis
         <div class="absolute inset-0 bg-gradient-to-t from-background-dark/80 to-transparent z-10"></div>
         <img 
             src={imageUrl}
-            alt={coverImage?.alt_text || product.title}
+            alt={product.title}
             loading="lazy"
             decoding="async"
-            class={`object-cover h-full w-full transition-all duration-500 image-blur-up ${isSold ? 'opacity-50 grayscale-[30%]' : 'opacity-0 group-hover:opacity-100'}`} />
+            class={`object-cover h-full w-full transition-all duration-500 image-blur-up ${product.isSold ? 'opacity-50 grayscale-[30%]' : 'opacity-0 group-hover:opacity-100'}`} />
             
         <div class="absolute top-4 left-4 z-20">
             <StatusBadge status={product.status} badge={product.badge} />
         </div>
 
-        {isSold && (
+        {product.isSold && (
             <div class="sold-ribbon">VENDIDO</div>
         )}
     </div>
@@ -51,16 +40,16 @@ const ariaLabel = `${product.title}. ${isSold ? 'Vendido.' : `Precio: ${priceDis
         <h2 class="font-serif text-xl font-bold text-slate-200 group-hover:text-primary transition-colors line-clamp-2">
             {product.title}
         </h2>
-        <p class="text-slate-400 text-sm mt-2 mb-4">{product.short_description || ''}</p>
+        <p class="text-slate-400 text-sm mt-2 mb-4">{product.shortDescription || ''}</p>
         
-        <div class={`mt-auto border-t border-primary/10 pt-4 flex justify-between items-center ${isSold ? 'opacity-50' : ''}`}>
-            {!isSold ? (
+        <div class={`mt-auto border-t border-primary/10 pt-4 flex justify-between items-center ${product.isSold ? 'opacity-50' : ''}`}>
+            {!product.isSold ? (
                 <>
-                   <span class="font-serif text-lg text-primary tracking-wide">{priceDisplay}</span>
+                   <span class="font-serif text-lg text-primary tracking-wide">{product.priceLabel}</span>
                    <span class="material-symbols-outlined text-primary group-hover:translate-x-1 transition-transform">arrow_forward</span>
                 </>
             ) : (
-                <span class="font-serif text-lg text-slate-400 tracking-wide line-through">{priceDisplay}</span>
+                <span class="font-serif text-lg text-slate-400 tracking-wide line-through">{product.priceLabel}</span>
             )}
         </div>
     </div>

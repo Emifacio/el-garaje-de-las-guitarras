@@ -1,0 +1,70 @@
+import { supabase } from '../supabase/client';
+
+export const ProductRepository = {
+    async findAll(options?: {
+        categoryId?: string;
+        isFeatured?: boolean;
+        limit?: number;
+        from?: number;
+        to?: number;
+    }) {
+        let query = supabase
+            .from('products')
+            .select(`
+                *,
+                categories (*),
+                product_images (*)
+            `)
+            .order('sort_order', { ascending: true })
+            .order('created_at', { ascending: false });
+
+        if (options?.categoryId) {
+            query = query.eq('category_id', options.categoryId);
+        }
+
+        if (options?.isFeatured !== undefined) {
+            query = query.eq('is_featured', options.isFeatured);
+        }
+
+        if (options?.from !== undefined && options?.to !== undefined) {
+            query = query.range(options.from, options.to);
+        } else if (options?.limit) {
+            query = query.limit(options.limit);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+        return data || [];
+    },
+
+    async findBySlug(slug: string) {
+        const { data, error } = await supabase
+            .from('products')
+            .select(`
+                *,
+                categories (*),
+                product_images (*)
+            `)
+            .eq('slug', slug)
+            .single();
+
+        if (error) throw error;
+        return data;
+    },
+
+    async search(query: string, limit: number = 8) {
+        const { data, error } = await supabase
+            .from('products')
+            .select(`
+                id, title, slug, short_description, price, price_display, status, brand,
+                categories (name, slug),
+                product_images (storage_path, alt_text, sort_order)
+            `)
+            .ilike('title', `%${query}%`)
+            .order('sort_order', { ascending: true })
+            .limit(limit);
+
+        if (error) throw error;
+        return data || [];
+    }
+};

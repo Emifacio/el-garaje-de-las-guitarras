@@ -3,39 +3,21 @@ export const prerender = false;
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import { applyAdminNoStore, createAdminRedirect, getAdminAccess } from '../../lib/admin';
 import { createSupabaseServerClient } from '../../lib/supabase-server';
+import { getDashboardStats } from '../../application/admin/get-dashboard-stats';
 
 const supabase = createSupabaseServerClient(Astro.cookies, Astro.request);
 applyAdminNoStore(Astro.response.headers);
 const adminAccess = await getAdminAccess(supabase);
 
 if (!adminAccess.ok) {
-  console.warn('[Admin Dashboard] access denied', {
-    url: Astro.request.url,
-    reason: adminAccess.reason,
-    error: adminAccess.error ?? null,
-  });
-} else {
-  console.info('[Admin Dashboard] access granted', {
-    url: Astro.request.url,
-    userId: adminAccess.user.id,
-    email: adminAccess.user.email ?? null,
-    profileId: adminAccess.profile.id,
-    username: adminAccess.profile.username,
-  });
-}
-
-if (!adminAccess.ok) {
   if (adminAccess.reason === 'forbidden' || adminAccess.reason === 'missing_profile') {
     await supabase.auth.signOut();
     return createAdminRedirect('/admin/login?error=not_admin');
   }
-
   return createAdminRedirect('/admin/login');
 }
 
-// Quick statistics queries
-const { count: productCount } = await supabase.from('products').select('*', { count: 'exact', head: true });
-const { count: categoryCount } = await supabase.from('categories').select('*', { count: 'exact', head: true });
+const { productCount, categoryCount } = await getDashboardStats();
 ---
 
 <AdminLayout title="Dashboard">

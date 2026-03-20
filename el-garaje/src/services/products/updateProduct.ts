@@ -9,7 +9,8 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Product, ProductImage } from '../../lib/types';
+import type { Product } from '../../domain/product/product.types';
+type ProductImage = any;
 import { validateProductFormData, type ValidationResult } from '../../validators/product';
 import { resolveSlug, isValidSlug } from '../../lib/slug';
 import { getCurrentISODate, parseSoldDate, determineSoldDate } from '../../lib/dates';
@@ -133,8 +134,50 @@ export async function updateProduct(
         // Product was updated, just couldn't fetch it back
     }
 
+    // Handle image deletions
+    const deleteImageIds = formData.getAll('delete_images') as string[];
+    if (deleteImageIds.length > 0) {
+        // Fetch storage paths to delete from storage bucket
+        const { data: imagesToDelete } = await supabase
+            .from('product_images')
+            .select('storage_path')
+            .in('id', deleteImageIds);
+
+        if (imagesToDelete && imagesToDelete.length > 0) {
+            const paths = imagesToDelete.map(img => img.storage_path);
+            await supabase.storage.from('product_images').remove(paths);
+        }
+
+        const { error: deleteError } = await supabase
+            .from('product_images')
+            .delete()
+            .in('id', deleteImageIds);
+
+        if (deleteError) {
+            console.error('[UpdateProduct] Image deletion failed:', deleteError);
+            // Non-blocking but worthy of a log
+        }
+    }
+
+    // Handle image reordering
+    const imageOrder = formData.get('image_order') as string; // Comma-separated IDs
+    if (imageOrder) {
+        const orderedIds = imageOrder.split(',').filter(id => id.length > 0);
+        const SORT_ORDER_INTERVAL = 10;
+        
+        // Update each image's sort_order
+        // We do this individually or in a transaction if possible, 
+        // but here we'll use a loop for simplicity as it's usually few images.
+        for (let i = 0; i < orderedIds.length; i++) {
+            await supabase
+                .from('product_images')
+                .update({ sort_order: i * SORT_ORDER_INTERVAL, updated_at: getCurrentISODate() })
+                .eq('id', orderedIds[i]);
+        }
+    }
+
     // Handle new image uploads
-    const imageFiles = formData.getAll('images') as File[];
+    const imageFiles = (formData.getAll('images') as File[]).filter(f => f.size > 0);
     
     if (imageFiles.length > 0) {
         const nextSortOrder = await getNextSortOrder(supabase, productId);

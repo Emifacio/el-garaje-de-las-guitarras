@@ -2,17 +2,9 @@
 export const prerender = false;
 import BaseLayout from '../layouts/BaseLayout.astro';
 import ProductCard from '../components/product/ProductCard.astro';
-import { getProducts } from '../lib/queries';
+import { getProductRecommendations } from '../application/recommendations/get-recommendations';
 
-// Fetch some products to recommend
-const featuredProducts = await getProducts({ isFeatured: true, limit: 6 });
-// Fallback: if no featured, get latest available
-const recommendedProducts = featuredProducts.length > 0
-    ? featuredProducts
-    : await getProducts({ limit: 6 });
-
-// Filter out sold items for recommendations
-const availableProducts = recommendedProducts.filter(p => p.status !== 'vendido').slice(0, 6);
+const availableProducts = await getProductRecommendations(6);
 ---
 
 <BaseLayout title="Página no encontrada | El Garaje de las Guitarras">

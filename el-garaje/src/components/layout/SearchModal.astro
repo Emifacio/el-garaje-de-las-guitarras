@@ -387,9 +387,9 @@
             }
 
             results.innerHTML = data.map(product => {
-                const price = product.price_display || (product.price ? `USD ${product.price.toLocaleString()}` : '');
+                const price = product.priceLabel || '';
                 const isSold = product.status === 'vendido';
-                const category = product.category?.name || '';
+                const category = product.categoryName || '';
                 const brandText = product.brand ? `${product.brand}` : '';
                 const meta = [brandText, category].filter(Boolean).join(' · ');
 

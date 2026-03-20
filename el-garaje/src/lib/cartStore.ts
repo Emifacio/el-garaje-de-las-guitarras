@@ -14,19 +14,7 @@
  * This is an inquiry/intent tracking mechanism, not a transactional system.
  */
 
-/**
- * Represents a product added to the user's inquiry selection.
- * Note: This is NOT a cart item in the e-commerce sense.
- * It represents expressed purchase intent, not a committed purchase.
- */
-export interface CartItem {
-    id: string;
-    title: string;
-    price: number;
-    price_display?: string;
-    image_url: string;
-    slug: string;
-}
+import type { InquiryItem } from '../domain/inquiry/inquiry.types';
 
 const SELECTION_STORAGE_KEY = 'elgaraje_inquiry_selection';
 const LEGACY_CART_STORAGE_KEY = 'elgaraje_cart';
@@ -65,7 +53,7 @@ let migrationRan = false;
  * Retrieve all products in the user's inquiry selection.
  * Returns empty array during SSR.
  */
-export function getCartItems(): CartItem[] {
+export function getCartItems(): InquiryItem[] {
     if (typeof window === 'undefined') return [];
     try {
         if (!migrationRan) {
@@ -90,7 +78,7 @@ export function getCartItems(): CartItem[] {
  * 
  * It simply groups products for a bulk WhatsApp inquiry.
  */
-export function addToCart(item: CartItem): void {
+export function addToCart(item: InquiryItem): void {
     const currentSelection = getCartItems();
 
     if (!currentSelection.find(i => i.id === item.id)) {

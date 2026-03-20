@@ -2,31 +2,28 @@
 export const prerender = false;
 import CategoryLayout from '../../layouts/CategoryLayout.astro';
 import ProductCard from '../../components/product/ProductCard.astro';
-import { getCategoryBySlug, getProducts } from '../../lib/queries';
+import { getCategoryPage } from '../../application/category/get-category-page';
 
 const { slug } = Astro.params;
-const category = await getCategoryBySlug(slug as string);
+const result = await getCategoryPage(slug as string);
 
-if (!category) {
+if (!result) {
   return new Response("Not Found", { status: 404 });
 }
 
-const products = await getProducts({ categoryId: category.id });
+const { category, products } = result;
 const pageTitle = `${category.name} | El Garaje de las Guitarras`;
 
-// Split brands: available (shown by default) vs sold-only (shown when toggle opens)
-const availableProducts = products.filter(p => p.status !== 'vendido');
-const soldProducts = products.filter(p => p.status === 'vendido');
-
-const availableBrands = [...new Set(availableProducts.map(p => p.brand || 'Otras'))].sort();
-const soldOnlyBrands = [...new Set(soldProducts.map(p => p.brand || 'Otras'))]
+// Split brands: available vs sold-only
+const availableBrands = [...new Set(products.filter(p => !p.isSold).map(p => p.brand || 'Otras'))].sort();
+const soldOnlyBrands = [...new Set(products.filter(p => p.isSold).map(p => p.brand || 'Otras'))]
     .filter(b => !availableBrands.includes(b))
     .sort();
 ---
 
 <CategoryLayout 
     title={pageTitle} 
-    description={category.seo_description || category.description || ''}
+    description={category.seoDescription || category.description || ''}
     categoryName={category.name}
     categoryDescription={category.description}
     brands={availableBrands}

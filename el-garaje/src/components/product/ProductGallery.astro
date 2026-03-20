@@ -1,27 +1,18 @@
 ---
-import type { ProductImage } from '../../lib/types';
-import { getPublicImageUrl } from '../../lib/image-utils';
-
 interface Props {
-  images: ProductImage[] | null;
+  images: string[];
   title: string;
   isSold?: boolean;
 }
 
 const { images, title, isSold = false } = Astro.props;
 
-const sortedImages = images 
-    ? [...images].sort((a, b) => a.sort_order - b.sort_order) 
-    : [];
-
-const imageUrls = sortedImages.map(img => getPublicImageUrl(img.storage_path));
-
-const mainImage = imageUrls.length > 0 
-    ? imageUrls[0] 
+const mainImage = images.length > 0 
+    ? images[0] 
     : '/logo.avif';
 ---
 
-<div class="flex flex-col gap-4" id="product-gallery" data-images={JSON.stringify(imageUrls)}>
+<div class="flex flex-col gap-4" id="product-gallery" data-images={JSON.stringify(images)}>
     <!-- Main Image with Lens Zoom -->
     <div id="gallery-main-wrap"
          class="aspect-square bg-gradient-to-br from-slate-800 to-slate-900 border border-primary/20 rounded-sm overflow-hidden relative group cursor-crosshair">
@@ -54,9 +45,9 @@ const mainImage = imageUrls.length > 0
     </div>
 
     <!-- Thumbnails -->
-    {imageUrls.length > 1 && (
+    {images.length > 1 && (
         <div class="grid grid-cols-4 gap-4" id="gallery-thumbnails">
-            {imageUrls.map((url, index) => (
+            {images.map((url, index) => (
                 <button
                     type="button"
                     class={`gallery-thumb aspect-square bg-black border ${index === 0 ? 'border-primary opacity-100' : 'border-primary/20 opacity-60'} rounded-sm overflow-hidden hover:opacity-100 transition-all`}

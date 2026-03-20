@@ -10,7 +10,8 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Product, Category } from '../../lib/types';
+import type { Product } from '../../domain/product/product.types';
+import type { Category } from '../../domain/category/category.types';
 import { validateProductFormData, type ValidationResult } from '../../validators/product';
 import { resolveSlug, isValidSlug, sanitizeSlugInput } from '../../lib/slug';
 import { getCurrentISODate } from '../../lib/dates';

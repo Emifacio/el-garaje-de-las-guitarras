@@ -5,71 +5,27 @@ import Breadcrumbs from '../../components/ui/Breadcrumbs.astro';
 import ProductGallery from '../../components/product/ProductGallery.astro';
 import ProductSpecs from '../../components/product/ProductSpecs.astro';
 import StatusBadge from '../../components/product/StatusBadge.astro';
-import { getProductBySlug } from '../../lib/queries';
+import { getProductDetail } from '../../application/product/get-product-detail';
 import { generateWhatsAppUrl } from '../../lib/whatsapp';
-import { getPublicImageUrl } from '../../lib/image-utils';
 
 const { slug } = Astro.params;
-const product = await getProductBySlug(slug as string);
+const product = await getProductDetail(slug as string);
 
 if (!product) {
   return new Response("Not Found", { status: 404 });
 }
 
-// Get the first image URL for the cart
-const productImageUrl = product.product_images && product.product_images.length > 0 
-    ? getPublicImageUrl(product.product_images[0].storage_path)
-    : '/logo.jpg';
-
-// Format Price — always show value
-const priceDisplay = product.price_display || (product.price ? `U$D ${product.price.toLocaleString()}` : 'U$D 9.999.999,99');
-
 // WhatsApp URLs
 const reservarUrl = generateWhatsAppUrl('reservar', product.title);
 const comprarUrl = generateWhatsAppUrl('comprar', product.title);
 
-const isSold = product.status === 'vendido';
-
-// Breadcrumbs Data - categories is always a single object from Supabase query
-const categoryName = Array.isArray(product.categories) 
-    ? product.categories[0]?.name 
-    : product.categories?.name;
-const categorySlug = Array.isArray(product.categories) 
-    ? product.categories[0]?.slug 
-    : product.categories?.slug;
-
+// Breadcrumbs Data
 const breadcrumbs = [
   { label: 'Home', url: '/' },
-  { label: categoryName || 'Categoría', url: `/categoria/${categorySlug || ''}` },
+  { label: product.category?.name || 'Categoría', url: `/categoria/${product.category?.slug || ''}` },
   { label: product.title, isCurrent: true }
 ];
 const pageTitle = `${product.title} | El Garaje de las Guitarras`;
-
-// Parse Youtube URL to embed format
-let youtubeEmbedUrl = '';
-if (product.youtube_url) {
-    const url = product.youtube_url;
-    let videoId = '';
-    
-    if(url.includes('youtu.be/')) {
-        videoId = url.split('youtu.be/')[1].split('?')[0];
-    } else if(url.includes('youtube.com/watch')) {
-        try {
-            const urlObj = new URL(url);
-            videoId = urlObj.searchParams.get('v') || '';
-        } catch(e) {
-            // fallback for malformed urls
-            const urlParams = new URLSearchParams(url.split('?')[1]);
-            videoId = urlParams.get('v') || '';
-        }
-    } else if(url.includes('youtube.com/embed/')) {
-        videoId = url.split('embed/')[1].split('?')[0];
-    }
-
-    if (videoId) {
-        youtubeEmbedUrl = `https://www.youtube.com/embed/${videoId}?rel=0`;
-    }
-}
 ---
 
 <BaseLayout 
@@ -81,7 +37,7 @@ if (product.youtube_url) {
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 xl:gap-20">
             <!-- Image Gallery Column -->
-            <ProductGallery images={product.product_images || null} title={product.title} isSold={isSold} />
+            <ProductGallery images={product.images} title={product.title} isSold={product.isSold} />
 
             <!-- Product Detail Column -->
             <div class="flex flex-col">
@@ -93,18 +49,24 @@ if (product.youtube_url) {
                     {product.title}
                 </h1>
                 
-                <p class={`font-serif text-2xl font-bold mb-8 opacity-90 ${isSold ? 'text-slate-400 line-through' : 'text-primary'}`}>
-                    {priceDisplay}
+                <p class={`font-serif text-2xl font-bold mb-8 opacity-90 ${product.isSold ? 'text-slate-400 line-through' : 'text-primary'}`}>
+                    {product.priceLabel}
                 </p>
 
-                {(product.long_description || product.short_description) && (
-                    <div class="text-slate-400 text-lg leading-relaxed mb-10 border-l-[3px] border-primary/50 pl-6 italic">
-                        <p>{product.long_description || product.short_description}</p>
+                {product.shortDescription && (
+                    <div class="text-slate-400 text-lg leading-relaxed mb-6 border-l-[3px] border-primary/50 pl-6 italic">
+                        <p>{product.shortDescription}</p>
+                    </div>
+                )}
+
+                {product.longDescription && (
+                    <div class="text-slate-300 text-base leading-relaxed mb-10 prose prose-invert max-w-none">
+                        <p class="whitespace-pre-wrap">{product.longDescription}</p>
                     </div>
                 )}
 
                 <!-- CTAs: Shopping Cart & Direct WhatsApp Flow -->
-                {!isSold ? (
+                {!product.isSold ? (
                     <div class="product-footer flex flex-col md:flex-row gap-4 mb-12 relative w-full">
                         <a href={comprarUrl}
                            target="_blank" 
@@ -121,9 +83,9 @@ if (product.youtube_url) {
                            data-product-id={product.id}
                            data-product-title={product.title}
                            data-product-price={product.price || 0}
-                           data-product-price-display={priceDisplay}
-                           data-product-image={productImageUrl}
-                           data-product-slug={slug}
+                           data-product-price-label={product.priceLabel}
+                           data-product-image={product.images[0] || '/logo.jpg'}
+                           data-product-slug={product.slug}
                            class="group relative flex-1 h-16 bg-background-light dark:bg-background-dark text-primary text-sm font-bold tracking-widest uppercase hover:bg-primary/10 transition-all border border-primary rounded-sm flex items-center justify-center gap-3 overflow-hidden">
                             <span class="relative z-10 flex items-center gap-3">Al Carrito <span class="material-symbols-outlined transition-transform group-hover:scale-110">add_shopping_cart</span></span>
                         </button>
@@ -138,7 +100,7 @@ if (product.youtube_url) {
                 )}
 
                 <!-- YouTube Video (If present) -->
-                {youtubeEmbedUrl && (
+                {product.youtubeEmbedUrl && (
                     <div class="mb-12">
                         <h3 class="font-serif text-2xl font-bold text-slate-200 mb-6 border-b border-primary/20 pb-2 flex items-center gap-3">
                             <span class="material-symbols-outlined text-primary text-[1.5rem]">smart_display</span> Demostración en Video
@@ -147,7 +109,7 @@ if (product.youtube_url) {
                             <iframe 
                                 width="100%" 
                                 height="100%" 
-                                src={youtubeEmbedUrl}
+                                src={product.youtubeEmbedUrl}
                                 title="YouTube video player" 
                                 frameborder="0" 
                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
@@ -165,63 +127,18 @@ if (product.youtube_url) {
 </BaseLayout>
 
 <script>
-    import { addToCart } from '../../lib/cartStore';
-    import { InteractionType } from '../../lib/interaction-types';
+    import { ProductInteractionsController } from '../../ui/product/product-interactions-controller';
 
-    // Track interactions and handle Cart
-    document.addEventListener('astro:page-load', () => initProductInteractions());
-    initProductInteractions();
-
-    function initProductInteractions() {
-        const addToCartBtn = document.getElementById('add-to-cart-btn');
+    const init = () => {
+        const productId = document.getElementById('add-to-cart-btn')?.getAttribute('data-product-id');
+        const productTitle = document.getElementById('add-to-cart-btn')?.getAttribute('data-product-title');
         
-        if (addToCartBtn) {
-            // Remove old listeners if re-initializing
-            const newBtn = addToCartBtn.cloneNode(true) as HTMLElement;
-            addToCartBtn.replaceWith(newBtn);
-
-            newBtn.addEventListener('click', () => {
-                const id = newBtn.getAttribute('data-product-id');
-                const title = newBtn.getAttribute('data-product-title');
-                const priceStr = newBtn.getAttribute('data-product-price');
-                const priceDisplay = newBtn.getAttribute('data-product-price-display');
-                const image = newBtn.getAttribute('data-product-image');
-                const slug = newBtn.getAttribute('data-product-slug');
-
-                if (id && title && slug) {
-                    addToCart({
-                        id,
-                        title,
-                        price: priceStr ? parseFloat(priceStr) : 0,
-                        price_display: priceDisplay || undefined,
-                        image_url: image || '/logo.jpg',
-                        slug
-                    });
-
-                    // Track product added to inquiry selection
-                    fetch('/api/track-interaction', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            product_id: id,
-                            interaction_type: InteractionType.INQUIRY_SELECTION_ADDED,
-                            metadata: { product_title: title, timestamp: new Date().toISOString() }
-                        })
-                    }).catch(err => console.warn('Tracking failed:', err));
-                    
-                    // Button animation feedback
-                    const originalHTML = newBtn.innerHTML;
-                    newBtn.innerHTML = `<span class="relative z-10 flex items-center gap-3">¡Agregado! <span class="material-symbols-outlined">check_circle</span></span>`;
-                    newBtn.classList.add('bg-[#25D366]', 'border-[#25D366]');
-                    newBtn.classList.remove('bg-primary', 'border-primary');
-                    
-                    setTimeout(() => {
-                        newBtn.innerHTML = originalHTML;
-                        newBtn.classList.remove('bg-[#25D366]', 'border-[#25D366]');
-                        newBtn.classList.add('bg-primary', 'border-primary');
-                    }, 2000);
-                }
-            });
+        if (productId && productTitle) {
+            const controller = new ProductInteractionsController(productId, productTitle);
+            controller.init();
         }
-    }
+    };
+
+    document.addEventListener('astro:page-load', init);
+    init();
 </script>
