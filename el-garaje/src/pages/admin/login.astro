@@ -1,6 +1,7 @@
 ---
 export const prerender = false;
 import BaseHead from '../../components/layout/BaseHead.astro';
+import '../../styles/global.css';
 import type { User } from '@supabase/supabase-js';
 import { applyAdminNoStore, createAdminRedirect, getAdminAccess } from '../../lib/admin';
 import { createSupabaseServerClient } from '../../lib/supabase-server';
@@ -9,13 +10,6 @@ const supabase = createSupabaseServerClient(Astro.cookies, Astro.request);
 applyAdminNoStore(Astro.response.headers);
 let error = Astro.url.searchParams.get('error');
 let errorDetail: string | null = null;
-
-console.info('[Admin Login] request', {
-  method: Astro.request.method,
-  url: Astro.request.url,
-  forwardedProto: Astro.request.headers.get('x-forwarded-proto'),
-  hasCookieHeader: Boolean(Astro.request.headers.get('cookie')),
-});
 
 type AdminProfile = {
   id: string;
@@ -34,7 +28,6 @@ async function getAdminProfile(user: User) {
   return { profile, profileError };
 }
 
-// Handle the login POST request natively in the page
 if (Astro.request.method === 'POST') {
   try {
     const formData = await Astro.request.formData();
@@ -42,83 +35,42 @@ if (Astro.request.method === 'POST') {
     const password = formData.get('password')?.toString();
 
     if (!email || !password) {
-      console.warn('[Admin Login] missing_credentials', {
-        url: Astro.request.url,
-        hasEmail: Boolean(email),
-        hasPassword: Boolean(password),
-      });
       error = 'missing_credentials';
     } else {
-      console.info('[Admin Login] attempting sign in', {
-        url: Astro.request.url,
-        email,
-      });
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (authError) {
-        console.error('[Admin Login] signInWithPassword failed:', authError.message);
         error = 'invalid_credentials';
         errorDetail = authError.message;
       } else {
-        // Avoid re-checking auth with the original request cookies in this same POST.
-        // The new session cookies are only guaranteed on the response we are building now.
         const signedInUser = authData.user;
-        console.info('[Admin Login] signInWithPassword succeeded', {
-          email,
-          userId: signedInUser?.id ?? null,
-          hasSession: Boolean(authData.session),
-        });
         const { profile, profileError } = signedInUser ? await getAdminProfile(signedInUser) : { profile: null, profileError: null };
 
         if (profileError) {
-          console.error('[Admin Login] profile lookup failed after login:', profileError.message);
           await supabase.auth.signOut();
           error = 'profile_error';
           errorDetail = profileError.message;
         } else if (!signedInUser) {
-          console.error('[Admin Login] sign-in returned no user payload');
           await supabase.auth.signOut();
           error = 'unexpected_error';
-          errorDetail = 'Supabase did not return a user after sign-in.';
         } else if (!profile?.is_admin) {
-          console.error('[Admin Login] signed-in user is missing admin access:', {
-            userId: signedInUser.id,
-            hasProfile: Boolean(profile),
-            profileId: profile?.id ?? null,
-            isAdmin: profile?.is_admin ?? null,
-          });
           await supabase.auth.signOut();
           error = 'not_admin';
         } else {
-          console.info('[Admin Login] admin login successful', {
-            userId: signedInUser.id,
-            profileId: profile.id,
-            email: signedInUser.email ?? email,
-          });
           return createAdminRedirect('/admin');
         }
       }
     }
-  } catch (unexpectedError) {
-    console.error('[Admin Login] unexpected error:', unexpectedError);
+  } catch {
     error = 'unexpected_error';
   }
 }
 
-// Redirect to dashboard only for confirmed admins.
 if (Astro.request.method !== 'POST') {
   const adminAccess = await getAdminAccess(supabase);
-
-  if (!adminAccess.ok) {
-    console.warn('[Admin Login] existing session check failed', {
-      url: Astro.request.url,
-      reason: adminAccess.reason,
-      error: adminAccess.error ?? null,
-    });
-  }
 
   if (adminAccess.ok) {
     return createAdminRedirect('/admin');
@@ -132,62 +84,154 @@ if (Astro.request.method !== 'POST') {
   }
 }
 ---
+
 <!DOCTYPE html>
 <html class="dark" lang="es">
 <head>
-    <BaseHead title="Login | El Garaje de las Guitarras" />
+    <BaseHead title="Iniciar Sesión | El Garaje de las Guitarras" />
 </head>
-<body class="bg-background-dark text-slate-100 font-display min-h-screen flex selection:bg-primary/30 items-center justify-center">
-
-    <div class="w-full max-w-md p-8 bg-background-light/5 border border-primary/20 rounded-sm shadow-2xl relative overflow-hidden group">
-        <!-- Decoration -->
-        <div class="absolute -top-1/2 -left-1/2 w-full h-full bg-primary/10 blur-3xl rounded-full transform rotate-12 opacity-50"></div>
+<body class="bg-background-dark text-slate-100 font-display min-h-screen selection:bg-primary/30">
+    
+    <div class="min-h-screen flex items-center justify-center px-4 relative overflow-hidden bg-background-dark">
+        <!-- Background Decorative Elements -->
+        <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[120px] pointer-events-none"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-accent-burgundy/10 rounded-full blur-[120px] pointer-events-none"></div>
         
-        <div class="relative z-10 flex flex-col items-center">
-            <a href="/" class="font-serif text-3xl font-black tracking-widest text-primary uppercase drop-shadow-md mb-8 inline-block">El Garaje</a>
-            <h1 class="text-xl font-bold tracking-wide text-slate-200 mb-8 border-b-2 border-primary/50 pb-2 w-full text-center">
-                Acceso Administrador
-            </h1>
+        <div class="relative w-full max-w-md animate-fade-in-up">
+            <!-- Header -->
+            <div class="text-center mb-10">
+                <a href="/" class="inline-block mb-8 group transition-transform hover:scale-105 duration-300">
+                    <div class="relative">
+                        <img src="/logo.jpg" alt="El Garaje de las Guitarras" class="h-20 w-auto mx-auto object-contain relative z-10" />
+                        <div class="absolute inset-0 bg-primary/20 blur-2xl rounded-full scale-0 group-hover:scale-110 transition-transform duration-500 opacity-0 group-hover:opacity-40"></div>
+                    </div>
+                </a>
+                <h1 class="font-serif text-3xl md:text-4xl font-black text-slate-100 tracking-tight mb-3">
+                    Admin <span class="text-primary">Panel</span>
+                </h1>
+                <div class="w-12 h-0.5 bg-primary/40 mx-auto mb-4"></div>
+                <p class="text-slate-400 text-sm font-medium tracking-wide uppercase">
+                    Ingresá tus credenciales
+                </p>
+            </div>
 
-            {error && (
-                <div class="w-full bg-red-900/30 border border-red-500/50 text-red-200 p-3 rounded text-sm mb-6 text-center">
-                    {error === 'invalid_credentials' && 'Credenciales incorrectas.'}
-                    {error === 'missing_credentials' && 'Completa email y contraseña antes de ingresar.'}
-                    {error === 'not_admin' && 'Tu usuario existe, pero no tiene permisos de administrador.'}
-                    {error === 'profile_error' && 'No pudimos validar tu perfil de administrador. Revisa la configuración de Supabase.'}
-                    {error === 'unexpected_error' && 'Ocurrió un error inesperado al iniciar sesión.'}
-                    {!['invalid_credentials', 'missing_credentials', 'not_admin', 'profile_error', 'unexpected_error'].includes(error) && 'Ocurrió un error al iniciar sesión.'}
-                    {errorDetail && <div class="mt-2 text-xs text-red-100/80 break-words">{errorDetail}</div>}
-                </div>
-            )}
-
-            <form method="post" class="w-full flex flex-col gap-6" data-astro-reload>
-                <div class="flex flex-col gap-2">
-                    <label for="email" class="text-xs font-bold uppercase tracking-widest text-slate-400">Email</label>
-                    <input type="email" name="email" id="email" required
-                        autocomplete="username"
-                        class="w-full bg-background-dark/80 border border-primary/30 rounded px-4 py-3 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-slate-200"
-                        placeholder="admin@elgaraje.com" />
-                </div>
+            <!-- Card -->
+            <div class="bg-accent-dark/40 backdrop-blur-xl border border-primary/20 rounded-sm p-8 md:p-10 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] relative overflow-hidden group">
+                <!-- Inner card subtle glow -->
+                <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-primary/10 transition-colors duration-700"></div>
                 
-                <div class="flex flex-col gap-2">
-                    <label for="password" class="text-xs font-bold uppercase tracking-widest text-slate-400">Contraseña</label>
-                    <input type="password" name="password" id="password" required
-                        autocomplete="current-password"
-                        class="w-full bg-background-dark/80 border border-primary/30 rounded px-4 py-3 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-slate-200"
-                        placeholder="••••••••" />
-                </div>
+                <!-- Error Message -->
+                {error && (
+                    <div class="mb-8 p-4 bg-accent-burgundy/20 border border-accent-burgundy/30 text-red-200 rounded-sm text-sm flex items-start gap-3 animate-shake">
+                        <span class="material-symbols-outlined text-red-400 text-xl shrink-0">error</span>
+                        <div class="font-medium">
+                            {error === 'invalid_credentials' && 'Credenciales incorrectas. Verificá tu email y contraseña.'}
+                            {error === 'missing_credentials' && 'Completá email y contraseña antes de ingresar.'}
+                            {error === 'not_admin' && 'Tu usuario existe, pero no tiene permisos de administrador.'}
+                            {error === 'profile_error' && 'No pudimos validar tu perfil. Contactá al administrador.'}
+                            {error === 'unexpected_error' && 'Ocurrió un error inesperado. Intentá de nuevo.'}
+                            {!['invalid_credentials', 'missing_credentials', 'not_admin', 'profile_error', 'unexpected_error'].includes(error) && 'Ocurrió un error al iniciar sesión.'}
+                            {errorDetail && <div class="mt-2 text-xs text-red-400/80 font-mono bg-black/30 p-2 rounded">{errorDetail}</div>}
+                        </div>
+                    </div>
+                )}
 
-                <button type="submit" id="submitBtn"
-                    class="mt-4 w-full h-12 flex items-center justify-center bg-primary text-background-dark text-sm font-bold tracking-widest uppercase hover:bg-primary/90 transition-all rounded-sm shadow-lg shadow-primary/20">
-                    Ingresar <span class="material-symbols-outlined ml-2">login</span>
-                </button>
-            </form>
-            
-            <a href="/" class="mt-8 text-xs text-slate-400 hover:text-primary transition-colors flex items-center gap-1">
-                <span class="material-symbols-outlined text-[1rem]">arrow_back</span> Volver al sitio web
-            </a>
+                <!-- Form -->
+                <form method="post" class="space-y-8 relative z-10" data-astro-reload>
+                    
+                    <!-- Email Field -->
+                    <div class="space-y-2.5">
+                        <label for="email" class="block text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 ml-1">
+                            Email address
+                        </label>
+                        <div class="relative group">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-500 text-lg group-focus-within:text-primary transition-colors">mail</span>
+                            <input 
+                                type="email" 
+                                name="email" 
+                                id="email" 
+                                required
+                                autocomplete="username"
+                                placeholder="tu@email.com"
+                                class="w-full bg-background-dark/40 border border-primary/15 rounded-sm pl-12 pr-4 py-3.5 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/30 transition-all duration-300"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Password Field -->
+                    <div class="space-y-2.5">
+                        <label for="password" class="block text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 ml-1">
+                            Password
+                        </label>
+                        <div class="relative group">
+                            <span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-500 text-lg group-focus-within:text-primary transition-colors">lock</span>
+                            <input 
+                                type="password" 
+                                name="password" 
+                                id="password" 
+                                required
+                                autocomplete="current-password"
+                                placeholder="••••••••"
+                                class="w-full bg-background-dark/40 border border-primary/15 rounded-sm pl-12 pr-4 py-3.5 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/30 transition-all duration-300"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button 
+                        type="submit" 
+                        class="group relative w-full h-14 overflow-hidden rounded-sm bg-primary text-background-dark font-black tracking-[0.15em] uppercase text-sm transition-all duration-300 hover:shadow-[0_0_30px_-5px_rgba(217,184,112,0.5)] active:scale-[0.98]"
+                    >
+                        <div class="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+                        <div class="relative flex items-center justify-center gap-3">
+                            <span>Ingresar</span>
+                            <span class="material-symbols-outlined text-xl group-hover:translate-x-1 transition-transform">login</span>
+                        </div>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Footer Link -->
+            <div class="mt-12 text-center pb-8">
+                <a 
+                    href="/" 
+                    class="group inline-flex items-center gap-3 text-xs font-bold uppercase tracking-widest text-slate-500 hover:text-primary transition-all duration-300"
+                >
+                    <span class="material-symbols-outlined text-lg group-hover:-translate-x-1 transition-transform">arrow_back</span>
+                    <span>Volver al sitio</span>
+                </a>
+            </div>
         </div>
     </div>
+
+    <style>
+        .animate-fade-in-up {
+            animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .animate-shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+    </style>
+
+
 </body>
 </html>
