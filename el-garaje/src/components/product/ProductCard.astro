@@ -9,17 +9,14 @@ interface Props {
 
 const { product } = Astro.props;
 
-// Format Price — always show value, never "Consultar"
 const priceDisplay = product.price_display || (product.price ? `U$D ${product.price.toLocaleString()}` : 'U$D 9.999.999,99');
 
-// Get cover image (the one with the lowest sort order)
 const coverImage = product.product_images && product.product_images.length > 0
     ? product.product_images.sort((a, b) => a.sort_order - b.sort_order)[0]
     : null;
 
 const imageUrl = coverImage 
     ? getPublicImageUrl(coverImage.storage_path)
-    // Fallback placeholder
     : '/logo.avif';
 
 const isSold = product.status === 'vendido';
@@ -32,18 +29,19 @@ const ariaLabel = `${product.title}. ${isSold ? 'Vendido.' : `Precio: ${priceDis
     data-status={product.status}
     class="group flex flex-col bg-accent-dark/20 border border-primary/10 hover:border-primary/50 transition-all duration-300 rounded-sm overflow-hidden">
     
-    <div class="aspect-square bg-black relative overflow-hidden flex items-center justify-center p-8">
+    <div class="aspect-square bg-gradient-to-br from-slate-800 to-slate-900 relative overflow-hidden flex items-center justify-center p-8">
         <div class="absolute inset-0 bg-gradient-to-t from-background-dark/80 to-transparent z-10"></div>
-        <img src={imageUrl}
+        <img 
+            src={imageUrl}
             alt={coverImage?.alt_text || product.title}
             loading="lazy"
-            class={`object-cover h-full w-full group-hover:scale-105 transition-transform duration-700 ${isSold ? 'opacity-50 grayscale-[30%]' : 'opacity-80 group-hover:opacity-100'}`} />
+            decoding="async"
+            class={`object-cover h-full w-full transition-all duration-500 image-blur-up ${isSold ? 'opacity-50 grayscale-[30%]' : 'opacity-0 group-hover:opacity-100'}`} />
             
         <div class="absolute top-4 left-4 z-20">
             <StatusBadge status={product.status} badge={product.badge} />
         </div>
 
-        {/* VENDIDO diagonal ribbon */}
         {isSold && (
             <div class="sold-ribbon">VENDIDO</div>
         )}
@@ -67,3 +65,31 @@ const ariaLabel = `${product.title}. ${isSold ? 'Vendido.' : `Precio: ${priceDis
         </div>
     </div>
 </a>
+
+<style>
+    .image-blur-up {
+        filter: blur(20px);
+        transform: scale(1.1);
+    }
+    
+    .image-blur-up.loaded,
+    .group:hover .image-blur-up {
+        filter: blur(0);
+        transform: scale(1);
+        opacity: 1;
+    }
+</style>
+
+<script>
+    document.addEventListener('astro:page-load', () => {
+        document.querySelectorAll('.image-blur-up').forEach((img) => {
+            if (img instanceof HTMLImageElement) {
+                if (img.complete) {
+                    img.classList.add('loaded');
+                } else {
+                    img.addEventListener('load', () => img.classList.add('loaded'));
+                }
+            }
+        });
+    });
+</script>

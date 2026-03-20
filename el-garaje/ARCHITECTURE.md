@@ -96,6 +96,42 @@ This is NOT a checkout system:
 - Cart stores items user is "inquiring about"
 - "Purchase" action sends WhatsApp message with selections
 
+## Image Optimization
+
+### Blur-up Effect (LQIP)
+
+Images use a CSS blur-up effect for better perceived performance:
+- Gradient placeholder shown immediately
+- Image loads with `filter: blur(20px)` and `transform: scale(1.1)`
+- On load complete, transitions to sharp (`filter: blur(0)`)
+
+**Components with blur-up:**
+- `ProductCard.astro` - Gallery cards
+- `ProductGallery.astro` - Product detail page
+
+**Implementation:**
+```css
+.image-blur-up {
+    filter: blur(20px);
+    transform: scale(1.1);
+    opacity: 0;
+}
+
+.image-blur-up.loaded {
+    filter: blur(0);
+    transform: scale(1);
+    opacity: 1;
+}
+```
+
+### Image Compression
+
+Admin upload flow compresses images to WebP format:
+- Client-side compression before upload
+- Max dimensions: 1200x1200
+- Quality: 85%
+- Reduces storage and improves load times
+
 ## Database Schema (Supabase)
 
 See `schema.sql` for full DDL.
