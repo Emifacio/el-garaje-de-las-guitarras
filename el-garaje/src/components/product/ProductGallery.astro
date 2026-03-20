@@ -197,7 +197,7 @@ let mainImage = imageUrls.length > 0
         }
 
         // ─── Lightbox ───
-        const lightbox = document.getElementById('gallery-lightbox');
+        const lightbox = document.getElementById('gallery-lightbox')!;
         const lbImage = document.getElementById('lightbox-image') as HTMLImageElement;
         const lbClose = document.getElementById('lightbox-close');
         const lbPrev = document.getElementById('lightbox-prev');
@@ -206,7 +206,7 @@ let mainImage = imageUrls.length > 0
         const lbThumbs = document.getElementById('lightbox-thumbs');
         const lbImageWrap = document.getElementById('lightbox-image-wrap');
 
-        if (!lightbox || !lbImage || allUrls.length === 0) return;
+        if (!lbImage || allUrls.length === 0) return;
 
         let lbIndex = 0;
 

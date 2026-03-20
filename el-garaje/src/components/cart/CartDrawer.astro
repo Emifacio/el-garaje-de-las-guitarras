@@ -72,21 +72,18 @@ import { getCartItems } from '../../lib/cartStore';
     import { InteractionType } from '../../lib/interaction-types';
 
     function initCartUI() {
-        const backdrop = document.getElementById('cart-backdrop');
-        const drawer = document.getElementById('cart-drawer');
+        const backdrop = document.getElementById('cart-backdrop')!;
+        const drawer = document.getElementById('cart-drawer')!;
         const closeBtn = document.getElementById('cart-close');
         const triggers = document.querySelectorAll('.cart-toggle-btn');
-        const container = document.getElementById('cart-items-container');
+        const container = document.getElementById('cart-items-container')!;
         const emptyTemplate = document.getElementById('cart-empty-template') as HTMLTemplateElement;
         const itemTemplate = document.getElementById('cart-item-template') as HTMLTemplateElement;
         const checkoutBtn = document.getElementById('cart-checkout-btn') as HTMLAnchorElement;
 
-        if (!backdrop || !drawer || !container) return;
-
         // Toggle Drawer
         function openCart() {
             backdrop.classList.remove('hidden');
-            // small delay to allow display:block to apply before transition
             setTimeout(() => {
                 backdrop.classList.remove('opacity-0');
                 drawer.classList.remove('translate-x-full');
@@ -99,7 +96,7 @@ import { getCartItems } from '../../lib/cartStore';
             drawer.classList.add('translate-x-full');
             setTimeout(() => {
                 backdrop.classList.add('hidden');
-            }, 300); // match duration-300
+            }, 300);
         }
 
         // Render Cart Items
@@ -140,17 +137,14 @@ import { getCartItems } from '../../lib/cartStore';
                     removeBtn.setAttribute('data-id', item.id);
                     removeBtn.addEventListener('click', () => {
                         removeFromCart(item.id);
-                        // Re-render implicitly handled because custom event listener triggers it
                     });
 
                     container.appendChild(el);
                 });
             }
 
-            // Update WhatsApp Link
             checkoutBtn.href = generateCartWhatsAppUrl(items);
             
-            // Add Tracking Event Listener (cleaning up any old listeners first)
             const newCheckoutBtn = checkoutBtn.cloneNode(true) as HTMLAnchorElement;
             checkoutBtn.replaceWith(newCheckoutBtn);
             
@@ -169,20 +163,18 @@ import { getCartItems } from '../../lib/cartStore';
                                 timestamp: new Date().toISOString() 
                             }
                         })
-                    }).catch(err => console.warn('Tracking failed:', err));
+                    }).catch(() => {});
                 }
             });
         }
 
-        // Listeners
         triggers.forEach(t => t.addEventListener('click', openCart));
         closeBtn?.addEventListener('click', closeCart);
         backdrop.addEventListener('click', closeCart);
 
-        // Global Event listener for selection updates so UI stays in sync without page refresh
         window.addEventListener(SELECTION_UPDATED_EVENT, () => {
             renderCart();
-            openCart(); // Auto-open when adding something
+            openCart();
         });
     }
 

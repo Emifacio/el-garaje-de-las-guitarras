@@ -2,12 +2,14 @@ export const prerender = false;
 import type { APIRoute } from 'astro';
 import { createSupabaseServerClient } from '../../../lib/supabase-server';
 
-export const POST: APIRoute = async ({ cookies, request, redirect }) => {
+export const POST: APIRoute = async ({ cookies, request }) => {
     const supabase = createSupabaseServerClient(cookies, request);
-    // Clear the session from Supabase
     await supabase.auth.signOut();
-    return redirect('/admin/login', 302, {
+    
+    return new Response(null, {
+        status: 302,
         headers: {
+            Location: '/admin/login',
             'Cache-Control': 'no-store, private'
         }
     });

@@ -31,11 +31,13 @@
     "tailwindcss": "^4.2.1"
   },
   "devDependencies": {
+    "@astrojs/check": "^0.9.8",
     "@lhci/cli": "^0.15.1",
     "@vitest/ui": "^4.0.18",
     "critters": "^0.0.23",
     "fast-check": "^4.6.0",
     "sharp": "^0.34.5",
+    "typescript": "^5.9.3",
     "vitest": "^4.0.18",
     "web-vitals": "^5.1.0"
   }

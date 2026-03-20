@@ -50,12 +50,10 @@ const { title, description } = Astro.props;
         // ============================================================
 
         function initAgentUI() {
-            const glow = document.getElementById('agent-glow');
-            if (!glow) return;
+            const glow = document.getElementById('agent-glow')!;
 
             let glowTimeout: ReturnType<typeof setTimeout> | null = null;
 
-            // --- Core function: fire the glow ---
             function fireGlow(duration = 800) {
                 if (glowTimeout) clearTimeout(glowTimeout);
                 glow.classList.add('active');

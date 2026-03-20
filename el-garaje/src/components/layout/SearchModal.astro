@@ -263,33 +263,29 @@
 
 <script>
     function initSearchModal() {
-        const modal = document.getElementById('search-modal');
+        const modal = document.getElementById('search-modal')!;
         const input = document.getElementById('search-input') as HTMLInputElement;
-        const results = document.getElementById('search-results');
-        const closeBtn = document.getElementById('search-close');
+        const results = document.getElementById('search-results')!;
+        const closeBtn = document.getElementById('search-close')!;
         const emptyState = document.getElementById('search-empty');
         const searchButtons = document.querySelectorAll('[data-role="search-button"]');
-
-        if (!modal || !input || !results || !closeBtn) return;
 
         let debounceTimer: ReturnType<typeof setTimeout>;
         let activeIndex = -1;
 
-        // Open modal
         function openModal() {
             modal.classList.add('open');
             document.body.style.overflow = 'hidden';
             setTimeout(() => input.focus(), 100);
         }
 
-        // Close modal
         function closeModal() {
             modal.classList.remove('open');
             document.body.style.overflow = '';
             input.value = '';
             if (emptyState) emptyState.style.display = '';
             results.innerHTML = '';
-            results.appendChild(emptyState!);
+            if (emptyState) results.appendChild(emptyState);
             activeIndex = -1;
         }
 

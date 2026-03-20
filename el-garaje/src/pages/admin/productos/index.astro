@@ -48,10 +48,9 @@ if (Astro.request.method === 'POST') {
 
 // Fetch all products using service
 const { products, error: fetchError } = await listProducts(supabase);
-const fetchErrorMessage = fetchError || '';
 
 // Helper to get main image
-const getMainImage = (images: any[]) => {
+const getMainImage = (images: { storage_path: string; sort_order: number }[] | null | undefined) => {
     if (!images || images.length === 0) return null;
     const sorted = [...images].sort((a, b) => a.sort_order - b.sort_order);
     return getPublicImageUrl(sorted[0].storage_path);

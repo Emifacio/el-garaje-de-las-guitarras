@@ -61,16 +61,13 @@
     import { getCartItems, SELECTION_UPDATED_EVENT } from '../../lib/cartStore';
 
     function initCartBadge() {
-        const badge = document.getElementById('cart-badge');
-        if (!badge) return;
+        const badge = document.getElementById('cart-badge')!;
 
         function updateBadge() {
             const items = getCartItems();
             if (items.length > 0) {
                 badge.textContent = items.length.toString();
                 badge.classList.remove('hidden');
-                
-                // Animate pop
                 badge.classList.add('scale-150');
                 setTimeout(() => badge.classList.remove('scale-150'), 200);
             } else {
@@ -78,11 +75,10 @@
             }
         }
 
-        // Keep updated when selection changes
         window.addEventListener(SELECTION_UPDATED_EVENT, updateBadge);
         updateBadge();
     }
 
     document.addEventListener('astro:page-load', initCartBadge);
-    initCartBadge(); // For non-transition loads
+    initCartBadge();
 </script>

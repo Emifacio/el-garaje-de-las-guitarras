@@ -30,10 +30,17 @@ const comprarUrl = generateWhatsAppUrl('comprar', product.title);
 
 const isSold = product.status === 'vendido';
 
-// Breadcrumbs Data
+// Breadcrumbs Data - categories is always a single object from Supabase query
+const categoryName = Array.isArray(product.categories) 
+    ? product.categories[0]?.name 
+    : product.categories?.name;
+const categorySlug = Array.isArray(product.categories) 
+    ? product.categories[0]?.slug 
+    : product.categories?.slug;
+
 const breadcrumbs = [
   { label: 'Home', url: '/' },
-  { label: product.categories?.name || 'Categoría', url: `/categoria/${product.categories?.slug || ''}` },
+  { label: categoryName || 'Categoría', url: `/categoria/${categorySlug || ''}` },
   { label: product.title, isCurrent: true }
 ];
 const pageTitle = `${product.title} | El Garaje de las Guitarras`;
