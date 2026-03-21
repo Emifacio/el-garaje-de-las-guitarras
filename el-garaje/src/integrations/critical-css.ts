@@ -29,7 +29,7 @@ export default function criticalCssIntegration(options?: {
           publicPath: '/',
           inlineThreshold: options?.inlineThreshold ?? 14_336,
           preload: 'media',
-          pruneSource: true,
+          pruneSource: false,
           noscriptFallback: true
         });
 
