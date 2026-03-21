@@ -36,7 +36,17 @@ export default defineConfig({
   output: 'static',
   adapter: vercel(),
   redirects: {
-    '/index.html': '/'
+    '/index.html': '/',
+    '/electricas.html': '/categoria/electricas',
+    '/acusticas.html': '/categoria/acusticas',
+    '/bajos.html': '/categoria/bajos',
+    '/amplificadores.html': '/categoria/amplificadores',
+    '/efectos.html': '/categoria/efectos',
+    '/afinador.html': '/afinador',
+    '/consignaciones.html': '/consignaciones',
+    '/inspecciones.html': '/inspecciones',
+    '/sobre-elgaraje.html': '/sobre-elgaraje',
+    '/contacto.html': '/contacto'
   },
   security: {
     checkOrigin: false // Fixes "Cross-site POST form submissions are forbidden" in Astro on Vercel Edge Server
