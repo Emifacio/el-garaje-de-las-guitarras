@@ -5,68 +5,88 @@
  * Used by create and edit product forms.
  */
 
-const MAX_WIDTH = 800;
-const MAX_HEIGHT = 800;
-const QUALITY = 0.5;
+const MAX_DIMENSION = 2000;
+const TARGET_SIZE_BYTES = 300 * 1024; // 300KB
+const INITIAL_QUALITY = 0.9;
+const MIN_QUALITY = 0.6;
 
 /**
- * Compress an image file to WebP format.
- * Falls back to original file on error.
+ * Helper to load an image from a File.
  */
-export async function compressImage(file: File): Promise<Blob> {
+function loadImage(file: File): Promise<HTMLImageElement> {
     return new Promise((resolve, reject) => {
         const img = new Image();
         const objectUrl = URL.createObjectURL(file);
-        
         img.onload = () => {
             URL.revokeObjectURL(objectUrl);
-            
-            const canvas = document.createElement('canvas');
-            let { width, height } = img;
-
-            if (width > height) {
-                if (width > MAX_WIDTH) {
-                    height *= MAX_WIDTH / width;
-                    width = MAX_WIDTH;
-                }
-            } else {
-                if (height > MAX_HEIGHT) {
-                    width *= MAX_HEIGHT / height;
-                    height = MAX_HEIGHT;
-                }
-            }
-
-            canvas.width = width;
-            canvas.height = height;
-            
-            const ctx = canvas.getContext('2d');
-            if (!ctx) {
-                reject(new Error('No canvas context'));
-                return;
-            }
-            
-            ctx.drawImage(img, 0, 0, width, height);
-            
-            canvas.toBlob(
-                (blob) => {
-                    if (blob) {
-                        resolve(blob);
-                    } else {
-                        reject(new Error('Compression produced no data'));
-                    }
-                },
-                'image/webp',
-                QUALITY
-            );
+            resolve(img);
         };
-        
         img.onerror = (err) => {
             URL.revokeObjectURL(objectUrl);
             reject(err);
         };
-        
         img.src = objectUrl;
     });
+}
+
+/**
+ * Helper to convert canvas to blob with specific quality.
+ */
+function canvasToBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob> {
+    return new Promise((resolve) => {
+        canvas.toBlob((blob) => resolve(blob!), 'image/webp', quality);
+    });
+}
+
+/**
+ * Adaptive compression:
+ * 1. Skip if file is already small enough.
+ * 2. Resize only if beyond MAX_DIMENSION.
+ * 3. Iteratively reduce quality until under TARGET_SIZE or MIN_QUALITY reached.
+ */
+export async function compressImage(file: File): Promise<Blob> {
+    // 1. Skip if already small
+    if (file.size <= TARGET_SIZE_BYTES) {
+        console.log(`[Compression] Skipping ${file.name} (already ${Math.round(file.size / 1024)}KB)`);
+        return file;
+    }
+
+    try {
+        const img = await loadImage(file);
+        let { width, height } = img;
+
+        // 2. Initial resizing if needed
+        if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+            const ratio = Math.min(MAX_DIMENSION / width, MAX_DIMENSION / height);
+            width = Math.round(width * ratio);
+            height = Math.round(height * ratio);
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Canvas context failed');
+        
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // 3. Iterative compression
+        let quality = INITIAL_QUALITY;
+        let blob = await canvasToBlob(canvas, quality);
+        
+        console.log(`[Compression] Initial attempt for ${file.name}: ${Math.round(blob.size / 1024)}KB at Q=${quality}`);
+
+        while (blob.size > TARGET_SIZE_BYTES && quality > MIN_QUALITY) {
+            quality -= 0.1;
+            blob = await canvasToBlob(canvas, quality);
+            console.log(`[Compression] Retrying ${file.name}: ${Math.round(blob.size / 1024)}KB at Q=${quality.toFixed(1)}`);
+        }
+
+        return blob;
+    } catch (err) {
+        console.error(`[Compression] Failed for ${file.name}, using original:`, err);
+        return file;
+    }
 }
 
 /**
