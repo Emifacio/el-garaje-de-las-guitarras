@@ -1,8 +1,10 @@
+import { type SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from '../supabase/client';
 
 export const CategoryRepository = {
-    async findAll() {
-        const { data, error } = await supabase
+    async findAll(client?: SupabaseClient) {
+        const db = client || supabase;
+        const { data, error } = await db
             .from('categories')
             .select('*')
             .order('sort_order', { ascending: true });
@@ -11,8 +13,9 @@ export const CategoryRepository = {
         return data || [];
     },
 
-    async findBySlug(slug: string) {
-        const { data, error } = await supabase
+    async findBySlug(slug: string, client?: SupabaseClient) {
+        const db = client || supabase;
+        const { data, error } = await db
             .from('categories')
             .select('*')
             .eq('slug', slug)

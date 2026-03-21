@@ -109,6 +109,8 @@ export async function updateProduct(
         sold_date: soldDate,
     };
 
+    console.log('[UpdateProduct] REORDER DEBUG - Submitting update for:', productId, updateRecord);
+
     // Update product
     const { error: updateError } = await supabase
         .from('products')

@@ -200,14 +200,22 @@ export function initImageUpload(options: {
             const form = document.querySelector<HTMLFormElement>(formSelector);
             
             if (!imageInput || !btn || !form) return;
+
+            // Check browser validation first. If invalid, the browser will show tooltips
+            // and we should NOT start compression or change button state.
+            if (!form.checkValidity()) {
+                // If the checkValidity returns false, we let the browser handle it
+                // We return and let the default behavior (showing tooltips) occur.
+                return;
+            }
             
-            // Skip if already compressed or no files
+            // If already compressed or no files, let the browser handle standard submission
             if (
                 imageInput.dataset.compressed === 'true' ||
                 !imageInput.files ||
                 imageInput.files.length === 0
             ) {
-                // If it's already compressed (or no files), let the form submit normally
+                // VISUAL FEEDBACK: Show loading state but don't preventDefault
                 btn.innerHTML = loadingText;
                 btn.classList.add('opacity-70', 'pointer-events-none');
                 return;
@@ -224,15 +232,14 @@ export function initImageUpload(options: {
                 // Prepare compressed files
                 const dt = await prepareFilesForUpload(imageInput.files);
                 
-                // CRITICAL: Set the file input's files to the compressed ones
-                // This is supported in all modern browsers (IE11 excluded)
+                // Set the file input's files to the compressed ones
                 imageInput.files = dt.files;
                 
                 // Flag as compressed to avoid recursion
                 imageInput.dataset.compressed = 'true';
                 onCompressComplete?.();
                 
-                // Now submit the form NORMALLY - this is much more reliable
+                // Now submit the form NORMALLY after compression
                 btn.innerHTML = loadingText;
                 form.submit();
             } catch (error) {

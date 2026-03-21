@@ -9,7 +9,7 @@ import { listProducts } from '../../../services/products/listProducts';
 import { getPublicImageUrl } from '../../../lib/image-utils';
 
 // Initialize Supabase and require admin
-const supabase = createSupabaseServerClient(Astro.cookies, Astro.request);
+const supabase = createSupabaseServerClient(Astro.cookies, Astro.request, { admin: true });
 applyAdminHeaders(Astro.response.headers);
 
 const adminResult = await requireAdmin(supabase);

@@ -6,7 +6,7 @@ import { requireAdmin, applyAdminHeaders } from '../../../services/auth/requireA
 import { createProduct, fetchProductCategories } from '../../../services/products/createProduct';
 
 // Initialize Supabase and require admin
-const supabase = createSupabaseServerClient(Astro.cookies, Astro.request);
+const supabase = createSupabaseServerClient(Astro.cookies, Astro.request, { admin: true });
 applyAdminHeaders(Astro.response.headers);
 
 const adminResult = await requireAdmin(supabase);
@@ -165,7 +165,7 @@ if (Astro.request.method === 'POST') {
                             <label for="category_id" class="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-1">Categoría *</label>
                             <select id="category_id" name="category_id" required class={`w-full bg-background-dark/80 border rounded px-4 py-3 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-slate-200 transition-colors ${validationErrors.find(e => e.field === 'category_id') ? 'border-red-500' : 'border-primary/30'}`}>
                                 <option value="" disabled selected>Selecciona una categoría</option>
-                                {categories.map(c => (
+                                {categories.map((c: any) => (
                                     <option value={c.id}>{c.name}</option>
                                 ))}
                             </select>

@@ -1,3 +1,4 @@
+import { type SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from '../supabase/client';
 
 export const ProductRepository = {
@@ -7,8 +8,10 @@ export const ProductRepository = {
         limit?: number;
         from?: number;
         to?: number;
+        client?: SupabaseClient;
     }) {
-        let query = supabase
+        const db = options?.client || supabase;
+        let query = db
             .from('products')
             .select(`
                 *,
@@ -37,8 +40,9 @@ export const ProductRepository = {
         return data || [];
     },
 
-    async findBySlug(slug: string) {
-        const { data, error } = await supabase
+    async findBySlug(slug: string, client?: SupabaseClient) {
+        const db = client || supabase;
+        const { data, error } = await db
             .from('products')
             .select(`
                 *,
@@ -52,8 +56,9 @@ export const ProductRepository = {
         return data;
     },
 
-    async search(query: string, limit: number = 8) {
-        const { data, error } = await supabase
+    async search(query: string, limit: number = 8, client?: SupabaseClient) {
+        const db = client || supabase;
+        const { data, error } = await db
             .from('products')
             .select(`
                 id, title, slug, short_description, price, price_display, status, brand,

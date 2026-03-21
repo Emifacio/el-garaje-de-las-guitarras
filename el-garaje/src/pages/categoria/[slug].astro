@@ -3,34 +3,56 @@ export const prerender = false;
 import CategoryLayout from '../../layouts/CategoryLayout.astro';
 import ProductCard from '../../components/product/ProductCard.astro';
 import { getCategoryPage } from '../../application/category/get-category-page';
+import { createSupabaseServerClient } from '../../lib/supabase-server';
 
 const { slug } = Astro.params;
-const result = await getCategoryPage(slug as string);
+console.info(`[Category Page] Rendering slug: "${slug}"`);
 
-if (!result) {
-  return new Response("Not Found", { status: 404 });
+let result;
+let category;
+let products;
+let pageTitle;
+
+try {
+    const supabase = createSupabaseServerClient(Astro.cookies, Astro.request);
+    console.info(`[Category Page] Supabase client initialized. URL: ${import.meta.env.PUBLIC_SUPABASE_URL}`);
+    
+    result = await getCategoryPage(slug as string, supabase);
+    
+    if (!result) {
+        console.warn(`[Category Page] No result found for slug: ${slug}`);
+        return new Response("Not Found", { status: 404 });
+    }
+    
+    category = result.category;
+    products = result.products;
+    pageTitle = `${category.name} | El Garaje de las Guitarras`;
+    console.info(`[Category Page] Success! Loaded ${products.length} products for ${category.name}`);
+} catch (e) {
+    console.error(`[Category Page] CRITICAL FETCH ERROR for slug "${slug}":`, e);
+    throw e;
 }
 
-const { category, products } = result;
-const pageTitle = `${category.name} | El Garaje de las Guitarras`;
+// Ensure products is always an array for the following logic
+const safeProducts = products || [];
 
 // Split brands: available vs sold-only
-const availableBrands = [...new Set(products.filter(p => !p.isSold).map(p => p.brand || 'Otras'))].sort();
-const soldOnlyBrands = [...new Set(products.filter(p => p.isSold).map(p => p.brand || 'Otras'))]
-    .filter(b => !availableBrands.includes(b))
-    .sort();
+const availableBrands = [...new Set(safeProducts.filter((p: any) => !p.isSold).map((p: any) => p.brand || 'Otras'))].sort() as string[];
+const soldOnlyBrands = [...new Set(safeProducts.filter((p: any) => p.isSold).map((p: any) => p.brand || 'Otras'))]
+    .filter((b: any) => !availableBrands.includes(b))
+    .sort() as string[];
 ---
 
 <CategoryLayout 
-    title={pageTitle} 
-    description={category.seoDescription || category.description || ''}
-    categoryName={category.name}
-    categoryDescription={category.description}
+    title={pageTitle || 'Categoría'} 
+    description={category?.seoDescription || category?.description || ''}
+    categoryName={category?.name || 'Categoría'}
+    categoryDescription={category?.description || ''}
     brands={availableBrands}
     soldOnlyBrands={soldOnlyBrands}
 >
-    {products.length > 0 ? (
-        products.map(product => (
+    {safeProducts.length > 0 ? (
+        safeProducts.map((product: any) => (
             <ProductCard product={product} />
         ))
     ) : (

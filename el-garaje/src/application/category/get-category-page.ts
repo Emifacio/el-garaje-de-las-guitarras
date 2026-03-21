@@ -1,3 +1,4 @@
+import { type SupabaseClient } from '@supabase/supabase-js';
 import { CategoryRepository } from '../../infrastructure/repositories/category.repo';
 import { ProductRepository } from '../../infrastructure/repositories/product.repo';
 import { toProduct } from '../../domain/product/product.mapper';
@@ -13,11 +14,14 @@ export interface CategoryPageDTO {
     products: Product[];
 }
 
-export async function getCategoryPage(slug: string): Promise<CategoryPageDTO | null> {
-    const categoryRow = await CategoryRepository.findBySlug(slug);
+export async function getCategoryPage(slug: string, client?: SupabaseClient): Promise<CategoryPageDTO | null> {
+    const categoryRow = await CategoryRepository.findBySlug(slug, client);
     if (!categoryRow) return null;
 
-    const productsRows = await ProductRepository.findAll({ categoryId: categoryRow.id });
+    const productsRows = await ProductRepository.findAll({ 
+        categoryId: categoryRow.id,
+        client
+    });
     
     // Sort sold items to bottom
     const products = productsRows

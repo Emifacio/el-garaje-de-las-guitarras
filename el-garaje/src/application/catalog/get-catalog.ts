@@ -1,9 +1,10 @@
+import { type SupabaseClient } from '@supabase/supabase-js';
 import { ProductRepository } from '../../infrastructure/repositories/product.repo';
 import { toProduct } from '../../domain/product/product.mapper';
 import type { Product } from '../../domain/product/product.types';
 
-export async function getCatalogPage(): Promise<Product[]> {
-    const rows = await ProductRepository.findAll();
+export async function getCatalogPage(client?: SupabaseClient): Promise<Product[]> {
+    const rows = await ProductRepository.findAll({ client });
     const products = rows.map(toProduct);
     
     // Business Rule: Push sold items ("vendido") to the bottom

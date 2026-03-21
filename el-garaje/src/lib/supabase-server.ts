@@ -1,22 +1,29 @@
 import { createServerClient, parseCookieHeader, type CookieOptions } from '@supabase/ssr';
 import type { AstroCookies } from 'astro';
 
-export const createSupabaseServerClient = (cookies: AstroCookies, request: Request) => {
+export const createSupabaseServerClient = (
+    cookies: AstroCookies, 
+    request: Request,
+    options?: { admin?: boolean }
+) => {
     const forwardedProto = request.headers.get('x-forwarded-proto');
     const cookieHeader = request.headers.get('Cookie') ?? '';
     const cookieNames = parseCookieHeader(cookieHeader).map(cookie => cookie.name);
 
-    console.info('[Supabase SSR] createServerClient', {
+    // Use Service Role Key if admin is requested and the key exists
+    const isServerAdmin = options?.admin && !!import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseKey = isServerAdmin 
+        ? import.meta.env.SUPABASE_SERVICE_ROLE_KEY 
+        : import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
+
+    console.info(`[Supabase SSR] createServerClient (${isServerAdmin ? 'ADMIN' : 'PUBLIC'})`, {
         url: request.url,
         method: request.method,
-        forwardedProto,
-        hasCookieHeader: cookieHeader.length > 0,
-        cookieNames
     });
 
     return createServerClient(
         import.meta.env.PUBLIC_SUPABASE_URL,
-        import.meta.env.PUBLIC_SUPABASE_ANON_KEY,
+        supabaseKey,
         {
             cookies: {
                 getAll() {

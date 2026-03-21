@@ -4,8 +4,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import FilterSidebar from '../components/category/FilterSidebar.astro';
 import ProductCard from '../components/product/ProductCard.astro';
 import { getCatalogPage } from '../application/catalog/get-catalog';
+import { createSupabaseServerClient } from '../lib/supabase-server';
 
-const products = await getCatalogPage();
+const supabase = createSupabaseServerClient(Astro.cookies, Astro.request);
+const products = await getCatalogPage(supabase);
 const pageTitle = 'Catálogo | El Garaje de las Guitarras';
 
 // Split brands: available vs sold-only

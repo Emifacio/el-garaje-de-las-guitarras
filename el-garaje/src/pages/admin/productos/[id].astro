@@ -9,7 +9,7 @@ import { getPublicImageUrl } from '../../../lib/image-utils';
 import { formatSoldDateForDisplay } from '../../../lib/dates';
 
 // Initialize Supabase and require admin
-const supabase = createSupabaseServerClient(Astro.cookies, Astro.request);
+const supabase = createSupabaseServerClient(Astro.cookies, Astro.request, { admin: true });
 applyAdminHeaders(Astro.response.headers);
 
 const adminResult = await requireAdmin(supabase);
@@ -38,7 +38,7 @@ if (Astro.request.method === 'POST') {
         if (result.partialFailure && result.partialFailureMessage) {
             successMsg = result.partialFailureMessage;
         } else {
-            successMsg = `¡Producto actualizado con éxito!`;
+            successMsg = `¡Producto actualizado con éxito! Redirigiendo...`;
         }
     } else {
         errorMsg = result.errors.join('. ') || 'Ocurrió un error inesperado al actualizar el producto.';
@@ -88,11 +88,18 @@ const soldDateDisplay = formatSoldDateForDisplay(product.sold_date);
         </div>
     )}
 
-    {successMsg && (
-        <div class="mb-6 p-4 bg-emerald-900/20 border border-emerald-500/30 text-emerald-300 rounded text-sm flex items-center gap-2">
-            <span class="material-symbols-outlined">check_circle</span> {successMsg}
+    {successMsg ? (
+        <div class="mb-6 p-8 bg-emerald-900/20 border border-emerald-500/30 text-emerald-300 rounded text-center flex flex-col items-center gap-4">
+            <span class="material-symbols-outlined text-5xl">check_circle</span>
+            <div>
+                <h3 class="font-bold text-xl mb-2">{successMsg}</h3>
+                <p class="text-slate-400">Volviendo al inventario en unos instantes...</p>
+            </div>
+            <script is:inline>
+                setTimeout(() => window.location.href = '/admin/productos', 1500);
+            </script>
         </div>
-    )}
+    ) : (
 
     <form id="product-edit-form" method="POST" enctype="multipart/form-data" class="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-12">
         <!-- Main Content Column -->
@@ -163,7 +170,7 @@ const soldDateDisplay = formatSoldDateForDisplay(product.sold_date);
                 
                 {sortedImages.length > 0 ? (
                     <div id="image-management-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-                        {sortedImages.map((img) => (
+                        {sortedImages.map((img: any) => (
                             <div class="relative aspect-square rounded border border-primary/30 bg-background-dark overflow-hidden group touch-none" data-id={img.id}>
                                 <img src={getPublicImageUrl(img.storage_path)} class="w-full h-full object-cover" alt="Product Image" />
                                 
@@ -189,7 +196,7 @@ const soldDateDisplay = formatSoldDateForDisplay(product.sold_date);
                 )}
 
                 <!-- Hidden Input for Image Order -->
-                <input type="hidden" id="image_order" name="image_order" value={sortedImages.map(i => i.id).join(',')} />
+                <input type="hidden" id="image_order" name="image_order" value={sortedImages.map((i: any) => i.id).join(',')} />
 
                 <!-- Upload New Images -->
                 <div>
@@ -284,6 +291,7 @@ const soldDateDisplay = formatSoldDateForDisplay(product.sold_date);
             </div>
         </div>
     </form>
+    )}
 </AdminLayout>
 
 <script>
