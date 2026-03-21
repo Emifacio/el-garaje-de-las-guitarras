@@ -289,8 +289,9 @@ export function initImageUpload(options: {
                 }
                 pathsInput.value = JSON.stringify(storagePaths);
 
-                // D. Flag as processed and submit
+                // D. Flag as processed, exclude files from native submit, and submit
                 imageInput.dataset.processed = 'true';
+                imageInput.removeAttribute('name'); // CRITICAL: Stop binary data from being sent in the final form submit
                 onCompressComplete?.();
                 
                 btn.innerHTML = loadingText;
