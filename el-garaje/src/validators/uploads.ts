@@ -9,7 +9,7 @@ const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
 const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'jfif', 'png', 'webp'] as const;
 
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
-const MAX_FILES_PER_REQUEST = 10;
+const MAX_FILES_PER_REQUEST = 20;
 const MIN_FILE_SIZE_BYTES = 100; // Reject ghost/empty files
 
 export interface UploadValidationError {
