@@ -28,11 +28,8 @@ export const createSupabaseServerClient = (
             cookies: {
                 getAll() {
                     const parsed = parseCookieHeader(request.headers.get('Cookie') ?? '');
-                    console.info('[Supabase SSR] cookies.getAll', {
-                        url: request.url,
-                        method: request.method,
-                        cookieNames: parsed.map(cookie => cookie.name)
-                    });
+                    // Only log count to reduce terminal noise
+                    console.info(`[Supabase SSR] cookies.getAll (${parsed.length} cookies)`);
                     return parsed.map(cookie => ({
                         name: cookie.name,
                         value: cookie.value ?? ''
@@ -72,15 +69,7 @@ export const createSupabaseServerClient = (
                             astroOptions.maxAge = 0;
                         }
 
-                        console.info('[Supabase SSR] cookies.set', {
-                            url: request.url,
-                            method: request.method,
-                            name,
-                            secure: astroOptions.secure,
-                            sameSite: astroOptions.sameSite,
-                            hasValue: value.length > 0,
-                            maxAge: astroOptions.maxAge ?? null
-                        });
+                        console.info(`[Supabase SSR] cookies.set: ${name}`);
 
                         cookies.set(name, value, astroOptions);
                     });

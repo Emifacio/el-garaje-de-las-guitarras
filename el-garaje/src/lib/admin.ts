@@ -19,10 +19,21 @@ function createAdminDebugContext() {
 }
 
 export async function getAdminAccess(supabase: SupabaseClient): Promise<AdminAccessResult> {
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
+  let user;
+  let userError;
+
+  try {
+    const { data: { user: foundUser }, error: foundError } = await supabase.auth.getUser();
+    user = foundUser;
+    userError = foundError;
+  } catch (err: any) {
+    console.error('[Admin Access] CRITICAL AUTH ERROR:', err);
+    return { 
+      ok: false, 
+      reason: 'unauthenticated', 
+      error: err?.message || 'Auth failure' 
+    };
+  }
 
   if (userError || !user) {
     console.warn('[Admin Access] unauthenticated', {

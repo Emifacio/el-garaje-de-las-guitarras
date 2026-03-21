@@ -5,9 +5,9 @@
  * Used by create and edit product forms.
  */
 
-const MAX_WIDTH = 1200;
-const MAX_HEIGHT = 1200;
-const QUALITY = 0.85;
+const MAX_WIDTH = 1000;
+const MAX_HEIGHT = 1000;
+const QUALITY = 0.7;
 
 /**
  * Compress an image file to WebP format.
