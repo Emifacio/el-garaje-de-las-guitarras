@@ -29,8 +29,8 @@ const pageTitle = `${product.title} | El Garaje de las Guitarras`;
 ---
 
 <BaseLayout 
-    title={pageTitle} 
-    description={product.seo_description || product.short_description || ''}
+    title={`${product.title} | El Garaje de las Guitarras`}
+    description={product.shortDescription || ''}
 >
     <main class="w-full max-w-7xl mx-auto px-4 py-8">
         <Breadcrumbs items={breadcrumbs} />

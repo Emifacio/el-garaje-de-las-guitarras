@@ -10,11 +10,10 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Product } from '../../domain/product/product.types';
-type ProductImage = any;
-import { validateProductFormData, type ValidationResult } from '../../validators/product';
+import { validateProductFormData } from '../../validators/product';
 import { resolveSlug, isValidSlug } from '../../lib/slug';
 import { getCurrentISODate, parseSoldDate, determineSoldDate } from '../../lib/dates';
-import { uploadProductImages, getNextSortOrder } from './uploadProductImages';
+import { getNextSortOrder } from './uploadProductImages';
 
 export interface UpdateProductInput {
     productId: string;
@@ -203,37 +202,33 @@ export async function updateProduct(
         console.log('[UpdateProduct] No image_order provided or it was empty.');
     }
 
-    // Handle new image uploads
-    const imageFiles = (formData.getAll('images') as File[]).filter(f => f.size > 0);
+    // 6. Handle New Image Records (Paths already uploaded via separate API)
+    const uploadedPathsJson = formData.get('uploaded_image_paths') as string;
     
-    if (imageFiles.length > 0) {
-        const nextSortOrder = await getNextSortOrder(supabase, productId);
-        
-        const uploadResult = await uploadProductImages(
-            supabase,
-            productId,
-            imageFiles,
-            nextSortOrder
-        );
+    if (uploadedPathsJson) {
+        try {
+            const storagePaths = JSON.parse(uploadedPathsJson) as string[];
+            
+            if (storagePaths.length > 0) {
+                const nextSortOrder = await getNextSortOrder(supabase, productId);
+                
+                const imageRecords = storagePaths.map((path, index) => ({
+                    product_id: productId,
+                    storage_path: path,
+                    sort_order: nextSortOrder + (index * 10),
+                }));
 
-        if (uploadResult.partialFailure) {
-            return {
-                success: true,
-                product: (updatedProduct || currentProduct) as Product,
-                errors: uploadResult.errors,
-                partialFailure: true,
-                partialFailureMessage: `Producto actualizado, pero falló la subida de ${uploadResult.errors.length} imagen(es).`,
-            };
-        }
+                const { error: dbError } = await supabase
+                    .from('product_images')
+                    .insert(imageRecords);
 
-        if (!uploadResult.success) {
-            return {
-                success: true,
-                product: (updatedProduct || currentProduct) as Product,
-                errors: uploadResult.errors,
-                partialFailure: true,
-                partialFailureMessage: `Producto actualizado, pero no se pudieron subir las imágenes.`,
-            };
+                if (dbError) {
+                    console.error('[UpdateProduct] Image DB record insertion failed:', dbError);
+                    errors.push(`Error al registrar nuevas imágenes: ${dbError.message}`);
+                }
+            }
+        } catch (parseError) {
+            console.error('[UpdateProduct] Failed to parse uploaded_image_paths:', parseError);
         }
     }
 

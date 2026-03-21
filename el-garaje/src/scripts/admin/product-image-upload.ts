@@ -5,9 +5,9 @@
  * Used by create and edit product forms.
  */
 
-const MAX_WIDTH = 1000;
-const MAX_HEIGHT = 1000;
-const QUALITY = 0.7;
+const MAX_WIDTH = 800;
+const MAX_HEIGHT = 800;
+const QUALITY = 0.5;
 
 /**
  * Compress an image file to WebP format.
@@ -193,7 +193,7 @@ export function initImageUpload(options: {
         };
         imageInput.addEventListener('change', handlers.change);
         
-        // Submit handler with compression
+        // Submit handler with compression and individual uploads
         handlers.submit = async (e: Event) => {
             const imageInput = document.querySelector<HTMLInputElement>(inputSelector);
             const btn = document.querySelector<HTMLButtonElement>(buttonSelector);
@@ -201,27 +201,23 @@ export function initImageUpload(options: {
             
             if (!imageInput || !btn || !form) return;
 
-            // Check browser validation first. If invalid, the browser will show tooltips
-            // and we should NOT start compression or change button state.
+            // 1. Check browser validation
             if (!form.checkValidity()) {
-                // If the checkValidity returns false, we let the browser handle it
-                // We return and let the default behavior (showing tooltips) occur.
                 return;
             }
             
-            // If already compressed or no files, let the browser handle standard submission
-            if (
-                imageInput.dataset.compressed === 'true' ||
-                !imageInput.files ||
-                imageInput.files.length === 0
-            ) {
-                // VISUAL FEEDBACK: Show loading state but don't preventDefault
+            // 2. Identify if there are new images to upload
+            const hasNewImages = imageInput.files && imageInput.files.length > 0;
+            const alreadyProcessed = imageInput.dataset.processed === 'true';
+
+            if (!hasNewImages || alreadyProcessed) {
+                // No new images or already handled, standard submission
                 btn.innerHTML = loadingText;
                 btn.classList.add('opacity-70', 'pointer-events-none');
                 return;
             }
             
-            // Prevent standard submission while we compress
+            // 3. Start the Decoupled Upload Flow
             e.preventDefault();
             
             btn.innerHTML = compressingText;
@@ -229,25 +225,63 @@ export function initImageUpload(options: {
             onCompressStart?.();
             
             try {
-                // Prepare compressed files
-                const dt = await prepareFilesForUpload(imageInput.files);
-                
-                // Set the file input's files to the compressed ones
-                imageInput.files = dt.files;
-                
-                // Flag as compressed to avoid recursion
-                imageInput.dataset.compressed = 'true';
+                // A. Compress images
+                const dt = await prepareFilesForUpload(imageInput.files as FileList);
+                const filesToUpload = Array.from(dt.files);
+                const storagePaths: string[] = [];
+
+                // B. Upload images individually to avoid payload limits
+                for (let i = 0; i < filesToUpload.length; i++) {
+                    const file = filesToUpload[i];
+                    btn.innerHTML = `<span class="material-symbols-outlined animate-spin text-sm">refresh</span> Subiendo ${i + 1}/${filesToUpload.length}...`;
+                    
+                    const uploadFormData = new FormData();
+                    uploadFormData.append('file', file);
+                    
+                    // Try to get productId from current URL if in edit mode
+                    const urlParts = window.location.pathname.split('/');
+                    const potentialId = urlParts[urlParts.length - 1];
+                    if (potentialId && potentialId !== 'nuevo') {
+                        uploadFormData.append('productId', potentialId);
+                    }
+
+                    const response = await fetch('/api/admin/productos/upload', {
+                        method: 'POST',
+                        body: uploadFormData
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error || `Error al subir la imagen ${i + 1}`);
+                    }
+
+                    const data = await response.json();
+                    storagePaths.push(data.storagePath);
+                }
+
+                // C. Inject the collected paths into the form
+                let pathsInput = form.querySelector<HTMLInputElement>('input[name="uploaded_image_paths"]');
+                if (!pathsInput) {
+                    pathsInput = document.createElement('input');
+                    pathsInput.type = 'hidden';
+                    pathsInput.name = 'uploaded_image_paths';
+                    form.appendChild(pathsInput);
+                }
+                pathsInput.value = JSON.stringify(storagePaths);
+
+                // D. Flag as processed and submit
+                imageInput.dataset.processed = 'true';
                 onCompressComplete?.();
                 
-                // Now submit the form NORMALLY after compression
                 btn.innerHTML = loadingText;
                 form.submit();
-            } catch (error) {
-                console.error('Compression/submission error:', error);
-                // Fallback: submit original files
-                imageInput.dataset.compressed = 'true';
-                btn.innerHTML = loadingText;
-                form.submit();
+            } catch (error: any) {
+                console.error('Decoupled upload error:', error);
+                alert(`Error en la subida: ${error.message || 'Error desconocido'}. Por favor, intenta de nuevo.`);
+                
+                // Reset button state
+                btn.innerHTML = 'Reintentar Guardar';
+                btn.classList.remove('opacity-70', 'pointer-events-none');
             }
         };
         form.addEventListener('submit', handlers.submit);

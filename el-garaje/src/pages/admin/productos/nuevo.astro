@@ -70,7 +70,7 @@ if (Astro.request.method === 'POST') {
             </script>
         </div>
     ) : (
-        <form method="POST" enctype="multipart/form-data" class="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-12">
+        <form id="product-create-form" method="POST" enctype="multipart/form-data" class="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-12">
             
             <!-- Main Content Column -->
             <div class="lg:col-span-2 flex flex-col gap-6">
@@ -147,8 +147,10 @@ if (Astro.request.method === 'POST') {
                             <span class="text-slate-400 text-xs text-center px-4">Formatos válidos: JPG, JFIF, PNG, WEBP. Máximo 20 imágenes.</span>
                             <input type="file" name="images" id="images" multiple accept="image/jpeg,image/jfif,image/png,image/webp" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                         </div>
-                        <div id="image-preview" class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 empty:hidden">
-                        </div>
+                        <div id="image-preview" class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 empty:hidden"></div>
+                        <p class="text-[10px] text-slate-500 mt-3 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs">info</span> Las fotos se optimizan automáticamente al guardar para asegurar una carga rápida.
+                        </p>
                     </div>
                 </div>
             </div>
@@ -240,7 +242,7 @@ if (Astro.request.method === 'POST') {
 
         console.log('[Admin Nuevo] Initializing upload script...');
         const cleanup = initImageUpload({
-            formSelector: 'form',
+            formSelector: '#product-create-form',
             inputSelector: '#images',
             previewSelector: '#image-preview',
             buttonSelector: '#saveBtn',

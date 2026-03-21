@@ -207,8 +207,10 @@ const soldDateDisplay = formatSoldDateForDisplay(product.sold_date);
                         <span class="text-slate-400 text-xs text-center px-4">Las fotos nuevas se agregarán al final. Formatos: JPG, JFIF, PNG, WEBP. Máximo 20 imágenes.</span>
                         <input type="file" name="images" id="images" multiple accept="image/jpeg,image/jfif,image/png,image/webp" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                     </div>
-                    <div id="image-preview" class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 empty:hidden">
-                    </div>
+                    <div id="image-preview" class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 empty:hidden"></div>
+                    <p class="text-[10px] text-slate-500 mt-3 flex items-center gap-1">
+                        <span class="material-symbols-outlined text-xs">info</span> Las fotos se optimizan automáticamente al guardar para asegurar una carga rápida.
+                    </p>
                 </div>
                 <p class="text-xs text-slate-400 mt-4 border-t border-primary/10 pt-4">Nota: Para eliminar imágenes deberás gestionarlo temporalmente desde el bucket "product-images" en Supabase.</p>
             </div>

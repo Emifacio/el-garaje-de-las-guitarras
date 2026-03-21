@@ -12,10 +12,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Product } from '../../domain/product/product.types';
 import type { Category } from '../../domain/category/category.types';
-import { validateProductFormData, type ValidationResult } from '../../validators/product';
-import { resolveSlug, isValidSlug, sanitizeSlugInput } from '../../lib/slug';
+import { validateProductFormData } from '../../validators/product';
+import { resolveSlug, isValidSlug } from '../../lib/slug';
 import { getCurrentISODate } from '../../lib/dates';
-import { uploadProductImages } from './uploadProductImages';
 
 export interface CreateProductInput {
     formData: FormData;
@@ -125,35 +124,38 @@ export async function createProduct(
         };
     }
 
-    // Handle image uploads
-    const imageFiles = formData.getAll('images') as File[];
+    // 5. Handle Image Records (Paths already uploaded via separate API)
+    const uploadedPathsJson = formData.get('uploaded_image_paths') as string;
     
-    if (imageFiles.length > 0) {
-        const uploadResult = await uploadProductImages(
-            supabase,
-            insertedProduct.id,
-            imageFiles,
-            0 // Start from 0 for new product
-        );
+    if (uploadedPathsJson) {
+        try {
+            const storagePaths = JSON.parse(uploadedPathsJson) as string[];
+            
+            if (storagePaths.length > 0) {
+                const imageRecords = storagePaths.map((path, index) => ({
+                    product_id: insertedProduct.id,
+                    storage_path: path,
+                    sort_order: index * 10,
+                }));
 
-        if (uploadResult.partialFailure) {
-            return {
-                success: true,
-                product: insertedProduct as Product,
-                errors: uploadResult.errors,
-                partialFailure: true,
-                partialFailureMessage: `Producto creado, pero falló la subida de ${uploadResult.errors.length} imagen(es).`,
-            };
-        }
+                const { error: dbError } = await supabase
+                    .from('product_images')
+                    .insert(imageRecords);
 
-        if (!uploadResult.success) {
-            return {
-                success: true,
-                product: insertedProduct as Product,
-                errors: uploadResult.errors,
-                partialFailure: true,
-                partialFailureMessage: `Producto creado, pero no se pudieron subir las imágenes.`,
-            };
+                if (dbError) {
+                    console.error('[CreateProduct] Image DB record insertion failed:', dbError);
+                    return {
+                        success: true,
+                        product: insertedProduct as Product,
+                        errors: [`Producto creado, pero falló el registro de imágenes: ${dbError.message}`],
+                        partialFailure: true,
+                        partialFailureMessage: 'El producto fue creado pero hubo un problema al vincular las imágenes.',
+                    };
+                }
+            }
+        } catch (parseError) {
+            console.error('[CreateProduct] Failed to parse uploaded_image_paths:', parseError);
+            // Non-blocking but should be logged
         }
     }
 

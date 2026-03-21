@@ -38,7 +38,9 @@ export default defineConfig({
   redirects: {
     '/index.html': '/',
     '/electricas.html': '/categoria/electricas',
+    '/guitarras-electricas.html': '/categoria/electricas',
     '/acusticas.html': '/categoria/acusticas',
+    '/guitarras-acusticas.html': '/categoria/acusticas',
     '/bajos.html': '/categoria/bajos',
     '/amplificadores.html': '/categoria/amplificadores',
     '/efectos.html': '/categoria/efectos',
@@ -46,7 +48,8 @@ export default defineConfig({
     '/consignaciones.html': '/consignaciones',
     '/inspecciones.html': '/inspecciones',
     '/sobre-elgaraje.html': '/sobre-elgaraje',
-    '/contacto.html': '/contacto'
+    '/contacto.html': '/contacto',
+    '/producto.html': '/catalogo'
   },
   security: {
     checkOrigin: false // Fixes "Cross-site POST form submissions are forbidden" in Astro on Vercel Edge Server
