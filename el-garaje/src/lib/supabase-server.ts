@@ -28,16 +28,30 @@ export const createSupabaseServerClient = (
             cookies: {
                 getAll() {
                     const parsed = parseCookieHeader(request.headers.get('Cookie') ?? '');
-                    // Only log count to reduce terminal noise
-                    console.info(`[Supabase SSR] cookies.getAll (${parsed.length} cookies)`);
-                    return parsed.map(cookie => ({
+                    // Only return supabase-related cookies to reduce header size passed to the client
+                    const filtered = parsed.filter(cookie => cookie.name.startsWith('sb-'));
+                    
+                    console.info(`[Supabase SSR] cookies.getAll: ${filtered.length}/${parsed.length} cookies filtered`);
+                    
+                    return filtered.map(cookie => ({
                         name: cookie.name,
                         value: cookie.value ?? ''
                     }));
                 },
                 setAll(cookiesToSet) {
                     cookiesToSet.forEach(({ name, value, options }) => {
-                        console.log(`[Cookies SSR] Setting: ${name}`);
+                        console.info(`[Supabase SSR] cookies.set: ${name}`);
+
+                        // Chunk Cleanup: If we are setting the main token or first chunk, 
+                        // try to clear any potentially stale higher chunks from previous sessions.
+                        if (name.includes('-auth-token') && !name.includes('.chunk')) {
+                             cookieNames.filter(cn => cn.startsWith(name + '.chunk.')).forEach(oldChunk => {
+                                 if (!cookiesToSet.find(c => c.name === oldChunk)) {
+                                     console.info(`[Supabase SSR] Clearing stale chunk: ${oldChunk}`);
+                                     cookies.set(oldChunk, '', { path: '/', maxAge: 0 });
+                                 }
+                             });
+                        }
 
                         // Parse options to ensure Astro accepts them perfectly
                         let sameSiteVal: true | false | "lax" | "strict" | "none" | undefined = 'lax';
@@ -57,19 +71,9 @@ export const createSupabaseServerClient = (
                             maxAge: options?.maxAge
                         };
 
-                        // Let the browser handle the domain automatically by not specifying it.
-                        // This avoids issues where the provided domain doesn't perfectly match the host.
-                        /*
-                        if (import.meta.env.PROD && options?.domain) {
-                            (astroOptions as any).domain = options.domain;
-                        }
-                        */
-
                         if (value === '') {
                             astroOptions.maxAge = 0;
                         }
-
-                        console.info(`[Supabase SSR] cookies.set: ${name}`);
 
                         cookies.set(name, value, astroOptions);
                     });
