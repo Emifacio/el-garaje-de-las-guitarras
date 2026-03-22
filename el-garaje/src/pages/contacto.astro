@@ -84,13 +84,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         initContactForm();
     });
 
-    initContactForm();
-
     function initContactForm() {
         const contactForm = document.getElementById('contact-form') as HTMLFormElement;
         const statusEl = document.getElementById('form-status');
 
         if (contactForm && statusEl) {
+            // Guard against multiple initializations
+            if (contactForm.dataset.formInitialized) return;
+            contactForm.dataset.formInitialized = 'true';
+
             contactForm.addEventListener('submit', async (event) => {
                 event.preventDefault();
 
