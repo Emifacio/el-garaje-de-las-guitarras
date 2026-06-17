@@ -1,0 +1,136 @@
+---
+// Confetti.astro
+// Uso: <Confetti />
+// Llámalo on-demand desde cualquier script del cliente: window.launchConfetti();
+---
+
+<canvas id="confetti-canvas"></canvas>
+
+<style>
+  #confetti-canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 999;
+  }
+</style>
+
+<script>
+  const COLORS = [
+    '#75AADB', '#FFFFFF', '#5B9DD9',
+    '#E8F4FF', '#4A8EC7', '#9EC8E8',
+  ];
+
+  const CONFIG = {
+    quantity: 300,
+    spawnDuration: 3000,   // ms durante los cuales se emiten piezas
+    gravity: 0.045,
+    decayMin: 0.003,
+    decayMax: 0.007,
+  };
+
+  const canvas = document.getElementById('confetti-canvas') as HTMLCanvasElement;
+  const ctx = canvas.getContext('2d')!;
+
+  function resize() {
+    canvas.width  = window.innerWidth  * devicePixelRatio;
+    canvas.height = window.innerHeight * devicePixelRatio;
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const rand = (a: number, b: number) => a + Math.random() * (b - a);
+
+  class Piece {
+    x: number; y: number; w: number; h: number;
+    vx: number; vy: number; angle: number; spin: number;
+    wave: number; waveSpeed: number; waveAmp: number;
+    color: string; shape: 'rect' | 'ellipse';
+    life: number; decay: number; dead = false;
+
+    constructor(W: number, H: number) {
+      this.x         = rand(0, W);
+      this.y         = rand(-H * 0.5, -10);
+      this.w         = rand(6, 14);
+      this.h         = rand(3, 7);
+      this.vx        = rand(-1.5, 1.5);
+      this.vy        = rand(1.5, 4.5);
+      this.angle     = rand(0, Math.PI * 2);
+      this.spin      = rand(-0.08, 0.08);
+      this.wave      = rand(0, Math.PI * 2);
+      this.waveSpeed = rand(0.03, 0.07);
+      this.waveAmp   = rand(0.4, 1.2);
+      this.color     = COLORS[Math.floor(Math.random() * COLORS.length)];
+      this.shape     = Math.random() > 0.35 ? 'rect' : 'ellipse';
+      this.life      = 1;
+      this.decay     = rand(CONFIG.decayMin, CONFIG.decayMax);
+    }
+
+    update() {
+      this.wave += this.waveSpeed;
+      this.x    += this.vx + Math.sin(this.wave) * this.waveAmp;
+      this.y    += this.vy;
+      this.vy   += CONFIG.gravity;
+      this.angle += this.spin;
+      this.life  -= this.decay;
+      if (this.life <= 0) this.dead = true;
+    }
+
+    draw(ctx: CanvasRenderingContext2D) {
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, this.life);
+      ctx.fillStyle   = this.color;
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this.angle);
+      if (this.shape === 'rect') {
+        ctx.fillRect(-this.w / 2, -this.h / 2, this.w, this.h);
+      } else {
+        ctx.beginPath();
+        ctx.ellipse(0, 0, this.w / 2, this.h / 2, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+  }
+
+  function launch() {
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+    let pieces: Piece[] = [];
+    let spawned = 0;
+    let lastSpawn = 0;
+    let startTime: number | null = null;
+    const spawnInterval = CONFIG.spawnDuration / CONFIG.quantity;
+
+    function tick(ts: number) {
+      if (!startTime) startTime = ts;
+      const elapsed = ts - startTime;
+
+      if (elapsed - lastSpawn >= spawnInterval && spawned < CONFIG.quantity) {
+        pieces.push(new Piece(W, H));
+        spawned++;
+        lastSpawn = elapsed;
+      }
+
+      ctx.clearRect(0, 0, W, H);
+      pieces = pieces.filter(p => !p.dead);
+      pieces.forEach(p => { p.update(); p.draw(ctx); });
+
+      if (pieces.length > 0 || spawned < CONFIG.quantity) {
+        requestAnimationFrame(tick);
+      }
+    }
+
+    requestAnimationFrame(tick);
+  }
+
+  // Lanza al cargar la página
+  window.addEventListener('load', launch);
+
+  // También exportamos para llamarlo manualmente desde otro script
+  (window as any).launchConfetti = launch;
+</script>
